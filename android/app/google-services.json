@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "416976631560",
+    "firebase_url": "https://pet-shop-app-115fb-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "pet-shop-app-115fb",
+    "storage_bucket": "pet-shop-app-115fb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:416976631560:android:bbe9849c878466d4c01ebd",
+        "android_client_info": {
+          "package_name": "com.petpoint.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "416976631560-3vl1ijsvfpg2jhg1bjabt9a0lcsjiqvs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBf8ihru9s5lI2YiIVV70Kl9PHddDMnD_A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "416976631560-3vl1ijsvfpg2jhg1bjabt9a0lcsjiqvs.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
