@@ -5,6 +5,8 @@ import '../../screens/login/login_page.dart';
 import '../../screens/register/register_page.dart';
 import '../../screens/verify/email_verification_page.dart';
 import '../../screens/main/base_screen.dart';
+import '../../screens/adoption/adoption_screen.dart';
+import '../../screens/admin/add_pet_screen.dart';
 
 /// Application route configuration using GoRouter.
 class AppRouter {
@@ -51,6 +53,16 @@ class AppRouter {
           path: '/home',
           name: 'home',
           builder: (context, state) => const BaseScreen(),
+        ),
+        GoRoute(
+          path: '/adoption',
+          name: 'adoption',
+          builder: (context, state) => const AdoptionScreen(),
+        ),
+        GoRoute(
+          path: '/admin/add-pet',
+          name: 'add-pet',
+          builder: (context, state) => const AddPetScreen(),
         ),
       ],
     );

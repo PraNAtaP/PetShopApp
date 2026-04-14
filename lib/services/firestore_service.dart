@@ -109,7 +109,7 @@ class FirestoreService {
   // Product Shop
   // ==========================================
 
-  /// Fetches products filtered by category.
+  /// Fetches products filtered by category (Future).
   Future<List<ProductModel>> getProductsByCategory(String category) async {
     try {
       final querySnapshot = await _productsRef
@@ -118,6 +118,20 @@ class FirestoreService {
       return querySnapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
       throw Exception('Gagal mengambil data produk: $e');
+    }
+  }
+
+  /// Returns a real-time stream of all products, optionally filtered.
+  Stream<List<ProductModel>> getProductsStream({String? category}) {
+    try {
+      Query<ProductModel> query = _productsRef;
+      if (category != null && category.isNotEmpty && category != 'Semua') {
+        query = query.where('kategori', isEqualTo: category);
+      }
+      return query.snapshots().map(
+          (snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    } catch (e) {
+      throw Exception('Gagal stream data produk: $e');
     }
   }
 

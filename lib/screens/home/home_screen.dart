@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
+import '../../services/firestore_service.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -18,23 +20,36 @@ class HomeScreen extends StatelessWidget {
       );
     }
 
-    final isAdmin = user.role == UserRole.admin;
-
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(context, user, isAdmin),
-              const SizedBox(height: 24),
-              if (isAdmin)
-                _buildAdminDashboard(context)
-              else
-                _buildCustomerDashboard(context),
-            ],
-          ),
+        child: FutureBuilder<UserModel?>(
+          future: FirestoreService.instance.getUserProfile(user.uid),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+            }
+            if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
+              return const Center(child: Text('Gagal memuat profil', style: TextStyle(color: AppColors.error)));
+            }
+
+            final userProfile = snapshot.data!;
+            final isAdminProfile = userProfile.role == UserRole.admin;
+
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildHeader(context, userProfile, isAdminProfile),
+                  const SizedBox(height: 24),
+                  if (isAdminProfile)
+                    _buildAdminDashboard(context)
+                  else
+                    _buildCustomerDashboard(context),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -135,11 +150,13 @@ class HomeScreen extends StatelessWidget {
             childAspectRatio: 0.85,
             children: [
               _buildFeatureCard(
-                  context, Icons.cut_outlined, 'Grooming', AppColors.primary),
+                  context, Icons.cut_outlined, 'Grooming', AppColors.primary, () {}),
               _buildFeatureCard(
-                  context, Icons.pets, 'Adopsi', AppColors.secondary),
+                  context, Icons.pets, 'Adopsi', AppColors.secondary, () {
+                context.push('/adoption');
+              }),
               _buildFeatureCard(
-                  context, Icons.shopping_bag_outlined, 'Beli Barang', AppColors.accent),
+                  context, Icons.shopping_bag_outlined, 'Beli Barang', AppColors.accent, () {}),
             ],
           ),
           const SizedBox(height: 32),
@@ -194,13 +211,17 @@ class HomeScreen extends StatelessWidget {
             childAspectRatio: 1.1,
             children: [
               _buildActionCard(
-                  context, Icons.inventory_2_outlined, 'Kelola Stok', AppColors.primary),
+                  context, Icons.inventory_2_outlined, 'Kelola Stok', AppColors.primary, () {}),
               _buildActionCard(
-                  context, Icons.verified_outlined, 'Validasi\nPembayaran', AppColors.secondary),
+                  context, Icons.verified_outlined, 'Validasi\nPembayaran', AppColors.secondary, () {}),
               _buildActionCard(
-                  context, Icons.assignment_turned_in_outlined, 'Update Status\nAdopsi', AppColors.accent),
+                  context, Icons.add_circle_outline, 'Tambah\nAnabul', AppColors.accent, () {
+                context.push('/admin/add-pet');
+              }),
               _buildActionCard(
-                  context, Icons.post_add_outlined, 'Unggah\nFun Fact', AppColors.error),
+                  context, Icons.assignment_turned_in_outlined, 'Update Status\nAdopsi', AppColors.textDark, () {}),
+              _buildActionCard(
+                  context, Icons.post_add_outlined, 'Unggah\nFun Fact', AppColors.error, () {}),
             ],
           ),
         ],
@@ -209,9 +230,9 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildFeatureCard(
-      BuildContext context, IconData icon, String title, Color color) {
+      BuildContext context, IconData icon, String title, Color color, VoidCallback onTap) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
@@ -253,9 +274,9 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildActionCard(
-      BuildContext context, IconData icon, String title, Color color) {
+      BuildContext context, IconData icon, String title, Color color, VoidCallback onTap) {
     return InkWell(
-      onTap: () {},
+      onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
