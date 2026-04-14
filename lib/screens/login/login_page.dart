@@ -45,10 +45,12 @@ class _LoginPageState extends State<LoginPage> {
 
     setState(() => _isLoading = false);
 
-    if (result != null) {
+    if (result == 'email-not-verified') {
+      context.go('/verify-email');
+    } else if (result != null) {
       setState(() => _errorMessage = result);
     }
-    // On success, GoRouter's refreshListenable triggers redirect to /home
+    // On success (result == null), GoRouter's refreshListenable → /home
   }
 
   @override

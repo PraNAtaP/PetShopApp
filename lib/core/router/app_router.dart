@@ -3,7 +3,8 @@ import '../../services/auth_service.dart';
 import '../../screens/landing/landing_page.dart';
 import '../../screens/login/login_page.dart';
 import '../../screens/register/register_page.dart';
-import '../../screens/home/home_page.dart';
+import '../../screens/verify/email_verification_page.dart';
+import '../../screens/main/base_screen.dart';
 
 /// Application route configuration using GoRouter.
 class AppRouter {
@@ -15,13 +16,12 @@ class AppRouter {
         final isLoggedIn = authService.isLoggedIn;
         final location = state.matchedLocation;
 
-        final isAuthRoute =
-            location == '/' || location == '/login' || location == '/register';
+        final isAuthRoute = location == '/' ||
+            location == '/login' ||
+            location == '/register';
 
-        // Logged in → skip landing/login/register, go to home
         if (isLoggedIn && isAuthRoute) return '/home';
 
-        // Not logged in → block /home
         if (!isLoggedIn && location == '/home') return '/login';
 
         return null;
@@ -43,9 +43,14 @@ class AppRouter {
           builder: (context, state) => const RegisterPage(),
         ),
         GoRoute(
+          path: '/verify-email',
+          name: 'verify-email',
+          builder: (context, state) => const EmailVerificationPage(),
+        ),
+        GoRoute(
           path: '/home',
           name: 'home',
-          builder: (context, state) => const HomePage(),
+          builder: (context, state) => const BaseScreen(),
         ),
       ],
     );
