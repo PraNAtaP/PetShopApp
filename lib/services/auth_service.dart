@@ -5,9 +5,8 @@ import '../models/user_model.dart';
 
 /// Authentication service backed by Firebase Auth and Cloud Firestore.
 ///
-/// On register: creates a Firebase Auth account, then writes the user
-/// profile to the `users` collection with the Auth UID as document ID.
-/// On login: authenticates via Firebase Auth, then fetches the Firestore profile.
+/// Registration is exclusively for customers. The role is hardcoded.
+/// After registration, a verification email is sent automatically.
 class AuthService extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -16,24 +15,27 @@ class AuthService extends ChangeNotifier {
   bool _isLoading = false;
 
   UserModel? get currentUser => _currentUser;
-  bool get isLoggedIn => _auth.currentUser != null && _currentUser != null;
+  bool get isLoggedIn =>
+      _auth.currentUser != null &&
+      _auth.currentUser!.emailVerified &&
+      _currentUser != null;
   bool get isLoading => _isLoading;
 
-  /// Initializes the service by checking for an existing Firebase session.
   Future<void> initializeAuth() async {
     final firebaseUser = _auth.currentUser;
-    if (firebaseUser != null) {
+    if (firebaseUser != null && firebaseUser.emailVerified) {
       await _fetchUserProfile(firebaseUser.uid);
     }
   }
 
-  /// Registers a new user with Firebase Auth and saves the profile to Firestore.
-  /// Returns `null` on success, or a user-friendly error message on failure.
+  /// Registers a new customer, saves profile to Firestore, and sends
+  /// a verification email. Does NOT sign out so the verification screen
+  /// can call reload/resend on the current user.
+  /// Returns `null` on success, or a user-friendly error message.
   Future<String?> registerUser({
     required String nama,
     required String email,
     required String password,
-    required UserRole role,
   }) async {
     _setLoading(true);
     try {
@@ -47,7 +49,7 @@ class AuthService extends ChangeNotifier {
         uid: uid,
         nama: nama,
         email: email,
-        role: role,
+        role: UserRole.customer,
       );
 
       await _firestore
@@ -55,8 +57,8 @@ class AuthService extends ChangeNotifier {
           .doc(uid)
           .set(userModel.toFirestore());
 
-      // Sign out after registration so user logs in explicitly
-      await _auth.signOut();
+      await credential.user!.sendEmailVerification();
+
       _setLoading(false);
       return null;
     } on FirebaseAuthException catch (e) {
@@ -68,8 +70,8 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Authenticates a user via Firebase Auth and loads their Firestore profile.
-  /// Returns `null` on success, or a user-friendly error message on failure.
+  /// Authenticates a user. If email is not verified, returns a special
+  /// result string 'email-not-verified' so the UI can redirect.
   Future<String?> login({
     required String email,
     required String password,
@@ -80,6 +82,11 @@ class AuthService extends ChangeNotifier {
         email: email,
         password: password,
       );
+
+      if (!credential.user!.emailVerified) {
+        _setLoading(false);
+        return 'email-not-verified';
+      }
 
       await _fetchUserProfile(credential.user!.uid);
       _setLoading(false);
@@ -93,14 +100,45 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Signs out and clears local state.
+  /// Reloads the current Firebase user and checks emailVerified status.
+  /// On success, fetches Firestore profile and returns `true`.
+  Future<bool> checkEmailVerified() async {
+    _setLoading(true);
+    try {
+      await _auth.currentUser?.reload();
+      final user = _auth.currentUser;
+      if (user != null && user.emailVerified) {
+        await _fetchUserProfile(user.uid);
+        _setLoading(false);
+        return true;
+      }
+      _setLoading(false);
+      return false;
+    } catch (_) {
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  /// Resends the verification email to the current user.
+  /// Returns `null` on success, or a user-friendly error message.
+  Future<String?> resendVerificationEmail() async {
+    try {
+      await _auth.currentUser?.sendEmailVerification();
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _mapAuthError(e.code);
+    } catch (_) {
+      return 'Gagal mengirim ulang email. Coba lagi nanti.';
+    }
+  }
+
   Future<void> logout() async {
     await _auth.signOut();
     _currentUser = null;
     notifyListeners();
   }
 
-  /// Fetches the user profile document from Firestore `users` collection.
   Future<void> _fetchUserProfile(String uid) async {
     final doc = await _firestore.collection('users').doc(uid).get();
     if (doc.exists) {
@@ -114,7 +152,6 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Maps Firebase Auth error codes to Indonesian user-friendly messages.
   String _mapAuthError(String code) {
     switch (code) {
       case 'email-already-in-use':

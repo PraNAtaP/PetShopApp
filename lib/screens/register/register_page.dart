@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_colors.dart';
-import '../../models/user_model.dart';
 import '../../services/auth_service.dart';
 
-/// Registration screen with name, email, password, and role selection.
+/// Registration screen with name, email, and password fields.
+/// Role is hardcoded to Customer — no selection UI.
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
@@ -18,7 +18,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  UserRole _selectedRole = UserRole.customer;
   bool _obscurePassword = true;
   bool _isLoading = false;
   String? _errorMessage;
@@ -44,7 +43,6 @@ class _RegisterPageState extends State<RegisterPage> {
       nama: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,
-      role: _selectedRole,
     );
 
     if (!mounted) return;
@@ -54,17 +52,7 @@ class _RegisterPageState extends State<RegisterPage> {
     if (result != null) {
       setState(() => _errorMessage = result);
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Registrasi berhasil! Silakan login.'),
-          backgroundColor: AppColors.secondary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-      context.go('/login');
+      context.go('/verify-email');
     }
   }
 
@@ -216,28 +204,6 @@ class _RegisterPageState extends State<RegisterPage> {
                   }
                   return null;
                 },
-              ),
-              const SizedBox(height: 16),
-
-              DropdownButtonFormField<UserRole>(
-                initialValue: _selectedRole,
-                decoration: const InputDecoration(
-                  hintText: 'Pilih Role',
-                  prefixIcon: Icon(Icons.admin_panel_settings_outlined),
-                ),
-                items: UserRole.values.map((role) {
-                  return DropdownMenuItem(
-                    value: role,
-                    child: Text(role.displayName),
-                  );
-                }).toList(),
-                onChanged: _isLoading
-                    ? null
-                    : (value) {
-                        if (value != null) {
-                          setState(() => _selectedRole = value);
-                        }
-                      },
               ),
               const SizedBox(height: 32),
 
