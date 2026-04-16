@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user_model.dart';
+import 'package:petshopapp/models/user_model.dart';
 
 /// Authentication service backed by Firebase Auth and Cloud Firestore.
 ///

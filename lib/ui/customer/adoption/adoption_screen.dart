@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
-import '../../models/pet_model.dart';
-import '../../services/firestore_service.dart';
+import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:petshopapp/models/pet_model.dart';
+import 'package:petshopapp/services/firestore_service.dart';
 
 class AdoptionScreen extends StatelessWidget {
   const AdoptionScreen({super.key});

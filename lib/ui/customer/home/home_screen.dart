@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_colors.dart';
-import '../../models/user_model.dart';
-import '../../services/auth_service.dart';
-import '../../services/firestore_service.dart';
+import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:petshopapp/models/user_model.dart';
+import 'package:petshopapp/services/auth_service.dart';
+import 'package:petshopapp/services/firestore_service.dart';
 import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatelessWidget {

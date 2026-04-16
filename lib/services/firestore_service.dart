@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user_model.dart';
-import '../models/pet_model.dart';
-import '../models/product_model.dart';
-import '../models/grooming_booking_model.dart';
+import 'package:petshopapp/models/user_model.dart';
+import 'package:petshopapp/models/pet_model.dart';
+import 'package:petshopapp/models/product_model.dart';
+import 'package:petshopapp/models/grooming_booking_model.dart';
 
 /// Service to handle Cloud Firestore CRUD operations for Pet Point.
 /// Utilizes the Repository pattern and `.withConverter` for type safety.

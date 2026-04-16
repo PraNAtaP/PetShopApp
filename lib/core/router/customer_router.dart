@@ -1,15 +1,14 @@
 import 'package:go_router/go_router.dart';
-import '../../services/auth_service.dart';
-import '../../screens/landing/landing_page.dart';
-import '../../screens/login/login_page.dart';
-import '../../screens/register/register_page.dart';
-import '../../screens/verify/email_verification_page.dart';
-import '../../screens/main/base_screen.dart';
-import '../../screens/adoption/adoption_screen.dart';
-import '../../screens/admin/add_pet_screen.dart';
+import 'package:petshopapp/services/auth_service.dart';
+import 'package:petshopapp/ui/shared/auth/landing/landing_page.dart';
+import 'package:petshopapp/ui/shared/auth/login/login_page.dart';
+import 'package:petshopapp/ui/shared/auth/register/register_page.dart';
+import 'package:petshopapp/ui/shared/auth/verify/email_verification_page.dart';
+import 'package:petshopapp/ui/customer/main/base_screen.dart';
+import 'package:petshopapp/ui/customer/adoption/adoption_screen.dart';
 
-/// Application route configuration using GoRouter.
-class AppRouter {
+/// Customer application route configuration using GoRouter.
+class CustomerRouter {
   static GoRouter router(AuthService authService) {
     return GoRouter(
       initialLocation: '/',
@@ -26,6 +25,9 @@ class AppRouter {
 
         if (!isLoggedIn && location == '/home') return '/login';
 
+        // Additional: block admin users out of customer app or just ignore them.
+        // Actually, if role == admin, maybe redirect to an error? Or they can't login here?
+        // Let's keep it simple for now as requested.
         return null;
       },
       routes: [
@@ -52,17 +54,12 @@ class AppRouter {
         GoRoute(
           path: '/home',
           name: 'home',
-          builder: (context, state) => const BaseScreen(),
+          builder: (context, state) => const BaseScreen(), // Contains the BottomNavigationBar
         ),
         GoRoute(
           path: '/adoption',
           name: 'adoption',
           builder: (context, state) => const AdoptionScreen(),
-        ),
-        GoRoute(
-          path: '/admin/add-pet',
-          name: 'add-pet',
-          builder: (context, state) => const AddPetScreen(),
         ),
       ],
     );

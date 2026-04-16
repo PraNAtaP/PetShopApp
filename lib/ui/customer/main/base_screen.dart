@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../core/theme/app_colors.dart';
-import '../../models/user_model.dart';
-import '../../services/auth_service.dart';
+import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:petshopapp/models/user_model.dart';
+import 'package:petshopapp/services/auth_service.dart';
 import '../chat/chat_screen.dart';
 import '../home/home_screen.dart';
-import '../management/management_screen.dart';
 import '../profile/profile_screen.dart';
 import '../shop/shop_screen.dart';
 
@@ -32,21 +31,12 @@ class _BaseScreenState extends State<BaseScreen> {
       );
     }
 
-    final isAdmin = user.role == UserRole.admin;
-
-    final List<Widget> screens = isAdmin
-        ? const [
-            HomeScreen(),
-            ManagementScreen(),
-            ChatScreen(),
-            ProfileScreen(),
-          ]
-        : const [
-            HomeScreen(),
-            ShopScreen(),
-            ChatScreen(),
-            ProfileScreen(),
-          ];
+    final List<Widget> screens = const [
+      HomeScreen(),
+      ShopScreen(),
+      ChatScreen(),
+      ProfileScreen(),
+    ];
 
     return Scaffold(
       body: IndexedStack(
@@ -82,18 +72,11 @@ class _BaseScreenState extends State<BaseScreen> {
               activeIcon: Icon(Icons.home),
               label: 'Home',
             ),
-            if (isAdmin)
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.dashboard_outlined),
-                activeIcon: Icon(Icons.dashboard),
-                label: 'Management',
-              )
-            else
-              const BottomNavigationBarItem(
-                icon: Icon(Icons.storefront_outlined),
-                activeIcon: Icon(Icons.storefront),
-                label: 'Shop',
-              ),
+            const BottomNavigationBarItem(
+              icon: Icon(Icons.storefront_outlined),
+              activeIcon: Icon(Icons.storefront),
+              label: 'Shop',
+            ),
             const BottomNavigationBarItem(
               icon: Icon(Icons.chat_bubble_outline),
               activeIcon: Icon(Icons.chat_bubble),

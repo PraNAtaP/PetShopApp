@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../core/theme/app_colors.dart';
+import 'package:petshopapp/core/theme/app_colors.dart';
 
 /// Welcoming landing screen with branding, tagline, and navigation buttons.
 class LandingPage extends StatelessWidget {

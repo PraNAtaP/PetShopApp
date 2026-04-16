@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
-import '../../models/product_model.dart';
-import '../../services/firestore_service.dart';
+import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:petshopapp/models/product_model.dart';
+import 'package:petshopapp/services/firestore_service.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});

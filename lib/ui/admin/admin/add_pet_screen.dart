@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../core/theme/app_colors.dart';
-import '../../models/pet_model.dart';
-import '../../services/firestore_service.dart';
-import '../../services/imgbb_service.dart';
+import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:petshopapp/models/pet_model.dart';
+import 'package:petshopapp/services/firestore_service.dart';
+import 'package:petshopapp/services/imgbb_service.dart';
 import 'package:go_router/go_router.dart';
 
 class AddPetScreen extends StatefulWidget {
