@@ -9,22 +9,50 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'core/router/customer_router.dart';
 import 'core/router/admin_router.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  
+  try {
+    // For Web, if options are missing, this throws an error.
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    
+    // Only initialize notifications on mobile since Web lacks firebase-messaging-sw.js and local notifications.
+    if (!kIsWeb) {
+      await NotificationService.initialize();
+      NotificationService.instance.requestPermission();
+    }
 
-  await NotificationService.initialize();
-  // Request notification permissions
-  NotificationService.instance.requestPermission();
+    final authService = AuthService();
+    await authService.initializeAuth();
 
-  final authService = AuthService();
-  await authService.initializeAuth();
-
-  if (kIsWeb) {
-    runApp(AdminApp(authService: authService));
-  } else {
-    runApp(CustomerApp(authService: authService));
+    if (kIsWeb) {
+      runApp(AdminApp(authService: authService));
+    } else {
+      runApp(CustomerApp(authService: authService));
+    }
+  } catch (e) {
+    // Prevent silent blank screen by rendering the error
+    runApp(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'Initialization Failed:\n$e\n\n'
+                'Jika ini di Web, Anda mungkin belum mengonfigurasi Firebase Web (firebase_options.dart).',
+                style: const TextStyle(color: Colors.red, fontSize: 16),
+                textDirection: TextDirection.ltr,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

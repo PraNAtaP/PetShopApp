@@ -17,19 +17,19 @@ class AdminRouter {
 
         final isAuthRoute = location == '/login' || location == '/';
 
-        if (isLoggedIn && isAuthRoute) return '/admin/dashboard';
+        if (!isLoggedIn && !isAuthRoute) {
+          return '/login';
+        }
 
-        if (!isLoggedIn && (location.startsWith('/admin') || location == '/')) return '/login';
-
-        // Additional admin verification loop:
-        if (isLoggedIn && authService.currentUser != null) {
-          if (authService.currentUser!.role.value != 'admin') {
-            // Wait, we logged in as a normal user. For now just logout?
-            // This happens on web.
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              authService.logout();
-            });
-            return '/login';
+        if (isLoggedIn) {
+          final role = authService.currentUser?.role.value;
+          if (role == 'admin') {
+            if (isAuthRoute) return '/admin/dashboard';
+            return null; // Let them proceed to their admin page
+          } else {
+             // They are logged in but not an admin.
+             if (location != '/forbidden') return '/forbidden';
+             return null;
           }
         }
 
@@ -51,6 +51,27 @@ class AdminRouter {
           path: '/admin/add-pet',
           name: 'add-pet',
           builder: (context, state) => const AddPetScreen(),
+        ),
+        GoRoute(
+          path: '/forbidden',
+          name: 'forbidden',
+          builder: (context, state) => Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('403 - Akses Ditolak', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  const Text('Anda tidak memiliki akses sebagai Admin.'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => authService.logout(),
+                    child: const Text('Logout'),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ],
     );

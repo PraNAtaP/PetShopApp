@@ -1,6 +1,5 @@
 import 'package:go_router/go_router.dart';
 import 'package:petshopapp/services/auth_service.dart';
-import 'package:petshopapp/ui/shared/auth/landing/landing_page.dart';
 import 'package:petshopapp/ui/shared/auth/login/login_page.dart';
 import 'package:petshopapp/ui/shared/auth/register/register_page.dart';
 import 'package:petshopapp/ui/shared/auth/verify/email_verification_page.dart';
@@ -11,19 +10,19 @@ import 'package:petshopapp/ui/customer/adoption/adoption_screen.dart';
 class CustomerRouter {
   static GoRouter router(AuthService authService) {
     return GoRouter(
-      initialLocation: '/',
+      initialLocation: '/login',
       refreshListenable: authService,
       redirect: (context, state) {
         final isLoggedIn = authService.isLoggedIn;
         final location = state.matchedLocation;
 
-        final isAuthRoute = location == '/' ||
-            location == '/login' ||
+        final isAuthRoute = location == '/login' ||
             location == '/register';
 
         if (isLoggedIn && isAuthRoute) return '/home';
 
-        if (!isLoggedIn && location == '/home') return '/login';
+        // Block unauthorized access to any route that is not login or register (e.g. /home, /adoption)
+        if (!isLoggedIn && !isAuthRoute) return '/login';
 
         // Additional: block admin users out of customer app or just ignore them.
         // Actually, if role == admin, maybe redirect to an error? Or they can't login here?
@@ -31,11 +30,6 @@ class CustomerRouter {
         return null;
       },
       routes: [
-        GoRoute(
-          path: '/',
-          name: 'landing',
-          builder: (context, state) => const LandingPage(),
-        ),
         GoRoute(
           path: '/login',
           name: 'login',
