@@ -76,6 +76,17 @@ class FirestoreService {
     }
   }
 
+  /// Updates the user's FCM token in Firestore.
+  Future<void> updateUserFcmToken(String uid, String token) async {
+    try {
+      await _db.collection('users').doc(uid).update({
+        'fcm_token': token,
+      });
+    } catch (e) {
+      throw Exception('Gagal memperbarui FCM token: $e');
+    }
+  }
+
   // ==========================================
   // Pet Management
   // ==========================================

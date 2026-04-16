@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "416976631560-o5kq5p30h8h4vipr4sttt7afrm2ipj90.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.petpoint.app",
+            "certificate_hash": "2ca16893817bb5b8159d17df1d7a05474491b0ea"
+          }
+        },
+        {
           "client_id": "416976631560-3vl1ijsvfpg2jhg1bjabt9a0lcsjiqvs.apps.googleusercontent.com",
           "client_type": 3
         }

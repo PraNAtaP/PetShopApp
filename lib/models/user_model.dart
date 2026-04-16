@@ -44,6 +44,7 @@ class UserModel {
   final String? alamat;
   final GeoPoint? koordinat;
   final int poin;
+  final String? fcmToken;
   final DateTime? createdAt;
 
   /// Creates a new [UserModel] instance.
@@ -57,6 +58,7 @@ class UserModel {
     this.alamat,
     this.koordinat,
     this.poin = 0,
+    this.fcmToken,
     this.createdAt,
   });
 
@@ -73,6 +75,7 @@ class UserModel {
       alamat: data['alamat'] as String?,
       koordinat: data['koordinat'] as GeoPoint?,
       poin: data['poin'] ?? 0,
+      fcmToken: data['fcm_token'] as String?,
       createdAt: (data['created_at'] as Timestamp?)?.toDate(),
     );
   }
@@ -88,6 +91,7 @@ class UserModel {
       'alamat': alamat,
       'koordinat': koordinat,
       'poin': poin,
+      if (fcmToken != null) 'fcm_token': fcmToken,
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
     };
   }
@@ -112,6 +116,7 @@ class UserModel {
     String? alamat,
     GeoPoint? koordinat,
     int? poin,
+    String? fcmToken,
     DateTime? createdAt,
   }) {
     return UserModel(
@@ -124,6 +129,7 @@ class UserModel {
       alamat: alamat ?? this.alamat,
       koordinat: koordinat ?? this.koordinat,
       poin: poin ?? this.poin,
+      fcmToken: fcmToken ?? this.fcmToken,
       createdAt: createdAt ?? this.createdAt,
     );
   }
