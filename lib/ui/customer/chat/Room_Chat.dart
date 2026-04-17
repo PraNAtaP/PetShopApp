@@ -78,3 +78,13 @@ class _RoomChatScreenState extends State<RoomChatScreen>
     super.dispose();
   }
   }
+
+  void _addAdminWelcome() {
+    Future.delayed(const Duration(milliseconds: 400), () {
+      _addMessage('Halo! Selamat datang di Pet Point 🐶🐱\nAda yang bisa kami bantu hari ini?',
+          MessageSender.admin);
+      Future.delayed(const Duration(milliseconds: 800), () {
+        _addMessage('Silakan pilih topik di bawah ya! 🌟', MessageSender.admin);
+      });
+    });
+  }
