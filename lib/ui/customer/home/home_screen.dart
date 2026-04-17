@@ -34,18 +34,14 @@ class HomeScreen extends StatelessWidget {
             }
 
             final userProfile = snapshot.data!;
-            final isAdminProfile = userProfile.role == UserRole.admin;
 
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(context, userProfile, isAdminProfile),
+                  _buildHeader(context, userProfile),
                   const SizedBox(height: 24),
-                  if (isAdminProfile)
-                    _buildAdminDashboard(context)
-                  else
-                    _buildCustomerDashboard(context),
+                  _buildCustomerDashboard(context),
                 ],
               ),
             );
@@ -55,7 +51,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, UserModel user, bool isAdmin) {
+  Widget _buildHeader(BuildContext context, UserModel user) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
@@ -73,55 +69,44 @@ class HomeScreen extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  isAdmin
-                      ? 'Halo admin ${user.nama}'
-                      : 'Halo ${user.nama}, mau ngapain hari ini?',
+                  'Halo ${user.nama}, mau ngapain hari ini?',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w700,
                         color: AppColors.textDark,
                       ),
                 ),
               ),
-              if (!isAdmin)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.accent, // Yellow Accent
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.stars, color: AppColors.textDark, size: 16),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${user.poin} Pts',
-                        style: const TextStyle(
-                          color: AppColors.textDark,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.accent, // Yellow Accent
+                  borderRadius: BorderRadius.circular(20),
                 ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.stars, color: AppColors.textDark, size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${user.poin} Pts',
+                      style: const TextStyle(
+                        color: AppColors.textDark,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
-          if (!isAdmin)
-            Text(
-              'Temukan layanan terbaik untuk hewan kesayangan Anda.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textDark.withValues(alpha: 0.8),
-                  ),
-            )
-          else
-            Text(
-              'Kelola layanan dan stok Pet Point dari dashboard Anda.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textDark.withValues(alpha: 0.8),
-                  ),
-            ),
+          Text(
+            'Temukan layanan terbaik untuk hewan kesayangan Anda.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textDark.withValues(alpha: 0.8),
+                ),
+          ),
         ],
       ),
     );
@@ -188,47 +173,6 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAdminDashboard(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Manajemen Cepat',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-          ),
-          const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 1.1,
-            children: [
-              _buildActionCard(
-                  context, Icons.inventory_2_outlined, 'Kelola Stok', AppColors.primary, () {}),
-              _buildActionCard(
-                  context, Icons.verified_outlined, 'Validasi\nPembayaran', AppColors.secondary, () {}),
-              _buildActionCard(
-                  context, Icons.add_circle_outline, 'Tambah\nAnabul', AppColors.accent, () {
-                context.push('/admin/add-pet');
-              }),
-              _buildActionCard(
-                  context, Icons.assignment_turned_in_outlined, 'Update Status\nAdopsi', AppColors.textDark, () {}),
-              _buildActionCard(
-                  context, Icons.post_add_outlined, 'Unggah\nFun Fact', AppColors.error, () {}),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildFeatureCard(
       BuildContext context, IconData icon, String title, Color color, VoidCallback onTap) {
     return InkWell(
@@ -268,47 +212,6 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildActionCard(
-      BuildContext context, IconData icon, String title, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 32),
-              const Spacer(),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
-                ),
-              ),
-            ],
-          ),
         ),
       ),
     );
