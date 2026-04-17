@@ -56,7 +56,7 @@ class RoomChatScreen extends StatefulWidget {
   @override
   State<RoomChatScreen> createState() => _RoomChatScreenState();
 }
- 
+// state class ChatRoomPage
 class _RoomChatScreenState extends State<RoomChatScreen>
     with TickerProviderStateMixin {
   final TextEditingController _inputCtrl = TextEditingController();
@@ -78,7 +78,7 @@ class _RoomChatScreenState extends State<RoomChatScreen>
     super.dispose();
   }
   }
-
+// function add admin welcome
   void _addAdminWelcome() {
     Future.delayed(const Duration(milliseconds: 400), () {
       _addMessage('Halo! Selamat datang di Pet Point 🐶🐱\nAda yang bisa kami bantu hari ini?',
@@ -88,3 +88,55 @@ class _RoomChatScreenState extends State<RoomChatScreen>
       });
     });
   }
+// function add message
+ void _addMessage(String text, MessageSender sender) {
+    setState(() {
+      _messages.add(ChatMessage(
+        text: text,
+        sender: sender,
+        time: DateTime.now(),
+      ));
+    });
+    _scrollToBottom();
+  }
+ //function send message
+void _sendMessage(String text) {
+    final trimmed = text.trim();
+    if (trimmed.isEmpty) return;
+ 
+    _inputCtrl.clear();
+    setState(() => _showQuickReplies = false);
+    _addMessage(trimmed, MessageSender.customer);
+    _triggerAdminReply(trimmed);
+  }
+  //function trigger admin reply
+ void _triggerAdminReply(String customerText) {
+    setState(() => _isTyping = true);
+    _scrollToBottom();
+    final lower = customerText.toLowerCase();
+    String reply = 'Terima kasih pesannya! 😊 Tim kami akan segera membalas ya~';
+ 
+    for (final entry in kAutoReplies.entries) {
+      if (lower.contains(entry.key)) {
+        reply = entry.value;
+        break;
+      }
+    }
+      Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      setState(() => _isTyping = false);
+      _addMessage(reply, MessageSender.admin);
+    });
+  }
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollCtrl.hasClients) {
+        _scrollCtrl.animateTo(
+        _scrollCtrl.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+ 
