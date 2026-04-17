@@ -48,3 +48,33 @@ const Map<String, String> kAutoReplies = {
   'adopsi': 'Wah kamu mau adopsi hewan? 🏡💕 Kami punya banyak hewan lucu '
       'yang butuh rumah hangat. Mau lihat daftar hewan yang tersedia?',
 };
+
+// class ChatRoomPage extends StatefulWidget {
+class RoomChatScreen extends StatefulWidget {
+  const RoomChatScreen({super.key});
+ 
+  @override
+  State<RoomChatScreen> createState() => _RoomChatScreenState();
+}
+ 
+class _RoomChatScreenState extends State<RoomChatScreen>
+    with TickerProviderStateMixin {
+  final TextEditingController _inputCtrl = TextEditingController();
+  final ScrollController _scrollCtrl = ScrollController();
+  final List<ChatMessage> _messages = [];
+  bool _isTyping = false;
+  bool _showQuickReplies = true;
+ 
+  @override
+  void initState() {
+    super.initState();
+    _addAdminWelcome();
+  }
+ 
+  @override
+  void dispose() {
+    _inputCtrl.dispose();
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+  }
