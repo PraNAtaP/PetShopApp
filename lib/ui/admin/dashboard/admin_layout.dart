@@ -4,6 +4,7 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import '../management/management_screen.dart'; // We should probably move management to inventory/dashboard etc, but let's just show it here.
 import '../admin/add_pet_screen.dart'; // This is also an admin feature
+import '../profile/admin_profile_screen.dart';
 
 class AdminLayout extends StatefulWidget {
   const AdminLayout({super.key});
@@ -34,6 +35,7 @@ class _AdminLayoutState extends State<AdminLayout> {
       const ManagementScreen(),       // Manage/View Inventory, Users, etc.
       const AddPetScreen(),           // Pet insertion
       const Center(child: Text("Adoption Requests Table", style: TextStyle(fontSize: 24))),
+      const AdminProfileScreen(),     // Admin Profile
     ];
 
     return Scaffold(
@@ -94,6 +96,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       selectedIcon: Icon(Icons.assignment_ind),
                       label: Text('Adoptions'),
                     ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.person_outline),
+                      selectedIcon: Icon(Icons.person),
+                      label: Text('Profile'),
+                    ),
                   ],
                 )
               else
@@ -126,6 +133,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       icon: Icon(Icons.assignment_ind_outlined),
                       selectedIcon: Icon(Icons.assignment_ind),
                       label: Text('Adoptions'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.person_outline),
+                      selectedIcon: Icon(Icons.person),
+                      label: Text('Profile'),
                     ),
                   ],
                 ),

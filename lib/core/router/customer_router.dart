@@ -5,6 +5,8 @@ import 'package:petshopapp/ui/shared/auth/register/register_page.dart';
 import 'package:petshopapp/ui/shared/auth/verify/email_verification_page.dart';
 import 'package:petshopapp/ui/customer/main/base_screen.dart';
 import 'package:petshopapp/ui/customer/adoption/adoption_screen.dart';
+import 'package:petshopapp/ui/customer/profile/edit_profile_screen.dart';
+import 'package:petshopapp/ui/customer/profile/points_screen.dart';
 
 /// Customer application route configuration using GoRouter.
 class CustomerRouter {
@@ -54,6 +56,16 @@ class CustomerRouter {
           path: '/adoption',
           name: 'adoption',
           builder: (context, state) => const AdoptionScreen(),
+        ),
+        GoRoute(
+          path: '/edit-profile',
+          name: 'edit-profile',
+          builder: (context, state) => const EditProfileScreen(),
+        ),
+        GoRoute(
+          path: '/points',
+          name: 'points',
+          builder: (context, state) => const PointsScreen(),
         ),
       ],
     );
