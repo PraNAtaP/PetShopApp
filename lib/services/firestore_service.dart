@@ -146,6 +146,28 @@ class FirestoreService {
     }
   }
 
+  /// Adds a new product to the database.
+  Future<void> addProduct(ProductModel product) async {
+    try {
+      if (product.productId.isEmpty) {
+        await _productsRef.add(product);
+      } else {
+        await _productsRef.doc(product.productId).set(product);
+      }
+    } catch (e) {
+      throw Exception('Gagal menambahkan produk: $e');
+    }
+  }
+
+  /// Deletes a product from the database.
+  Future<void> deleteProduct(String productId) async {
+    try {
+      await _productsRef.doc(productId).delete();
+    } catch (e) {
+      throw Exception('Gagal menghapus produk: $e');
+    }
+  }
+
   /// Updates the stock quantity of a specific product.
   /// Use a negative [quantity] to reduce stock.
   Future<void> updateProductStock(String productId, int quantity) async {
