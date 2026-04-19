@@ -1,16 +1,60 @@
-# petshopapp
+# 🐾 Pet Point: Digital Pet Shop & Adoption Ecosystem
 
-A new Flutter project.
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
+[![Firebase](https://img.shields.io/badge/Firebase-Powered-FFCA28?logo=firebase&logoColor=black)](https://firebase.google.com)
+[![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20Web-orange)](https://petpoint.web.app)
 
-## Getting Started
+**Pet Point** adalah platform hybrid inovatif yang memisahkan ekosistem manajemen dan user experience. Dibangun dengan satu codebase Flutter untuk menangani **Web Dashboard (Admin)** dan **Mobile App (Customer)** secara sinkron menggunakan Firebase Real-time integration.
 
-This project is a starting point for a Flutter application.
+---
 
-A few resources to get you started if this is your first Flutter project:
+## 🛠️ Cara Menjalankan Project (Setup Guide)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Ikuti langkah-langkah berikut buat nge-run project ini di lokal lu:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### 1. Clone Repository
+Buka terminal dan jalankan perintah berikut:
+\`\`\`bash
+git clone https://github.com/pranata/pet_point.git
+cd pet_point
+\`\`\`
+
+### 2. Dapatkan File Secret (PENTING!)
+Demi keamanan, file konfigurasi sensitif **tidak disertakan** dalam repository ini. Lu wajib minta file berikut ke pemilik repo (**Prana**) dan taruh di folder yang sesuai:
+
+* **\`google-services.json\`**: Taruh di folder \`android/app/\`.
+* **\`serviceAccountKey.json\`**: Taruh di folder \`assets/secret/\`.
+* **\`firebase_options.dart\`**: Taruh di folder \`lib/\`.
+
+### 3. Install Dependencies
+Jalankan perintah ini buat download semua package yang dibutuhin:
+\`\`\`bash
+flutter pub get
+\`\`\`
+
+### 4. Running the Project
+Project ini pake sistem platform detection, pilih salah satu:
+
+* **Admin Dashboard (Web):**
+\`\`\`bash
+flutter run -d chrome --web-renderer canvaskit
+\`\`\`
+
+* **Customer App (Android):**
+\`\`\`bash
+flutter run -d android
+\`\`\`
+
+---
+
+## 🏗️ Hybrid Architecture
+Aplikasi ini menggunakan logika **Platform Detection** pada \`main.dart\`.
+
+## 👥 Tim Pengembangan
+•⁠  ⁠*Pranata Putrandana* - Lead Developer & Project Manager
+•⁠  ⁠*Bunga Aulia Sari* 
+•⁠  ⁠*Khoirun Nisa Fitriani* 
+•⁠  ⁠*Muh. Zaky Dawamul Busro*
+
+---
+© 2026 Pet Point Project - Teknologi Informasi Politeknik Negeri Malang.
