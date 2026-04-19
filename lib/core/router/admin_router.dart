@@ -4,27 +4,28 @@ import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/ui/shared/auth/login/login_page.dart';
 import 'package:petshopapp/ui/admin/dashboard/admin_layout.dart';
 import 'package:petshopapp/ui/admin/admin/add_pet_screen.dart';
+import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
 
 /// Admin application route configuration using GoRouter.
 class AdminRouter {
   static GoRouter router(AuthService authService) {
     return GoRouter(
-      initialLocation: '/admin/dashboard',
+      initialLocation: '/splash',
       refreshListenable: authService,
       redirect: (context, state) {
         final isLoggedIn = authService.isLoggedIn;
         final location = state.matchedLocation;
 
-        final isAuthRoute = location == '/login' || location == '/';
+        final isAuthRoute = location == '/login' || location == '/' || location == '/splash';
 
         if (!isLoggedIn && !isAuthRoute) {
-          return '/login';
+          return '/splash';
         }
 
         if (isLoggedIn) {
           final role = authService.currentUser?.role.value;
           if (role == 'admin') {
-            if (isAuthRoute) return '/admin/dashboard';
+            if (location == '/login' || location == '/' || location == '/splash') return '/admin/dashboard';
             return null; // Let them proceed to their admin page
           } else {
              // They are logged in but not an admin.
@@ -36,6 +37,11 @@ class AdminRouter {
         return null;
       },
       routes: [
+        GoRoute(
+          path: '/splash',
+          name: 'splash',
+          builder: (context, state) => const SplashScreen(),
+        ),
         GoRoute(
           path: '/login',
           name: 'admin-login',
