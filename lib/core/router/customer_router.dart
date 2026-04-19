@@ -7,6 +7,7 @@ import 'package:petshopapp/ui/customer/main/base_screen.dart';
 import 'package:petshopapp/ui/customer/adoption/adoption_screen.dart';
 import 'package:petshopapp/ui/customer/profile/edit_profile_screen.dart';
 import 'package:petshopapp/ui/customer/profile/points_screen.dart';
+import 'package:petshopapp/ui/customer/profile/profile_screen.dart';
 
 /// Customer application route configuration using GoRouter.
 class CustomerRouter {
@@ -18,8 +19,7 @@ class CustomerRouter {
         final isLoggedIn = authService.isLoggedIn;
         final location = state.matchedLocation;
 
-        final isAuthRoute = location == '/login' ||
-            location == '/register';
+        final isAuthRoute = location == '/login' || location == '/register';
 
         if (isLoggedIn && isAuthRoute) return '/home';
 
@@ -50,7 +50,8 @@ class CustomerRouter {
         GoRoute(
           path: '/home',
           name: 'home',
-          builder: (context, state) => const BaseScreen(), // Contains the BottomNavigationBar
+          builder: (context, state) =>
+              const BaseScreen(), // Contains the BottomNavigationBar
         ),
         GoRoute(
           path: '/adoption',
