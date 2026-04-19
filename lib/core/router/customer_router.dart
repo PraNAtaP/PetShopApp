@@ -8,23 +8,24 @@ import 'package:petshopapp/ui/customer/adoption/adoption_screen.dart';
 import 'package:petshopapp/ui/customer/profile/edit_profile_screen.dart';
 import 'package:petshopapp/ui/customer/profile/points_screen.dart';
 import 'package:petshopapp/ui/customer/profile/profile_screen.dart';
+import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
 
 /// Customer application route configuration using GoRouter.
 class CustomerRouter {
   static GoRouter router(AuthService authService) {
     return GoRouter(
-      initialLocation: '/login',
+      initialLocation: '/splash',
       refreshListenable: authService,
       redirect: (context, state) {
         final isLoggedIn = authService.isLoggedIn;
         final location = state.matchedLocation;
 
-        final isAuthRoute = location == '/login' || location == '/register';
+        final isAuthRoute = location == '/login' || location == '/register' || location == '/splash';
 
-        if (isLoggedIn && isAuthRoute) return '/home';
+        if (isLoggedIn && (location == '/login' || location == '/register')) return '/home';
 
-        // Block unauthorized access to any route that is not login or register (e.g. /home, /adoption)
-        if (!isLoggedIn && !isAuthRoute) return '/login';
+        // Block unauthorized access to any route that is not login, register, or splash
+        if (!isLoggedIn && !isAuthRoute) return '/splash';
 
         // Additional: block admin users out of customer app or just ignore them.
         // Actually, if role == admin, maybe redirect to an error? Or they can't login here?
@@ -32,6 +33,11 @@ class CustomerRouter {
         return null;
       },
       routes: [
+        GoRoute(
+          path: '/splash',
+          name: 'splash',
+          builder: (context, state) => const SplashScreen(),
+        ),
         GoRoute(
           path: '/login',
           name: 'login',

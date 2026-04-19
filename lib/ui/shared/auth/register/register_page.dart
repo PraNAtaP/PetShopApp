@@ -72,56 +72,41 @@ class _RegisterPageState extends State<RegisterPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                // ── Header ─────────────────────────────────────────────
-                Center(
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: AppColors.background.withValues(alpha: 0.3),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.pets,
-                          size: 40,
-                          color: AppColors.primary,
-                        ),
+              Center(
+                child: Column(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppColors.background.withValues(alpha: 0.3),
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'PetPoint',
-                        style: Theme.of(context)
-                            .textTheme
-                            .titleLarge
-                            ?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.primary,
-                            ),
+                      child: const Icon(
+                        Icons.person_add_outlined,
+                        size: 40,
+                        color: AppColors.primary,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Buat Akun Baru',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
-                            ?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textDark,
-                            ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Buat Akun Baru',
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textDark,
+                          ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Bergabunglah dengan Pet Point',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textLight,
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Mulai petualangan bersama anabul\ntersayang Anda dari sini.',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textLight,
-                            ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 32),
+              ),
+              const SizedBox(height: 36),
 
                 // ── Pesan Error ────────────────────────────────────────
                 if (_errorMessage != null) ...[
