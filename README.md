@@ -14,10 +14,10 @@ Ikuti langkah-langkah berikut buat nge-run project ini di lokal lu:
 
 ### 1. Clone Repository
 Buka terminal dan jalankan perintah berikut:
-\`\`\`bash
+```sh
 git clone https://github.com/pranata/pet_point.git
 cd pet_point
-\`\`\`
+```
 
 ### 2. Dapatkan File Secret (PENTING!)
 Demi keamanan, file konfigurasi sensitif **tidak disertakan** dalam repository ini. Lu wajib minta file berikut ke pemilik repo (**Prana**) dan taruh di folder yang sesuai:
@@ -28,22 +28,22 @@ Demi keamanan, file konfigurasi sensitif **tidak disertakan** dalam repository i
 
 ### 3. Install Dependencies
 Jalankan perintah ini buat download semua package yang dibutuhin:
-\`\`\`bash
+```bash
 flutter pub get
-\`\`\`
+```
 
 ### 4. Running the Project
 Project ini pake sistem platform detection, pilih salah satu:
 
 * **Admin Dashboard (Web):**
-\`\`\`bash
-flutter run -d chrome --web-renderer canvaskit
-\`\`\`
+```bash
+flutter run -d chrome
+```
 
 * **Customer App (Android):**
-\`\`\`bash
+```bash
 flutter run -d android
-\`\`\`
+```
 
 ---
 
