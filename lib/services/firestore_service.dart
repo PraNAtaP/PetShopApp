@@ -5,6 +5,7 @@ import 'package:petshopapp/models/pet_model.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:petshopapp/models/cart_model.dart';
+import 'package:petshopapp/models/order_model.dart';
 
 /// Service to handle Cloud Firestore CRUD operations for Pet Point.
 /// Utilizes the Repository pattern and `.withConverter` for type safety.
@@ -67,6 +68,12 @@ class FirestoreService {
   CollectionReference<CartModel> get _cartsRef =>
       _db.collection('carts').withConverter<CartModel>(
         fromFirestore: (snapshot, _) => CartModel.fromFirestore(snapshot),
+        toFirestore: (model, _) => model.toMap(),
+      );
+
+  CollectionReference<OrderModel> get _ordersRef =>
+      _db.collection('orders').withConverter<OrderModel>(
+        fromFirestore: (snapshot, _) => OrderModel.fromFirestore(snapshot),
         toFirestore: (model, _) => model.toMap(),
       );
 
@@ -280,6 +287,54 @@ class FirestoreService {
       await batch.commit();
     } catch (e) {
       throw Exception('Gagal mengosongkan keranjang: $e');
+    }
+  }
+
+  // ==========================================
+  // Order Management
+  // ==========================================
+
+  /// Creates a new order in Firestore. Returns the generated document ID.
+  Future<String> createOrder(OrderModel order) async {
+    try {
+      final docRef = await _ordersRef.add(order);
+      return docRef.id;
+    } catch (e) {
+      throw Exception('Gagal membuat pesanan: $e');
+    }
+  }
+
+  /// Updates the payment status of an order.
+  Future<void> updateOrderStatus(String orderId, String status) async {
+    try {
+      await _db.collection('orders').doc(orderId).update({
+        'status_bayar': status,
+      });
+    } catch (e) {
+      throw Exception('Gagal memperbarui status pesanan: $e');
+    }
+  }
+
+  /// Saves the payment proof URL to an existing order.
+  Future<void> updateOrderPaymentProof(String orderId, String url) async {
+    try {
+      await _db.collection('orders').doc(orderId).update({
+        'bukti_bayar_url': url,
+      });
+    } catch (e) {
+      throw Exception('Gagal menyimpan bukti pembayaran: $e');
+    }
+  }
+
+  /// Returns a real-time stream of orders for a specific customer.
+  Stream<List<OrderModel>> getOrdersStream(String customerId) {
+    try {
+      return _ordersRef
+          .where('customer_id', isEqualTo: customerId)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    } catch (e) {
+      throw Exception('Gagal stream data pesanan: $e');
     }
   }
 }

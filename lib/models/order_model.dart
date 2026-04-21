@@ -45,6 +45,7 @@ class OrderModel {
   final String statusBayar;
   final String statusPengiriman;
   final String metodePengambilan;
+  final String metodePembayaran;
   final DateTime? createdAt;
 
   /// Creates a new [OrderModel] instance.
@@ -57,6 +58,7 @@ class OrderModel {
     required this.statusBayar,
     required this.statusPengiriman,
     required this.metodePengambilan,
+    required this.metodePembayaran,
     this.createdAt,
   });
 
@@ -76,6 +78,7 @@ class OrderModel {
       statusBayar: data['status_bayar'] ?? '',
       statusPengiriman: data['status_pengiriman'] ?? '',
       metodePengambilan: data['metode_pengambilan'] ?? '',
+      metodePembayaran: data['metode_pembayaran'] ?? '',
       createdAt: (data['created_at'] as Timestamp?)?.toDate(),
     );
   }
@@ -90,6 +93,7 @@ class OrderModel {
       'status_bayar': statusBayar,
       'status_pengiriman': statusPengiriman,
       'metode_pengambilan': metodePengambilan,
+      'metode_pembayaran': metodePembayaran,
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
     };
   }
@@ -104,6 +108,7 @@ class OrderModel {
     String? statusBayar,
     String? statusPengiriman,
     String? metodePengambilan,
+    String? metodePembayaran,
     DateTime? createdAt,
   }) {
     return OrderModel(
@@ -115,6 +120,7 @@ class OrderModel {
       statusBayar: statusBayar ?? this.statusBayar,
       statusPengiriman: statusPengiriman ?? this.statusPengiriman,
       metodePengambilan: metodePengambilan ?? this.metodePengambilan,
+      metodePembayaran: metodePembayaran ?? this.metodePembayaran,
       createdAt: createdAt ?? this.createdAt,
     );
   }

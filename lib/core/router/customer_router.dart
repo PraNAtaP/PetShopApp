@@ -8,6 +8,9 @@ import 'package:petshopapp/ui/customer/adoption/adoption_screen.dart';
 import 'package:petshopapp/ui/customer/profile/edit_profile_screen.dart';
 import 'package:petshopapp/ui/customer/profile/points_screen.dart';
 import 'package:petshopapp/ui/customer/profile/profile_screen.dart';
+import 'package:petshopapp/ui/customer/checkout/checkout_review_screen.dart';
+import 'package:petshopapp/ui/customer/checkout/payment_method_screen.dart';
+import 'package:petshopapp/ui/customer/checkout/payment_execution_screen.dart';
 import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
 
 /// Customer application route configuration using GoRouter.
@@ -73,6 +76,24 @@ class CustomerRouter {
           path: '/points',
           name: 'points',
           builder: (context, state) => const PointsScreen(),
+        ),
+        GoRoute(
+          path: '/checkout-review',
+          name: 'checkout-review',
+          builder: (context, state) => const CheckoutReviewScreen(),
+        ),
+        GoRoute(
+          path: '/payment-method',
+          name: 'payment-method',
+          builder: (context, state) => const PaymentMethodScreen(),
+        ),
+        GoRoute(
+          path: '/payment-execution',
+          name: 'payment-execution',
+          builder: (context, state) {
+            final method = state.extra as String? ?? 'QRIS';
+            return PaymentExecutionScreen(paymentMethod: method);
+          },
         ),
       ],
     );

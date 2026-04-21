@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
@@ -546,7 +547,8 @@ class CartBottomSheet extends StatelessWidget {
                           height: 55,
                           child: ElevatedButton(
                             onPressed: () {
-                              // Action for checkout
+                              Navigator.pop(context);
+                              context.pushNamed('checkout-review');
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
