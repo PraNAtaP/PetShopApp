@@ -16,7 +16,7 @@ class ProfileScreen extends StatelessWidget {
         return Scaffold(
           backgroundColor: AppColors.cardBackground,
           appBar: AppBar(
-            title: const Text('Anabul Care'),
+            title: const Text('Profile'),
             actions: [
               IconButton(
                 icon: const Icon(Icons.settings_outlined),

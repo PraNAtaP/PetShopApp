@@ -53,7 +53,7 @@ class _ShopScreenState extends State<ShopScreen> {
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
       ),
       title: const Text(
-        'Pet Shop',
+        'Shop',
         style: TextStyle(
           color: AppColors.white,
           fontWeight: FontWeight.bold,
