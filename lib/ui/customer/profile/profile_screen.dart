@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
+import 'package:petshopapp/ui/customer/order/order_history_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -193,7 +194,13 @@ class ProfileScreen extends StatelessWidget {
                               _buildActionTile(
                                 icon: Icons.receipt_long_outlined,
                                 title: 'Riwayat Pesanan',
-                                onTap: () {},
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const OrderHistoryScreen(),
+                                    ),
+                                  );
+                                },
                               ),
                               const Divider(height: 1, indent: 56),
                               _buildActionTile(

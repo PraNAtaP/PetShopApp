@@ -547,8 +547,9 @@ class CartBottomSheet extends StatelessWidget {
                           height: 55,
                           child: ElevatedButton(
                             onPressed: () {
+                              final nav = GoRouter.of(context);
                               Navigator.pop(context);
-                              context.pushNamed('checkout-review');
+                              nav.pushNamed('checkout-review');
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,

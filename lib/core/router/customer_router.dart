@@ -11,6 +11,7 @@ import 'package:petshopapp/ui/customer/profile/profile_screen.dart';
 import 'package:petshopapp/ui/customer/checkout/checkout_review_screen.dart';
 import 'package:petshopapp/ui/customer/checkout/payment_method_screen.dart';
 import 'package:petshopapp/ui/customer/checkout/payment_execution_screen.dart';
+import 'package:petshopapp/ui/customer/order/order_history_screen.dart';
 import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
 
 /// Customer application route configuration using GoRouter.
@@ -76,6 +77,11 @@ class CustomerRouter {
           path: '/points',
           name: 'points',
           builder: (context, state) => const PointsScreen(),
+        ),
+        GoRoute(
+          path: '/order-history',
+          name: 'order-history',
+          builder: (context, state) => const OrderHistoryScreen(),
         ),
         GoRoute(
           path: '/checkout-review',
