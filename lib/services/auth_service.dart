@@ -36,6 +36,7 @@ class AuthService extends ChangeNotifier {
     required String nama,
     required String email,
     required String password,
+    String? nomorWa,
   }) async {
     _setLoading(true);
     try {
@@ -50,6 +51,7 @@ class AuthService extends ChangeNotifier {
         nama: nama,
         email: email,
         role: UserRole.customer,
+        nomorWa: nomorWa,
       );
 
       await _firestore

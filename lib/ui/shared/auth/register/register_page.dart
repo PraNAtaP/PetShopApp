@@ -46,6 +46,7 @@ class _RegisterPageState extends State<RegisterPage> {
       nama: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,
+      nomorWa: _phoneController.text.trim(),
     );
 
     if (!mounted) return;
@@ -251,34 +252,6 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                         )
                       : const Text('Daftar Sekarang'),
-                ),
-                const SizedBox(height: 24),
-
-                // ── Divider ────────────────────────────────────────────
-                Row(
-                  children: [
-                    const Expanded(child: Divider()),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        'ATAU DAFTAR DENGAN',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppColors.textLight,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ),
-                    const Expanded(child: Divider()),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // ── Tombol Google ──────────────────────────────────────
-                OutlinedButton.icon(
-                  onPressed: _isLoading ? null : () {},
-                  icon: const Icon(Icons.g_mobiledata, size: 26),
-                  label: const Text('Google'),
                 ),
                 const SizedBox(height: 24),
 

@@ -23,11 +23,11 @@ class CustomerRouter {
         final isLoggedIn = authService.isLoggedIn;
         final location = state.matchedLocation;
 
-        final isAuthRoute = location == '/login' || location == '/register' || location == '/splash';
+        final isAuthRoute = location == '/login' || location == '/register' || location == '/splash' || location == '/verify-email';
 
-        if (isLoggedIn && (location == '/login' || location == '/register')) return '/home';
+        if (isLoggedIn && (location == '/login' || location == '/register' || location == '/verify-email')) return '/home';
 
-        // Block unauthorized access to any route that is not login, register, or splash
+        // Block unauthorized access to any route that is not an auth route
         if (!isLoggedIn && !isAuthRoute) return '/splash';
 
         // Additional: block admin users out of customer app or just ignore them.
