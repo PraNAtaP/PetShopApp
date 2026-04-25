@@ -139,4 +139,6 @@ void _sendMessage(String text) {
       }
     });
   }
- 
+  void _QuickReply(QuickReply reply) {
+    _sendMessage(reply.text);
+  }
