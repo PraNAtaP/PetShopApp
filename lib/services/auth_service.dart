@@ -36,6 +36,7 @@ class AuthService extends ChangeNotifier {
     required String nama,
     required String email,
     required String password,
+    String? nomorWa,
   }) async {
     _setLoading(true);
     try {
@@ -50,6 +51,7 @@ class AuthService extends ChangeNotifier {
         nama: nama,
         email: email,
         role: UserRole.customer,
+        nomorWa: nomorWa,
       );
 
       await _firestore
@@ -130,6 +132,40 @@ class AuthService extends ChangeNotifier {
       return _mapAuthError(e.code);
     } catch (_) {
       return 'Gagal mengirim ulang email. Coba lagi nanti.';
+    }
+  }
+
+  /// Refreshes the cached user profile from Firestore.
+  Future<void> refreshProfile() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid != null) {
+      await _fetchUserProfile(uid);
+    }
+  }
+
+  /// Updates the user's profile data in Firestore and refreshes cache.
+  Future<String?> updateProfile({
+    required String nama,
+    String? nomorWa,
+    String? alamat,
+    String? fotoUrl,
+  }) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return 'Pengguna tidak ditemukan.';
+
+    try {
+      final updates = <String, dynamic>{
+        'nama': nama,
+      };
+      if (nomorWa != null) updates['nomor_wa'] = nomorWa;
+      if (alamat != null) updates['alamat'] = alamat;
+      if (fotoUrl != null) updates['foto_url'] = fotoUrl;
+
+      await _firestore.collection('users').doc(uid).update(updates);
+      await _fetchUserProfile(uid);
+      return null;
+    } catch (e) {
+      return 'Gagal menyimpan profil: $e';
     }
   }
 

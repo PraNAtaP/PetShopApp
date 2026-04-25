@@ -1,8 +1,11 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:petshopapp/models/user_model.dart';
 import 'package:petshopapp/models/pet_model.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/models/grooming_booking_model.dart';
+import 'package:petshopapp/models/cart_model.dart';
+import 'package:petshopapp/models/order_model.dart';
 
 /// Service to handle Cloud Firestore CRUD operations for Pet Point.
 /// Utilizes the Repository pattern and `.withConverter` for type safety.
@@ -59,6 +62,18 @@ class FirestoreService {
   CollectionReference<GroomingBookingModel> get _bookingsRef =>
       _db.collection('grooming_bookings').withConverter<GroomingBookingModel>(
         fromFirestore: (snapshot, _) => GroomingBookingModel.fromFirestore(snapshot),
+        toFirestore: (model, _) => model.toMap(),
+      );
+
+  CollectionReference<CartModel> get _cartsRef =>
+      _db.collection('carts').withConverter<CartModel>(
+        fromFirestore: (snapshot, _) => CartModel.fromFirestore(snapshot),
+        toFirestore: (model, _) => model.toMap(),
+      );
+
+  CollectionReference<OrderModel> get _ordersRef =>
+      _db.collection('orders').withConverter<OrderModel>(
+        fromFirestore: (snapshot, _) => OrderModel.fromFirestore(snapshot),
         toFirestore: (model, _) => model.toMap(),
       );
 
@@ -146,6 +161,28 @@ class FirestoreService {
     }
   }
 
+  /// Adds a new product to the database.
+  Future<void> addProduct(ProductModel product) async {
+    try {
+      if (product.productId.isEmpty) {
+        await _productsRef.add(product);
+      } else {
+        await _productsRef.doc(product.productId).set(product);
+      }
+    } catch (e) {
+      throw Exception('Gagal menambahkan produk: $e');
+    }
+  }
+
+  /// Deletes a product from the database.
+  Future<void> deleteProduct(String productId) async {
+    try {
+      await _productsRef.doc(productId).delete();
+    } catch (e) {
+      throw Exception('Gagal menghapus produk: $e');
+    }
+  }
+
   /// Updates the stock quantity of a specific product.
   /// Use a negative [quantity] to reduce stock.
   Future<void> updateProductStock(String productId, int quantity) async {
@@ -172,6 +209,132 @@ class FirestoreService {
       }
     } catch (e) {
       throw Exception('Gagal membuat booking grooming: $e');
+    }
+  }
+
+  // ==========================================
+  // Cart Management
+  // ==========================================
+
+  /// Returns a real-time stream of cart items for a specific customer.
+  Stream<List<CartModel>> getCartStream(String customerId) {
+    try {
+      debugPrint('Firestore: Streaming cart for customerId: $customerId');
+      return _cartsRef
+          .where('customer_id', isEqualTo: customerId)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    } catch (e) {
+      debugPrint('Firestore Error (getCartStream): $e');
+      throw Exception('Gagal stream data keranjang: $e');
+    }
+  }
+
+  /// Adds an item to the cart or increments quantity if it already exists.
+  Future<void> addToCart(CartModel item) async {
+    try {
+      final existingItems = await _cartsRef
+          .where('customer_id', isEqualTo: item.customerId)
+          .where('product_id', isEqualTo: item.productId)
+          .limit(1)
+          .get();
+
+      if (existingItems.docs.isNotEmpty) {
+        final docId = existingItems.docs.first.id;
+        await _cartsRef.doc(docId).update({
+          'jumlah': FieldValue.increment(item.jumlah),
+        });
+      } else {
+        await _cartsRef.add(item);
+      }
+    } catch (e) {
+      throw Exception('Gagal menambahkan ke keranjang: $e');
+    }
+  }
+
+  /// Updates the quantity of a specific cart item.
+  /// Use a negative [quantity] to reduce.
+  Future<void> updateCartQuantity(String cartId, int quantity) async {
+    try {
+      await _cartsRef.doc(cartId).update({
+        'jumlah': FieldValue.increment(quantity),
+      });
+    } catch (e) {
+      throw Exception('Gagal memperbarui jumlah keranjang: $e');
+    }
+  }
+
+  /// Removes a specific item from the cart.
+  Future<void> removeFromCart(String cartId) async {
+    try {
+      await _cartsRef.doc(cartId).delete();
+    } catch (e) {
+      throw Exception('Gagal menghapus item keranjang: $e');
+    }
+  }
+
+  /// Clears all cart items for a specific customer.
+  Future<void> clearCart(String customerId) async {
+    try {
+      final snapshot = await _cartsRef
+          .where('customer_id', isEqualTo: customerId)
+          .get();
+
+      final batch = _db.batch();
+      for (var doc in snapshot.docs) {
+        batch.delete(doc.reference);
+      }
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Gagal mengosongkan keranjang: $e');
+    }
+  }
+
+  // ==========================================
+  // Order Management
+  // ==========================================
+
+  /// Creates a new order in Firestore. Returns the generated document ID.
+  Future<String> createOrder(OrderModel order) async {
+    try {
+      final docRef = await _ordersRef.add(order);
+      return docRef.id;
+    } catch (e) {
+      throw Exception('Gagal membuat pesanan: $e');
+    }
+  }
+
+  /// Updates the payment status of an order.
+  Future<void> updateOrderStatus(String orderId, String status) async {
+    try {
+      await _db.collection('orders').doc(orderId).update({
+        'status_bayar': status,
+      });
+    } catch (e) {
+      throw Exception('Gagal memperbarui status pesanan: $e');
+    }
+  }
+
+  /// Saves the payment proof URL to an existing order.
+  Future<void> updateOrderPaymentProof(String orderId, String url) async {
+    try {
+      await _db.collection('orders').doc(orderId).update({
+        'bukti_bayar_url': url,
+      });
+    } catch (e) {
+      throw Exception('Gagal menyimpan bukti pembayaran: $e');
+    }
+  }
+
+  /// Returns a real-time stream of orders for a specific customer.
+  Stream<List<OrderModel>> getOrdersStream(String customerId) {
+    try {
+      return _ordersRef
+          .where('customer_id', isEqualTo: customerId)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    } catch (e) {
+      throw Exception('Gagal stream data pesanan: $e');
     }
   }
 }

@@ -46,3 +46,5 @@ app.*.map.json
 
 /lib/assets/secret/
 /android/app/google-services.json
+
+SKILL.md

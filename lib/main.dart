@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:petshopapp/providers/cart_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'services/auth_service.dart';
 import 'services/notification_service.dart';
@@ -84,8 +85,14 @@ class _AdminAppState extends State<AdminApp> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: widget.authService,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: widget.authService),
+        ChangeNotifierProxyProvider<AuthService, CartProvider>(
+          create: (_) => CartProvider(),
+          update: (_, auth, cart) => cart!..update(auth.currentUser?.uid),
+        ),
+      ],
       child: MaterialApp.router(
         title: 'Pet Point Admin',
         debugShowCheckedModeBanner: false,
@@ -123,8 +130,14 @@ class _CustomerAppState extends State<CustomerApp> {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: widget.authService,
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider.value(value: widget.authService),
+        ChangeNotifierProxyProvider<AuthService, CartProvider>(
+          create: (_) => CartProvider(),
+          update: (_, auth, cart) => cart!..update(auth.currentUser?.uid),
+        ),
+      ],
       child: MaterialApp.router(
         title: 'Pet Point',
         debugShowCheckedModeBanner: false,

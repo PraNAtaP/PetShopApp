@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
-import 'package:petshopapp/models/user_model.dart';
 import 'package:petshopapp/services/auth_service.dart';
-import 'package:petshopapp/services/firestore_service.dart';
 import 'package:go_router/go_router.dart';
 
+/// Dashboard utama Pet Point.
+/// Menampilkan greeting, quick-actions, promo banner, dan tips hewan.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
@@ -20,195 +20,371 @@ class HomeScreen extends StatelessWidget {
       );
     }
 
+    final firstName = user.nama.split(' ').first;
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
-      body: SafeArea(
-        child: FutureBuilder<UserModel?>(
-          future: FirestoreService.instance.getUserProfile(user.uid),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-            }
-            if (snapshot.hasError || !snapshot.hasData || snapshot.data == null) {
-              return const Center(child: Text('Gagal memuat profil', style: TextStyle(color: AppColors.error)));
-            }
+      body: CustomScrollView(
+        slivers: [
+          // ── Custom Header ─────────────────────────────────────────
+          SliverToBoxAdapter(child: _buildHeader(context, firstName, user.poin)),
 
-            final userProfile = snapshot.data!;
-
-            return SingleChildScrollView(
+          // ── Quick Actions ─────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildHeader(context, userProfile),
-                  const SizedBox(height: 24),
-                  _buildCustomerDashboard(context),
+                  const Text(
+                    'Layanan Kami',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      _buildServiceCard(
+                        context,
+                        icon: Icons.content_cut,
+                        label: 'Grooming',
+                        gradient: const [Color(0xFF003F87), Color(0xFF1565C0)],
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 12),
+                      _buildServiceCard(
+                        context,
+                        icon: Icons.pets,
+                        label: 'Adopsi',
+                        gradient: const [Color(0xFF2E7D32), Color(0xFF66BB6A)],
+                        onTap: () => context.push('/adoption'),
+                      ),
+                      const SizedBox(width: 12),
+                      _buildServiceCard(
+                        context,
+                        icon: Icons.shopping_bag_outlined,
+                        label: 'Shop',
+                        gradient: const [Color(0xFFE65100), Color(0xFFFF9800)],
+                        onTap: () {},
+                      ),
+                      const SizedBox(width: 12),
+                      _buildServiceCard(
+                        context,
+                        icon: Icons.local_hospital_outlined,
+                        label: 'Konsultasi',
+                        gradient: const [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
+                        onTap: () {},
+                      ),
+                    ],
+                  ),
                 ],
               ),
-            );
-          },
-        ),
+            ),
+          ),
+
+          // ── Promo Banner ──────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+              child: _buildPromoBanner(context),
+            ),
+          ),
+
+          // ── Statistik Cepat ───────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Ringkasan Aktivitas',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textDark,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatCard(
+                          icon: Icons.receipt_long,
+                          value: '0',
+                          label: 'Pesanan',
+                          color: const Color(0xFF1565C0),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStatCard(
+                          icon: Icons.pets,
+                          value: '0',
+                          label: 'Adopsi',
+                          color: const Color(0xFF2E7D32),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildStatCard(
+                          icon: Icons.stars_rounded,
+                          value: '${user.poin}',
+                          label: 'Poin',
+                          color: const Color(0xFFE65100),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // ── Tips & Fun Facts ──────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+              child: const Text(
+                'Tips & Fun Fact',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textDark,
+                ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 170,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
+                children: [
+                  _buildTipCard(
+                    emoji: '😺',
+                    title: 'Tahukah Kamu?',
+                    content: 'Kucing menghabiskan 70% dari hidupnya untuk tidur. Mereka juga bisa berputar telinganya 180 derajat!',
+                    gradientColors: const [Color(0xFF003F87), Color(0xFF1976D2)],
+                  ),
+                  _buildTipCard(
+                    emoji: '🐕',
+                    title: 'Tips Grooming',
+                    content: 'Sisir bulu anjing setiap hari untuk mencegah kusut dan menjaga kesehatan kulitnya.',
+                    gradientColors: const [Color(0xFF2E7D32), Color(0xFF4CAF50)],
+                  ),
+                  _buildTipCard(
+                    emoji: '⚠️',
+                    title: 'Penting!',
+                    content: 'Jangan pernah berikan cokelat, bawang, atau anggur pada hewan peliharaan Anda!',
+                    gradientColors: const [Color(0xFFC62828), Color(0xFFEF5350)],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+        ],
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context, UserModel user) {
+  // ═══════════════════════════════════════════════════════════════════
+  // Header Section
+  // ═══════════════════════════════════════════════════════════════════
+
+  Widget _buildHeader(BuildContext context, String firstName, int poin) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
       decoration: const BoxDecoration(
-        color: AppColors.background, // Light Blue
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF003F87), Color(0xFF1565C0)],
+        ),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(
-                  'Halo ${user.nama}, mau ngapain hari ini?',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textDark,
-                      ),
-                ),
-              ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.accent, // Yellow Accent
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top row: Logo + Notification
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
                   children: [
-                    const Icon(Icons.stars, color: AppColors.textDark, size: 16),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${user.poin} Pts',
-                      style: const TextStyle(
-                        color: AppColors.textDark,
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.pets, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 10),
+                    const Text(
+                      'Pet Point',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'Temukan layanan terbaik untuk hewan kesayangan Anda.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textDark.withValues(alpha: 0.8),
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: IconButton(
+                    icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
+                    onPressed: () {},
+                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                    padding: EdgeInsets.zero,
+                  ),
                 ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCustomerDashboard(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Layanan Kami',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-          ),
-          const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 3,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 16,
-            crossAxisSpacing: 16,
-            childAspectRatio: 0.85,
-            children: [
-              _buildFeatureCard(
-                  context, Icons.cut_outlined, 'Grooming', AppColors.primary, () {}),
-              _buildFeatureCard(
-                  context, Icons.pets, 'Adopsi', AppColors.secondary, () {
-                context.push('/adoption');
-              }),
-              _buildFeatureCard(
-                  context, Icons.shopping_bag_outlined, 'Beli Barang', AppColors.accent, () {}),
-            ],
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'Tips & Fun Fact',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            height: 140,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              children: [
-                _buildTipCard(context, 'Tahukah Kamu?',
-                    'Kucing menghabiskan 70% dari hidupnya untuk tidur.'),
-                _buildTipCard(context, 'Tips Grooming',
-                    'Sisir bulu anjing Anda setiap hari untuk mencegah kusut.'),
-                _buildTipCard(context, 'Kesehatan',
-                    'Jangan pernah berikan cokelat pada hewan peliharaan!'),
               ],
             ),
-          ),
-          const SizedBox(height: 32),
-        ],
+            const SizedBox(height: 24),
+
+            // Greeting
+            Text(
+              'Halo, $firstName! 👋',
+              style: const TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                height: 1.2,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Temukan layanan terbaik untuk anabul kamu.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.white.withValues(alpha: 0.75),
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Points card
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.stars_rounded, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Pet Points',
+                          style: TextStyle(color: Colors.white70, fontSize: 12),
+                        ),
+                        Text(
+                          '$poin Poin',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Tukar',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildFeatureCard(
-      BuildContext context, IconData icon, String title, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ],
-        ),
+  // ═══════════════════════════════════════════════════════════════════
+  // Service Card
+  // ═══════════════════════════════════════════════════════════════════
+
+  Widget _buildServiceCard(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required List<Color> gradient,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              width: 60,
+              height: 60,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: gradient,
+                ),
+                borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(
+                    color: gradient[0].withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(icon, color: color, size: 28),
+              child: Icon(icon, color: Colors.white, size: 26),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             Text(
-              title,
-              textAlign: TextAlign.center,
+              label,
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: AppColors.primary,
+                color: AppColors.textDark,
               ),
             ),
           ],
@@ -217,21 +393,167 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTipCard(BuildContext context, String title, String content) {
+  // ═══════════════════════════════════════════════════════════════════
+  // Promo Banner
+  // ═══════════════════════════════════════════════════════════════════
+
+  Widget _buildPromoBanner(BuildContext context) {
     return Container(
-      width: 240,
-      margin: const EdgeInsets.only(right: 16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.primary.withValues(alpha: 0.1)),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF003F87), Color(0xFF0D47A1)],
+        ),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
+            color: const Color(0xFF003F87).withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'PROMO',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Grooming Diskon 20%',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Untuk pelanggan baru! Berlaku s/d 30 April.',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Container(
+            width: 70,
+            height: 70,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(Icons.content_cut, color: Colors.white, size: 36),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Stat Card
+  // ═══════════════════════════════════════════════════════════════════
+
+  Widget _buildStatCard({
+    required IconData icon,
+    required String value,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textLight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Tip Card
+  // ═══════════════════════════════════════════════════════════════════
+
+  Widget _buildTipCard({
+    required String emoji,
+    required String title,
+    required String content,
+    required List<Color> gradientColors,
+  }) {
+    return Container(
+      width: 260,
+      margin: const EdgeInsets.only(right: 16),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradientColors,
+        ),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: gradientColors[0].withValues(alpha: 0.25),
+            blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -239,27 +561,28 @@ class HomeScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.lightbulb_outline,
-                  color: AppColors.accent, size: 20),
+              Text(emoji, style: const TextStyle(fontSize: 22)),
               const SizedBox(width: 8),
               Text(
                 title,
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
+                  color: Colors.white,
+                  fontSize: 15,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Expanded(
             child: Text(
               content,
               style: TextStyle(
                 fontSize: 13,
-                color: AppColors.textDark.withValues(alpha: 0.7),
+                color: Colors.white.withValues(alpha: 0.85),
+                height: 1.4,
               ),
-              maxLines: 3,
+              maxLines: 4,
               overflow: TextOverflow.ellipsis,
             ),
           ),

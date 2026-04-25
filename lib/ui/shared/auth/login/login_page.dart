@@ -73,15 +73,14 @@ class _LoginPageState extends State<LoginPage> {
               Center(
                 child: Column(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.background.withValues(alpha: 0.3),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
+                    Image.asset(
+                      'lib/assets/img/1776076564947.png',
+                      width: 120, // Increased size
+                      height: 120,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
                         Icons.pets,
-                        size: 40,
+                        size: 80,
                         color: AppColors.primary,
                       ),
                     ),
