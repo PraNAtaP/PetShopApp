@@ -322,5 +322,211 @@ void _sendMessage(String text) {
         ],
       ),
     );
+ final avatar = Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        color: isAdmin ? PetColors.lightGreen : PetColors.yellow,
+        shape: BoxShape.circle,
+      ),
+      child: Center(
+        child: Text(
+          isAdmin ? '🐾' : '😊',
+          style: const TextStyle(fontSize: 14),
+        ),
+      ),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        mainAxisAlignment:
+            isAdmin ? MainAxisAlignment.start : MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: isAdmin
+            ? [avatar, const SizedBox(width: 6), bubble]
+            : [bubble, const SizedBox(width: 6), avatar],
+      ),
+    );
+  }
+// ── Typing Indicator
+
+Widget _typingBubble() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: const BoxDecoration(
+                color: PetColors.lightGreen, shape: BoxShape.circle),
+            child: const Center(
+                child: Text('🐾', style: TextStyle(fontSize: 14))),
+          ),
+          const SizedBox(width: 6),
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+                bottomRight: Radius.circular(16),
+                bottomLeft: Radius.circular(4),
+              ),
+              border: Border.all(color: Colors.blue.shade50, width: 0.5),
+            ),
+            child: const _TypingDotsWidget(),
+          ),
+        ],
+      ),
+    );
+  }
+// ── Area Bawah (Quick Reply + Input)
+Widget _buildBottomArea() {
+    return Container(
+      color: PetColors.bgInput,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_showQuickReplies) _buildQuickReplies(),
+          _buildInputRow(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickReplies() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+      decoration: BoxDecoration(
+        color: PetColors.bgInput,
+        border: Border(top: BorderSide(color: Colors.blue.shade100, width: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: const [
+              Text('✨ ',
+                  style: TextStyle(fontSize: 12)),
+              Text('Pilih topik cepat atau ketik sendiri ya!',
+                  style: TextStyle(
+                      color: PetColors.lightBlue,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w500)),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ...kQuickReplies.map((qr) => _quickChip(qr)),
+        ],
+      ),
+    );
+  }
+Widget _quickChip(QuickReply qr) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 5),
+      child: GestureDetector(
+        onTap: () => _sendMessage(qr.text),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: PetColors.lightGreen, width: 1),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              Text(qr.emoji, style: const TextStyle(fontSize: 14)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  qr.text,
+                  style: const TextStyle(
+                      color: PetColors.navyBlue,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w400),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+Widget _buildInputRow() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 6, 10, 10),
+      decoration: BoxDecoration(
+        color: PetColors.bgInput,
+        border: Border(top: BorderSide(color: Colors.blue.shade100, width: 0.5)),
+      ),
+      child: Row(
+        children: [
+          // Tombol Attachment
+          GestureDetector(
+            onTap: () {},
+            child: Container(
+              width: 34,
+              height: 34,
+              decoration: const BoxDecoration(
+                color: PetColors.yellow,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.attach_file,
+                  color: PetColors.navyBlue, size: 18),
+            ),
+          ),
+          const SizedBox(width: 8),
+   // Input Text
+          Expanded(
+            child: Container(
+              height: 38,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                border:
+                    Border.all(color: const Color(0xFFC9D8EF), width: 1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: TextField(
+                controller: _inputCtrl,
+                style: const TextStyle(
+                    fontSize: 12, color: PetColors.navyBlue),
+                decoration: const InputDecoration(
+                  hintText: 'Ketik pesan di sini...',
+                  hintStyle: TextStyle(
+                      fontSize: 12, color: Color(0xFFAAC0D8)),
+                  border: InputBorder.none,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                ),
+                onSubmitted: _sendMessage,
+                textInputAction: TextInputAction.send,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+ // Tombol Kirim
+          GestureDetector(
+            onTap: () => _sendMessage(_inputCtrl.text),
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: const BoxDecoration(
+                color: PetColors.navyBlue,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.send, color: Colors.white, size: 18),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 
 
