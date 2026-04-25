@@ -271,4 +271,56 @@ void _sendMessage(String text) {
       ),
     );
  }
- 
+  Widget _buildBubble(ChatMessage msg) {
+    final isAdmin = msg.sender == MessageSender.admin;
+    final timeStr =
+        '${msg.time.hour.toString().padLeft(2, '0')}:${msg.time.minute.toString().padLeft(2, '0')}';
+  final bubble = Container(
+      constraints: const BoxConstraints(maxWidth: 220),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: isAdmin ? Colors.white : PetColors.navyBlue,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(16),
+          topRight: const Radius.circular(16),
+          bottomLeft: Radius.circular(isAdmin ? 4 : 16),
+          bottomRight: Radius.circular(isAdmin ? 16 : 4),
+        ),
+        border: isAdmin
+            ? Border.all(color: Colors.blue.shade50, width: 0.5)
+            : null,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Text(
+            msg.text,
+            style: TextStyle(
+              color: isAdmin ? PetColors.navyBlue : Colors.white,
+              fontSize: 11.5,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(timeStr,
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: isAdmin
+                        ? PetColors.lightBlue
+                        : PetColors.lightGreen,
+                  )),
+              if (!isAdmin) ...[
+                const SizedBox(width: 3),
+                const Icon(Icons.done_all,
+                    size: 12, color: PetColors.lightGreen),
+              ]
+            ],
+          ),
+        ],
+      ),
+    );
+
+
