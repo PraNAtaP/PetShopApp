@@ -138,7 +138,137 @@ void _sendMessage(String text) {
         );
       }
     });
+  // BUILD
+ @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: PetColors.bgChat,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(child: _buildChatBody()),
+            _buildBottomArea(),
+          ],
+        ),
+      ),
+    );
   }
-  void _QuickReply(QuickReply reply) {
-    _sendMessage(reply.text);
+ // ── Header 
+    Widget _buildHeader() {
+    return Container(
+      color: PetColors.navyBlue,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: const Icon(Icons.arrow_back_ios_new,
+                color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: PetColors.lightGreen,
+              shape: BoxShape.circle,
+            ),
+            child: const Center(
+              child: Text('🐾', style: TextStyle(fontSize: 20)),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Pet Point Admin',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600)),
+                Row(
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: PetColors.lightGreen,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Text('Online sekarang',
+                        style: TextStyle(
+                            color: PetColors.lightGreen, fontSize: 10)),
+                  ],
+                )
+              ],
+            ),
+          ),
+          _headerIconBtn(Icons.phone_outlined),
+          const SizedBox(width: 8),
+          _headerIconBtn(Icons.more_vert),
+        ],
+      ),
+    );
   }
+
+  Widget _headerIconBtn(IconData icon) {
+    return Container(
+      width: 30,
+      height: 30,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: Colors.white, size: 16),
+    );
+  }
+// ── Chat Body 
+
+  Widget _buildChatBody() {
+    return ListView.builder(
+      controller: _scrollCtrl,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      itemCount: _messages.length + (_isTyping ? 2 : 1),
+      itemBuilder: (context, index) {
+        if (index == 0) return _dateDivider();
+
+        final msgIndex = index - 1;
+
+        if (_isTyping && msgIndex == _messages.length) {
+          return _typingBubble();
+        }
+
+        final msg = _messages[msgIndex];
+        return _buildBubble(msg);
+      },
+    );
+  }
+ Widget _dateDivider() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        children: [
+          Expanded(child: Container(height: 0.5, color: Colors.blue.shade100)),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: const Color(0xFFC9D8EF),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Text('🌸 Hari ini',
+                style: TextStyle(
+                    color: PetColors.navyBlue,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w500)),
+          ),
+          Expanded(child: Container(height: 0.5, color: Colors.blue.shade100)),
+        ],
+      ),
+    );
+ }
+ 
