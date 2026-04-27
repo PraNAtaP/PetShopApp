@@ -43,10 +43,10 @@ class GroomingSummaryScreen extends StatelessWidget {
                   const Text('Daftar Layanan Grooming', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 24),
                   _buildRow('Jenis Layanan:', provider.selectedServices.isNotEmpty ? provider.selectedServices.join(', ') : '-'),
-                  _buildRow('Harga:', currencyFormat.format(provider.selectedPrice)),
+                  _buildRow('Harga per Pet:', currencyFormat.format(provider.selectedPrice)),
                   const Divider(height: 32),
-                  _buildRow('Nama Pet:', provider.petName),
-                  _buildRow('Jenis Pet:', provider.petType),
+                  _buildRow('Jumlah Hewan:', '${provider.selectedPets.length} Hewan'),
+                  _buildRow('Daftar Hewan:', provider.selectedPets.map((p) => p.name).join(', ')),
                   const Divider(height: 32),
                   _buildRow('Tanggal:', provider.selectedDate != null ? dateFormat.format(provider.selectedDate!) : '-'),
                   _buildRow('Waktu:', provider.selectedTimeSlot ?? '-'),
@@ -60,7 +60,7 @@ class GroomingSummaryScreen extends StatelessWidget {
                     children: [
                       const Text('Total Pembayaran:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       Text(
-                        currencyFormat.format(provider.selectedPrice),
+                        currencyFormat.format(provider.selectedPrice * provider.selectedPets.length),
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primary),
                       ),
                     ],

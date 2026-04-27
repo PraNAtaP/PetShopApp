@@ -17,11 +17,9 @@ class GroomingServiceScreen extends StatefulWidget {
 }
 
 class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
-  final TextEditingController _petNameController = TextEditingController();
   final TextEditingController _alamatController = TextEditingController();
-  String _selectedPetType = 'Anjing';
   bool _isHomeService = false;
-  String? _selectedRegisteredPetId;
+  final List<UserPetModel> _selectedPets = [];
   final List<Map<String, dynamic>> _services = [
     {
       'name': 'Mandi Dasar',
@@ -59,7 +57,6 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
 
   @override
   void dispose() {
-    _petNameController.dispose();
     _alamatController.dispose();
     super.dispose();
   }
@@ -73,7 +70,10 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
         title: const Text('Layanan Grooming'),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
-        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => context.pop(),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -81,117 +81,212 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Pilih dari Hewan Saya',
+              'Pilih Hewan Kesayangan',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
             ),
             const SizedBox(height: 12),
-            SizedBox(
-              height: 100,
-              child: Consumer<AuthService>(
-                builder: (context, auth, _) {
-                  if (auth.currentUser == null) return const SizedBox();
-                  return StreamBuilder<List<UserPetModel>>(
-                    stream: FirestoreService.instance.getUserPets(auth.currentUser!.uid),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return Center(
-                          child: Text(
-                            'Belum ada hewan terdaftar. Daftarkan di Profil.',
-                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-                          ),
-                        );
-                      }
-                      final pets = snapshot.data!;
-                      return ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: pets.length,
-                        itemBuilder: (context, index) {
-                          final pet = pets[index];
-                          final isSelected = _selectedRegisteredPetId == pet.id;
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (isSelected) {
-                                  _selectedRegisteredPetId = null;
-                                  _petNameController.clear();
-                                } else {
-                                  _selectedRegisteredPetId = pet.id;
-                                  _petNameController.text = pet.name;
-                                  _selectedPetType = pet.type;
-                                }
-                              });
-                            },
-                            child: Container(
-                              width: 80,
-                              margin: const EdgeInsets.only(right: 12),
-                              child: Column(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 30,
-                                    backgroundColor: isSelected ? AppColors.primary : Colors.grey.shade200,
-                                    backgroundImage: pet.imageUrl != null ? NetworkImage(pet.imageUrl!) : null,
-                                    child: pet.imageUrl == null
-                                        ? FaIcon(
-                                            pet.type == 'Anjing' ? FontAwesomeIcons.dog : FontAwesomeIcons.cat,
-                                            color: isSelected ? Colors.white : Colors.grey,
-                                            size: 24,
-                                          )
-                                        : null,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    pet.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                      color: isSelected ? AppColors.primary : Colors.black87,
-                                    ),
-                                  ),
-                                ],
+            Consumer<AuthService>(
+              builder: (context, auth, _) {
+                if (auth.currentUser == null) return const SizedBox();
+                return StreamBuilder<List<UserPetModel>>(
+                  stream: FirestoreService.instance.getUserPets(auth.currentUser!.uid),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    final pets = snapshot.data ?? [];
+
+                    if (pets.isEmpty) {
+                      return Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.shade50,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.orange.shade200),
+                        ),
+                        child: Column(
+                          children: [
+                            const Text(
+                              'Kamu belum mendaftarkan hewan peliharaan.',
+                              style: TextStyle(fontWeight: FontWeight.w500),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton.icon(
+                              onPressed: () => context.push('/user-pets'),
+                              icon: const Icon(Icons.add),
+                              label: const Text('Daftarkan Hewan Sekarang'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
                               ),
                             ),
-                          );
-                        },
+                          ],
+                        ),
                       );
-                    },
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Atau Masukkan Manual',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _petNameController,
-              decoration: InputDecoration(
-                labelText: 'Nama Hewan',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                prefixIcon: const Icon(Icons.pets),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text('Jenis Hewan:', style: TextStyle(fontWeight: FontWeight.w500)),
-            Row(
-              children: [
-                _buildSelectableCard(
-                  label: 'Anjing',
-                  icon: FontAwesomeIcons.dog,
-                  isSelected: _selectedPetType == 'Anjing',
-                  onTap: () => setState(() => _selectedPetType = 'Anjing'),
-                ),
-                const SizedBox(width: 12),
-                _buildSelectableCard(
-                  label: 'Kucing',
-                  icon: FontAwesomeIcons.cat,
-                  isSelected: _selectedPetType == 'Kucing',
-                  onTap: () => setState(() => _selectedPetType = 'Kucing'),
-                ),
-              ],
+                    }
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Horizontal Selection (Quick Pick)
+                        SizedBox(
+                          height: 100,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: pets.length + 1,
+                            itemBuilder: (context, index) {
+                              if (index == pets.length) {
+                                return GestureDetector(
+                                  onTap: () => context.push('/user-pets'),
+                                  child: Container(
+                                    width: 80,
+                                    margin: const EdgeInsets.only(right: 12),
+                                    child: Column(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 30,
+                                          backgroundColor: Colors.grey.shade100,
+                                          child: const Icon(Icons.add, color: Colors.grey),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        const Text('Tambah', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }
+
+                              final pet = pets[index];
+                              final isSelected = _selectedPets.any((p) => p.id == pet.id);
+                              return GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    if (isSelected) {
+                                      _selectedPets.removeWhere((p) => p.id == pet.id);
+                                    } else {
+                                      _selectedPets.add(pet);
+                                    }
+                                  });
+                                },
+                                child: Container(
+                                  width: 80,
+                                  margin: const EdgeInsets.only(right: 12),
+                                  child: Column(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 30,
+                                        backgroundColor: isSelected ? AppColors.primary : Colors.grey.shade200,
+                                        backgroundImage: pet.imageUrl != null ? NetworkImage(pet.imageUrl!) : null,
+                                        child: pet.imageUrl == null
+                                            ? FaIcon(
+                                                pet.type == 'Anjing' ? FontAwesomeIcons.dog : FontAwesomeIcons.cat,
+                                                color: isSelected ? Colors.white : Colors.grey,
+                                                size: 24,
+                                              )
+                                            : null,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        pet.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                          color: isSelected ? AppColors.primary : Colors.black87,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        // Selected Pet Info Card (Premium replacement for dropdown)
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          child: _selectedPets.isEmpty
+                              ? Container(
+                                  key: const ValueKey('no-selection'),
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.grey.shade200, style: BorderStyle.solid),
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      'Silakan pilih satu atau lebih hewan di atas',
+                                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                                    ),
+                                  ),
+                                )
+                              : Container(
+                                  key: ValueKey(_selectedPets.length),
+                                  width: double.infinity,
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 1.5),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 50,
+                                        height: 50,
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.primary,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Center(
+                                          child: Icon(Icons.pets, color: Colors.white, size: 24),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              _selectedPets.length == 1 
+                                                ? _selectedPets.first.name 
+                                                : '${_selectedPets.length} Hewan Terpilih',
+                                              style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: AppColors.primary,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              _selectedPets.length == 1
+                                                ? '${_selectedPets.first.type} • ${_selectedPets.first.breed}'
+                                                : _selectedPets.map((p) => p.name).join(', '),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.grey.shade700,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
             ),
             const Divider(height: 30, thickness: 1),
             const Text(
@@ -328,9 +423,9 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
               height: 55,
               child: ElevatedButton(
                 onPressed: () {
-                  if (_petNameController.text.isEmpty) {
+                  if (_selectedPets.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Harap masukkan nama hewan')),
+                      const SnackBar(content: Text('Harap pilih minimal satu hewan peliharaan')),
                     );
                     return;
                   }
@@ -347,7 +442,7 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                     return;
                   }
 
-                  provider.updatePetInfo(_petNameController.text, _selectedPetType);
+                  provider.updatePetsInfo(_selectedPets);
                   // Location is already updated via Map Picker
                   context.push('/grooming-schedule');
                 },
@@ -357,7 +452,12 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   elevation: 2,
                 ),
-                child: const Text('Lanjutkan Pilih Jadwal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: Text(
+                  _selectedPets.length > 1
+                    ? 'Lanjutkan (${_selectedPets.length} Hewan)'
+                    : 'Lanjutkan Pilih Jadwal',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
               ),
             ),
           ],
