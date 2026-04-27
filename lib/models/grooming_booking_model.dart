@@ -16,6 +16,8 @@ class GroomingBookingModel {
   final double? latitude;
   final double? longitude;
   final String status; // Pending/Confirmed/Completed/Cancelled
+  final String? buktiBayarUrl;
+  final String metodePembayaran;
   final DateTime createdAt;
 
   const GroomingBookingModel({
@@ -33,28 +35,39 @@ class GroomingBookingModel {
     this.latitude,
     this.longitude,
     required this.status,
+    this.buktiBayarUrl,
+    required this.metodePembayaran,
     required this.createdAt,
   });
 
   /// Factory constructor to map Firestore [DocumentSnapshot] to [GroomingBookingModel].
   factory GroomingBookingModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+    final data = doc.data() as Map<String, dynamic>? ?? {};
+    
+    // Safety check for critical timestamp fields
+    DateTime safeDate(dynamic field) {
+      if (field is Timestamp) return field.toDate();
+      return DateTime.now();
+    }
+
     return GroomingBookingModel(
       bookingId: doc.id,
-      userId: data['userId'] ?? '',
-      customerName: data['customerName'] ?? '',
-      petName: data['petName'] ?? '',
-      petType: data['petType'] ?? '',
-      serviceType: data['serviceType'] ?? '',
-      bookingDate: (data['bookingDate'] as Timestamp).toDate(),
-      timeSlot: data['timeSlot'] ?? '',
+      userId: data['userId']?.toString() ?? '',
+      customerName: data['customerName']?.toString() ?? '',
+      petName: data['petName']?.toString() ?? '',
+      petType: data['petType']?.toString() ?? '',
+      serviceType: data['serviceType']?.toString() ?? '',
+      bookingDate: safeDate(data['bookingDate']),
+      timeSlot: data['timeSlot']?.toString() ?? '',
       totalPrice: (data['totalPrice'] ?? 0).toDouble(),
       isHomeService: data['isHomeService'] ?? false,
-      alamatLengkap: data['alamatLengkap'] as String?,
+      alamatLengkap: data['alamatLengkap']?.toString(),
       latitude: (data['latitude'] as num?)?.toDouble(),
       longitude: (data['longitude'] as num?)?.toDouble(),
-      status: data['status'] ?? 'Pending',
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      status: data['status']?.toString() ?? 'Pending',
+      buktiBayarUrl: data['buktiBayarUrl']?.toString(),
+      metodePembayaran: data['metodePembayaran']?.toString() ?? 'Transfer',
+      createdAt: safeDate(data['createdAt']),
     );
   }
 
@@ -74,6 +87,8 @@ class GroomingBookingModel {
       if (latitude != null) 'latitude': latitude,
       if (longitude != null) 'longitude': longitude,
       'status': status,
+      if (buktiBayarUrl != null) 'buktiBayarUrl': buktiBayarUrl,
+      'metodePembayaran': metodePembayaran,
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
@@ -94,6 +109,8 @@ class GroomingBookingModel {
     double? latitude,
     double? longitude,
     String? status,
+    String? buktiBayarUrl,
+    String? metodePembayaran,
     DateTime? createdAt,
   }) {
     return GroomingBookingModel(
@@ -111,6 +128,8 @@ class GroomingBookingModel {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       status: status ?? this.status,
+      buktiBayarUrl: buktiBayarUrl ?? this.buktiBayarUrl,
+      metodePembayaran: metodePembayaran ?? this.metodePembayaran,
       createdAt: createdAt ?? this.createdAt,
     );
   }

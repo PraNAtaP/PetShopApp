@@ -85,7 +85,7 @@ class GroomingProvider with ChangeNotifier {
   }
 
   /// Finalize booking and save to Firestore
-  Future<void> confirmBooking(String userId, String customerName) async {
+  Future<void> confirmBooking(String userId, String customerName, {String? buktiBayarUrl, required String metodePembayaran}) async {
     if (_selectedServices.isEmpty || _selectedDate == null || _selectedTimeSlot == null || _selectedPets.isEmpty) {
       throw Exception('Harap lengkapi data booking');
     }
@@ -107,6 +107,8 @@ class GroomingProvider with ChangeNotifier {
         latitude: _isHomeService ? _latitude : null,
         longitude: _isHomeService ? _longitude : null,
         status: 'Pending',
+        buktiBayarUrl: buktiBayarUrl,
+        metodePembayaran: metodePembayaran,
         createdAt: DateTime.now(),
       );
 

@@ -12,15 +12,13 @@ import 'package:petshopapp/ui/customer/profile/add_edit_pet_screen.dart';
 import 'package:petshopapp/ui/customer/profile/points_screen.dart';
 import 'package:petshopapp/ui/customer/profile/profile_screen.dart';
 import 'package:petshopapp/ui/customer/checkout/checkout_review_screen.dart';
-import 'package:petshopapp/ui/customer/checkout/payment_method_screen.dart';
-import 'package:petshopapp/ui/customer/checkout/payment_execution_screen.dart';
+import 'package:petshopapp/ui/customer/shared/payment/payment_method_screen.dart';
+import 'package:petshopapp/ui/customer/shared/payment/payment_execution_screen.dart';
 import 'package:petshopapp/ui/customer/order/order_history_screen.dart';
 import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_service_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_schedule_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_summary_screen.dart';
-import 'package:petshopapp/ui/customer/grooming/grooming_payment_method_screen.dart';
-import 'package:petshopapp/ui/customer/grooming/grooming_payment_execution_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_location_screen.dart';
 
 
@@ -101,14 +99,14 @@ class CustomerRouter {
         GoRoute(
           path: '/payment-method',
           name: 'payment-method',
-          builder: (context, state) => const PaymentMethodScreen(),
+          builder: (context, state) => const UniversalPaymentMethodScreen(category: 'shop'),
         ),
         GoRoute(
           path: '/payment-execution',
           name: 'payment-execution',
           builder: (context, state) {
             final method = state.extra as String? ?? 'QRIS';
-            return PaymentExecutionScreen(paymentMethod: method);
+            return UniversalPaymentExecutionScreen(paymentMethod: method, category: 'shop');
           },
         ),
         GoRoute(
@@ -142,14 +140,14 @@ class CustomerRouter {
         GoRoute(
           path: '/grooming-payment-method',
           name: 'grooming-payment-method',
-          builder: (context, state) => const GroomingPaymentMethodScreen(),
+          builder: (context, state) => const UniversalPaymentMethodScreen(category: 'grooming'),
         ),
         GoRoute(
           path: '/grooming-payment-execution',
           name: 'grooming-payment-execution',
           builder: (context, state) {
             final method = state.extra as String? ?? 'QRIS';
-            return GroomingPaymentExecutionScreen(paymentMethod: method);
+            return UniversalPaymentExecutionScreen(paymentMethod: method, category: 'grooming');
           },
         ),
         GoRoute(

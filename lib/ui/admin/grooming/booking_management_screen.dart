@@ -11,7 +11,6 @@ class BookingManagementScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'id_ID');
 
     return Padding(
       padding: const EdgeInsets.all(24.0),
@@ -21,138 +20,260 @@ class BookingManagementScreen extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Manajemen Booking Grooming',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Manajemen Booking Grooming',
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primary),
+                  ),
+                  Text('Kelola jadwal dan konfirmasi pembayaran di sini.', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                ],
               ),
               ElevatedButton.icon(
-                onPressed: () {}, // Add refresh if needed, but Stream handles it
+                onPressed: () {}, 
                 icon: const Icon(Icons.refresh),
                 label: const Text('Segarkan'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const Text('DEBUG: Jika baris ini muncul, berarti UI dasar ter-render.', style: TextStyle(color: Colors.red, fontSize: 10)),
+          const SizedBox(height: 8),
           Expanded(
             child: StreamBuilder<List<GroomingBookingModel>>(
               stream: GroomingService.instance.getAdminBookingsStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(child: CircularProgressIndicator(color: Colors.red, strokeWidth: 5));
                 }
+                
                 if (snapshot.hasError) {
-                  return Center(child: Text('Error: ${snapshot.error}'));
+                  return Container(
+                    width: double.infinity,
+                    color: Colors.red.shade50,
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.bug_report, color: Colors.red, size: 60),
+                        const SizedBox(height: 16),
+                        const Text('Firestore Stream Error!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                        const SizedBox(height: 12),
+                        SelectableText(snapshot.error.toString(), textAlign: TextAlign.center),
+                      ],
+                    ),
+                  );
                 }
+                
                 final bookings = snapshot.data ?? [];
                 if (bookings.isEmpty) {
-                  return const Center(child: Text('Belum ada pesanan grooming.'));
+                  return const Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.search_off, size: 80, color: Colors.grey),
+                        SizedBox(height: 16),
+                        Text('Data Kosong (Empty List)', style: TextStyle(color: Colors.grey, fontSize: 18)),
+                      ],
+                    ),
+                  );
                 }
 
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border.all(color: Colors.grey.shade200),
-                    ),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        headingRowColor: MaterialStateProperty.all(AppColors.primary.withOpacity(0.05)),
-                        columns: const [
-                          DataColumn(label: Text('Customer', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Pet', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Lay./Lokasi', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Jadwal', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Total', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-                          DataColumn(label: Text('Aksi', style: TextStyle(fontWeight: FontWeight.bold))),
-                        ],
-                        rows: bookings.map((booking) {
-                          return DataRow(cells: [
-                            DataCell(Text(booking.customerName)),
-                            DataCell(Text('${booking.petName} (${booking.petType})')),
-                            DataCell(
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(booking.serviceType),
-                                  Text(
-                                    booking.isHomeService ? 'Home Service' : 'Bawa ke Petshop',
-                                    style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
-                                  ),
-                                  if (booking.isHomeService && booking.alamatLengkap != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 4),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          SizedBox(
-                                            width: 150,
-                                            child: Text(
-                                              booking.alamatLengkap!,
-                                              style: const TextStyle(fontSize: 9, color: Colors.blueGrey),
-                                              overflow: TextOverflow.ellipsis,
-                                              maxLines: 2,
-                                            ),
-                                          ),
-                                          if (booking.latitude != null && booking.longitude != null)
-                                            IconButton(
-                                              icon: const Icon(Icons.map, size: 16, color: Colors.blue),
-                                              padding: EdgeInsets.zero,
-                                              constraints: const BoxConstraints(),
-                                              tooltip: 'Buka di Google Maps',
-                                              onPressed: () {
-                                                final url = 'https://www.google.com/maps/search/?api=1&query=${booking.latitude},${booking.longitude}';
-                                                _launchURL(url);
-                                              },
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                            DataCell(Text('${DateFormat('dd/MM').format(booking.bookingDate)} @ ${booking.timeSlot}')),
-                            DataCell(Text(currencyFormat.format(booking.totalPrice))),
-                            DataCell(_buildStatusBadge(booking.status)),
-                            DataCell(Row(
-                              children: [
-                                if (booking.status == 'Pending')
-                                  IconButton(
-                                    icon: const Icon(Icons.check, color: Colors.green),
-                                    tooltip: 'Konfirmasi',
-                                    onPressed: () => _updateStatus(context, booking.bookingId, 'Confirmed'),
-                                  ),
-                                if (booking.status == 'Confirmed')
-                                  IconButton(
-                                    icon: const Icon(Icons.done_all, color: Colors.blue),
-                                    tooltip: 'Selesai',
-                                    onPressed: () => _updateStatus(context, booking.bookingId, 'Completed'),
-                                  ),
-                                if (booking.status != 'Cancelled' && booking.status != 'Completed')
-                                  IconButton(
-                                    icon: const Icon(Icons.cancel, color: Colors.red),
-                                    tooltip: 'Batalkan',
-                                    onPressed: () => _updateStatus(context, booking.bookingId, 'Cancelled'),
-                                  ),
-                              ],
-                            )),
-                          ]);
-                        }).toList(),
-                      ),
-                    ),
-                  ),
+                return ListView.builder(
+                  itemCount: bookings.length,
+                  itemBuilder: (context, index) => _buildBookingRowCard(context, bookings[index], currencyFormat),
                 );
               },
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBookingRowCard(BuildContext context, GroomingBookingModel booking, NumberFormat currency) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            // Status Strip
+            Container(
+              width: 6,
+              decoration: BoxDecoration(
+                color: _getStatusColor(booking.status),
+                borderRadius: const BorderRadius.horizontal(left: Radius.circular(12)),
+              ),
+            ),
+            const SizedBox(width: 16),
+            
+            // Customer & Pet Info
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(booking.customerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(booking.petType == 'Kucing' ? Icons.pets : Icons.pets, size: 14, color: Colors.grey),
+                        const SizedBox(width: 6),
+                        Text('${booking.petName} (${booking.petType})', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const VerticalDivider(width: 1, indent: 15, endIndent: 15),
+
+            // Service & Schedule
+            Expanded(
+              flex: 4,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(booking.serviceType, style: const TextStyle(fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.access_time, size: 14, color: AppColors.primary),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${DateFormat('dd MMM').format(booking.bookingDate)} • ${booking.timeSlot}',
+                          style: const TextStyle(fontSize: 13, color: AppColors.primary, fontWeight: FontWeight.w500),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      booking.isHomeService ? 'Home Service' : 'Bawa ke Toko',
+                      style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const VerticalDivider(width: 1, indent: 15, endIndent: 15),
+
+            // Payment
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(currency.format(booking.totalPrice), style: const TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    if (booking.buktiBayarUrl != null)
+                      TextButton.icon(
+                        onPressed: () => _showProofDialog(context, booking.buktiBayarUrl!),
+                        icon: const Icon(Icons.image_search, size: 16),
+                        label: const Text('Bukti', style: TextStyle(fontSize: 12)),
+                        style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                      )
+                    else
+                      Text(
+                        booking.metodePembayaran == 'COD' ? '💰 COD' : '-',
+                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+
+            const VerticalDivider(width: 1, indent: 15, endIndent: 15),
+
+            // Status Badge & Actions
+            Expanded(
+              flex: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    _buildStatusBadge(booking.status),
+                    const SizedBox(width: 12),
+                    _buildActionButtons(context, booking),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'Confirmed': return Colors.blue;
+      case 'Completed': return Colors.green;
+      case 'Cancelled': return Colors.red;
+      default: return Colors.orange;
+    }
+  }
+
+  Widget _buildActionButtons(BuildContext context, GroomingBookingModel booking) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (booking.status == 'Pending')
+          _circleActionBtn(
+            icon: Icons.check,
+            color: Colors.green,
+            tooltip: 'Terima Pesanan',
+            onPressed: () => _updateStatus(context, booking.bookingId, 'Confirmed'),
+          ),
+        if (booking.status == 'Confirmed')
+          _circleActionBtn(
+            icon: Icons.done_all,
+            color: Colors.blue,
+            tooltip: 'Selesaikan',
+            onPressed: () => _updateStatus(context, booking.bookingId, 'Completed'),
+          ),
+        const SizedBox(width: 4),
+        if (booking.status != 'Cancelled' && booking.status != 'Completed')
+          _circleActionBtn(
+            icon: Icons.close,
+            color: Colors.red,
+            tooltip: 'Tolak/Batal',
+            onPressed: () => _updateStatus(context, booking.bookingId, 'Cancelled'),
+          ),
+      ],
+    );
+  }
+
+  Widget _circleActionBtn({required IconData icon, required Color color, required String tooltip, required VoidCallback onPressed}) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+          child: Icon(icon, color: color, size: 18),
+        ),
       ),
     );
   }
@@ -191,6 +312,55 @@ class BookingManagementScreen extends StatelessWidget {
         SnackBar(content: Text('Error: $e')),
       );
     }
+  }
+
+  void _showProofDialog(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Bukti Pembayaran', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                ],
+              ),
+            ),
+            Container(
+              constraints: const BoxConstraints(maxHeight: 500, maxWidth: 500),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.network(
+                  url,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()));
+                  },
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ElevatedButton.icon(
+                onPressed: () => _launchURL(url),
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('Buka di Tab Baru'),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _launchURL(String urlString) async {

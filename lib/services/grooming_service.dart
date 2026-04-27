@@ -67,8 +67,8 @@ class GroomingService {
 
   /// Returns a real-time stream of all grooming bookings for the Admin Dashboard.
   Stream<List<GroomingBookingModel>> getAdminBookingsStream() {
+    // Temporarily remove orderBy to avoid index requirement issues during debug
     return _bookingsRef
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
