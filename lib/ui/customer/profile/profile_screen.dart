@@ -205,6 +205,14 @@ class ProfileScreen extends StatelessWidget {
                               const Divider(height: 1, indent: 56),
                               _buildActionTile(
                                 icon: Icons.pets_outlined,
+                                title: 'Kelola Hewan Peliharaan',
+                                onTap: () {
+                                  context.push('/user-pets');
+                                },
+                              ),
+                              const Divider(height: 1, indent: 56),
+                              _buildActionTile(
+                                icon: Icons.history_outlined,
                                 title: 'Riwayat Adopsi',
                                 onTap: () {},
                               ),

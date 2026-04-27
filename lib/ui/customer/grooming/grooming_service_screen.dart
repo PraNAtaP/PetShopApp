@@ -5,6 +5,9 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/providers/grooming_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:petshopapp/services/auth_service.dart';
+import 'package:petshopapp/services/firestore_service.dart';
+import 'package:petshopapp/models/user_pet_model.dart';
 
 class GroomingServiceScreen extends StatefulWidget {
   const GroomingServiceScreen({super.key});
@@ -18,6 +21,7 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
   final TextEditingController _alamatController = TextEditingController();
   String _selectedPetType = 'Anjing';
   bool _isHomeService = false;
+  String? _selectedRegisteredPetId;
   final List<Map<String, dynamic>> _services = [
     {
       'name': 'Mandi Dasar',
@@ -77,10 +81,91 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Detail Informasi Hewan',
+              'Pilih dari Hewan Saya',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 100,
+              child: Consumer<AuthService>(
+                builder: (context, auth, _) {
+                  if (auth.currentUser == null) return const SizedBox();
+                  return StreamBuilder<List<UserPetModel>>(
+                    stream: FirestoreService.instance.getUserPets(auth.currentUser!.uid),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return Center(
+                          child: Text(
+                            'Belum ada hewan terdaftar. Daftarkan di Profil.',
+                            style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                          ),
+                        );
+                      }
+                      final pets = snapshot.data!;
+                      return ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: pets.length,
+                        itemBuilder: (context, index) {
+                          final pet = pets[index];
+                          final isSelected = _selectedRegisteredPetId == pet.id;
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (isSelected) {
+                                  _selectedRegisteredPetId = null;
+                                  _petNameController.clear();
+                                } else {
+                                  _selectedRegisteredPetId = pet.id;
+                                  _petNameController.text = pet.name;
+                                  _selectedPetType = pet.type;
+                                }
+                              });
+                            },
+                            child: Container(
+                              width: 80,
+                              margin: const EdgeInsets.only(right: 12),
+                              child: Column(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 30,
+                                    backgroundColor: isSelected ? AppColors.primary : Colors.grey.shade200,
+                                    backgroundImage: pet.imageUrl != null ? NetworkImage(pet.imageUrl!) : null,
+                                    child: pet.imageUrl == null
+                                        ? FaIcon(
+                                            pet.type == 'Anjing' ? FontAwesomeIcons.dog : FontAwesomeIcons.cat,
+                                            color: isSelected ? Colors.white : Colors.grey,
+                                            size: 24,
+                                          )
+                                        : null,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    pet.name,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                      color: isSelected ? AppColors.primary : Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Atau Masukkan Manual',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
             TextField(
               controller: _petNameController,
               decoration: InputDecoration(
