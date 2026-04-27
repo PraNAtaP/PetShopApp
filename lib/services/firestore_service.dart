@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:petshopapp/models/user_model.dart';
 import 'package:petshopapp/models/pet_model.dart';
 import 'package:petshopapp/models/product_model.dart';
+import 'package:petshopapp/models/user_pet_model.dart';
 
 import 'package:petshopapp/models/cart_model.dart';
 import 'package:petshopapp/models/order_model.dart';
@@ -68,6 +69,12 @@ class FirestoreService {
   CollectionReference<OrderModel> get _ordersRef =>
       _db.collection('orders').withConverter<OrderModel>(
         fromFirestore: (snapshot, _) => OrderModel.fromFirestore(snapshot),
+        toFirestore: (model, _) => model.toMap(),
+      );
+
+  CollectionReference<UserPetModel> get _userPetsRef =>
+      _db.collection('user_pets').withConverter<UserPetModel>(
+        fromFirestore: (snapshot, _) => UserPetModel.fromFirestore(snapshot),
         toFirestore: (model, _) => model.toMap(),
       );
 
@@ -312,6 +319,50 @@ class FirestoreService {
           .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
     } catch (e) {
       throw Exception('Gagal stream data pesanan: $e');
+    }
+  }
+
+  // ==========================================
+  // User Pet Management
+  // ==========================================
+
+  /// Adds a new user pet to Firestore.
+  Future<void> addUserPet(UserPetModel pet) async {
+    try {
+      await _userPetsRef.add(pet);
+    } catch (e) {
+      throw Exception('Gagal mendaftarkan hewan: $e');
+    }
+  }
+
+  /// Returns a real-time stream of pets for a specific user.
+  Stream<List<UserPetModel>> getUserPets(String userId) {
+    try {
+      return _userPetsRef
+          .where('userId', isEqualTo: userId)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    } catch (e) {
+      throw Exception('Gagal stream data hewan user: $e');
+    }
+  }
+
+  /// Updates an existing user pet.
+  Future<void> updateUserPet(UserPetModel pet) async {
+    try {
+      if (pet.id == null) throw Exception('Pet ID tidak ditemukan');
+      await _userPetsRef.doc(pet.id).update(pet.toMap());
+    } catch (e) {
+      throw Exception('Gagal memperbarui data hewan: $e');
+    }
+  }
+
+  /// Deletes a user pet.
+  Future<void> deleteUserPet(String petId) async {
+    try {
+      await _userPetsRef.doc(petId).delete();
+    } catch (e) {
+      throw Exception('Gagal menghapus data hewan: $e');
     }
   }
 }
