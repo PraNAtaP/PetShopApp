@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/providers/grooming_provider.dart';
 import 'package:intl/intl.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class GroomingServiceScreen extends StatefulWidget {
   const GroomingServiceScreen({super.key});
@@ -92,23 +93,18 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
             const Text('Jenis Hewan:', style: TextStyle(fontWeight: FontWeight.w500)),
             Row(
               children: [
-                Expanded(
-                  child: RadioListTile<String>(
-                    title: const Text('Anjing'),
-                    value: 'Anjing',
-                    groupValue: _selectedPetType,
-                    onChanged: (val) => setState(() => _selectedPetType = val!),
-                    activeColor: AppColors.primary,
-                  ),
+                _buildSelectableCard(
+                  label: 'Anjing',
+                  icon: FontAwesomeIcons.dog,
+                  isSelected: _selectedPetType == 'Anjing',
+                  onTap: () => setState(() => _selectedPetType = 'Anjing'),
                 ),
-                Expanded(
-                  child: RadioListTile<String>(
-                    title: const Text('Kucing'),
-                    value: 'Kucing',
-                    groupValue: _selectedPetType,
-                    onChanged: (val) => setState(() => _selectedPetType = val!),
-                    activeColor: AppColors.primary,
-                  ),
+                const SizedBox(width: 12),
+                _buildSelectableCard(
+                  label: 'Kucing',
+                  icon: FontAwesomeIcons.cat,
+                  isSelected: _selectedPetType == 'Kucing',
+                  onTap: () => setState(() => _selectedPetType = 'Kucing'),
                 ),
               ],
             ),
@@ -120,26 +116,21 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: RadioListTile<bool>(
-                    title: const Text('Bawa ke Petshop'),
-                    value: false,
-                    groupValue: _isHomeService,
-                    onChanged: (val) {
-                      setState(() => _isHomeService = val!);
-                      _alamatController.clear();
-                    },
-                    activeColor: AppColors.primary,
-                  ),
+                _buildSelectableCard(
+                  label: 'Bawa ke Petshop',
+                  icon: Icons.storefront,
+                  isSelected: !_isHomeService,
+                  onTap: () {
+                    setState(() => _isHomeService = false);
+                    _alamatController.clear();
+                  },
                 ),
-                Expanded(
-                  child: RadioListTile<bool>(
-                    title: const Text('Home Service'),
-                    value: true,
-                    groupValue: _isHomeService,
-                    onChanged: (val) => setState(() => _isHomeService = val!),
-                    activeColor: AppColors.primary,
-                  ),
+                const SizedBox(width: 12),
+                _buildSelectableCard(
+                  label: 'Home Service',
+                  icon: Icons.home_work_outlined,
+                  isSelected: _isHomeService,
+                  onTap: () => setState(() => _isHomeService = true),
                 ),
               ],
             ),
@@ -285,6 +276,53 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSelectableCard({
+    required String label,
+    required dynamic icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary.withOpacity(0.05) : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : Colors.grey.shade300,
+              width: 2,
+            ),
+          ),
+          child: Column(
+            children: [
+              icon is IconData
+                  ? Icon(
+                      icon,
+                      color: isSelected ? AppColors.primary : Colors.grey.shade600,
+                      size: 32,
+                    )
+                  : FaIcon(
+                      icon,
+                      color: isSelected ? AppColors.primary : Colors.grey.shade600,
+                      size: 28, // FA icons are sometimes larger
+                    ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? AppColors.primary : Colors.black87,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
