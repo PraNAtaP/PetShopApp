@@ -6,6 +6,8 @@ import '../chat/chat_screen.dart';
 import '../home/home_screen.dart';
 import '../profile/profile_screen.dart';
 import '../shop/shop_screen.dart';
+import '../grooming/grooming_service_screen.dart';
+
 
 class BaseScreen extends StatefulWidget {
   const BaseScreen({super.key});
@@ -33,6 +35,7 @@ class _BaseScreenState extends State<BaseScreen> {
     final List<Widget> screens = const [
       HomeScreen(),
       ShopScreen(),
+      GroomingServiceScreen(),
       ChatScreen(),
       ProfileScreen(),
     ];
@@ -75,12 +78,18 @@ class _BaseScreenState extends State<BaseScreen> {
               ),
               _buildNavItem(
                 index: 2,
+                icon: Icons.wash_outlined,
+                activeIcon: Icons.wash,
+                label: 'Grooming',
+              ),
+              _buildNavItem(
+                index: 3,
                 icon: Icons.chat_bubble_outline_rounded,
                 activeIcon: Icons.chat_bubble_rounded,
                 label: 'Chat',
               ),
               _buildNavItem(
-                index: 3,
+                index: 4,
                 icon: Icons.person_outline_rounded,
                 activeIcon: Icons.person_rounded,
                 label: 'Profile',

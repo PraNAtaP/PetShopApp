@@ -5,6 +5,8 @@ import 'package:petshopapp/services/auth_service.dart';
 import '../management/management_screen.dart'; // We should probably move management to inventory/dashboard etc, but let's just show it here.
 import '../admin/add_pet_screen.dart'; // This is also an admin feature
 import '../profile/admin_profile_screen.dart';
+import '../grooming/booking_management_screen.dart';
+
 
 class AdminLayout extends StatefulWidget {
   const AdminLayout({super.key});
@@ -33,6 +35,7 @@ class _AdminLayoutState extends State<AdminLayout> {
     final List<Widget> _adminScreens = [
       const Center(child: Text("Dashboard Overview", style: TextStyle(fontSize: 24))),
       const ManagementScreen(),       // Manage/View Inventory, Users, etc.
+      const BookingManagementScreen(), // Grooming Bookings
       const AddPetScreen(),           // Pet insertion
       const Center(child: Text("Adoption Requests Table", style: TextStyle(fontSize: 24))),
       const AdminProfileScreen(),     // Admin Profile
@@ -87,6 +90,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       label: Text('Inventory'),
                     ),
                     NavigationRailDestination(
+                      icon: Icon(Icons.calendar_month_outlined),
+                      selectedIcon: Icon(Icons.calendar_month),
+                      label: Text('Grooming'),
+                    ),
+                    NavigationRailDestination(
                       icon: Icon(Icons.pets_outlined),
                       selectedIcon: Icon(Icons.pets),
                       label: Text('Add Pet'),
@@ -123,6 +131,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       icon: Icon(Icons.inventory_2_outlined),
                       selectedIcon: Icon(Icons.inventory_2),
                       label: Text('Inventory'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.calendar_month_outlined),
+                      selectedIcon: Icon(Icons.calendar_month),
+                      label: Text('Grooming'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.pets_outlined),

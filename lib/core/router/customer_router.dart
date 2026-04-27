@@ -13,6 +13,13 @@ import 'package:petshopapp/ui/customer/checkout/payment_method_screen.dart';
 import 'package:petshopapp/ui/customer/checkout/payment_execution_screen.dart';
 import 'package:petshopapp/ui/customer/order/order_history_screen.dart';
 import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
+import 'package:petshopapp/ui/customer/grooming/grooming_service_screen.dart';
+import 'package:petshopapp/ui/customer/grooming/grooming_schedule_screen.dart';
+import 'package:petshopapp/ui/customer/grooming/grooming_summary_screen.dart';
+import 'package:petshopapp/ui/customer/grooming/grooming_payment_method_screen.dart';
+import 'package:petshopapp/ui/customer/grooming/grooming_payment_execution_screen.dart';
+import 'package:petshopapp/ui/customer/grooming/grooming_location_screen.dart';
+
 
 /// Customer application route configuration using GoRouter.
 class CustomerRouter {
@@ -100,6 +107,39 @@ class CustomerRouter {
             final method = state.extra as String? ?? 'QRIS';
             return PaymentExecutionScreen(paymentMethod: method);
           },
+        ),
+        GoRoute(
+          path: '/grooming-service',
+          name: 'grooming-service',
+          builder: (context, state) => const GroomingServiceScreen(),
+        ),
+        GoRoute(
+          path: '/grooming-schedule',
+          name: 'grooming-schedule',
+          builder: (context, state) => const GroomingScheduleScreen(),
+        ),
+        GoRoute(
+          path: '/grooming-summary',
+          name: 'grooming-summary',
+          builder: (context, state) => const GroomingSummaryScreen(),
+        ),
+        GoRoute(
+          path: '/grooming-payment-method',
+          name: 'grooming-payment-method',
+          builder: (context, state) => const GroomingPaymentMethodScreen(),
+        ),
+        GoRoute(
+          path: '/grooming-payment-execution',
+          name: 'grooming-payment-execution',
+          builder: (context, state) {
+            final method = state.extra as String? ?? 'QRIS';
+            return GroomingPaymentExecutionScreen(paymentMethod: method);
+          },
+        ),
+        GoRoute(
+          path: '/grooming-location',
+          name: 'grooming-location',
+          builder: (context, state) => const GroomingLocationScreen(),
         ),
       ],
     );

@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:petshopapp/models/user_model.dart';
 import 'package:petshopapp/models/pet_model.dart';
 import 'package:petshopapp/models/product_model.dart';
-import 'package:petshopapp/models/grooming_booking_model.dart';
+
 import 'package:petshopapp/models/cart_model.dart';
 import 'package:petshopapp/models/order_model.dart';
 
@@ -56,12 +56,6 @@ class FirestoreService {
   CollectionReference<ProductModel> get _productsRef =>
       _db.collection('products').withConverter<ProductModel>(
         fromFirestore: (snapshot, _) => ProductModel.fromFirestore(snapshot),
-        toFirestore: (model, _) => model.toMap(),
-      );
-
-  CollectionReference<GroomingBookingModel> get _bookingsRef =>
-      _db.collection('grooming_bookings').withConverter<GroomingBookingModel>(
-        fromFirestore: (snapshot, _) => GroomingBookingModel.fromFirestore(snapshot),
         toFirestore: (model, _) => model.toMap(),
       );
 
@@ -192,23 +186,6 @@ class FirestoreService {
       });
     } catch (e) {
       throw Exception('Gagal memperbarui stok produk: $e');
-    }
-  }
-
-  // ==========================================
-  // Booking
-  // ==========================================
-
-  /// Creates a new grooming booking.
-  Future<void> createGroomingBooking(GroomingBookingModel booking) async {
-    try {
-      if (booking.bookingId.isEmpty) {
-        await _bookingsRef.add(booking);
-      } else {
-        await _bookingsRef.doc(booking.bookingId).set(booking);
-      }
-    } catch (e) {
-      throw Exception('Gagal membuat booking grooming: $e');
     }
   }
 

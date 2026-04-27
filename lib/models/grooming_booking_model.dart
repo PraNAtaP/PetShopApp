@@ -11,6 +11,10 @@ class GroomingBookingModel {
   final DateTime bookingDate;
   final String timeSlot;
   final double totalPrice;
+  final bool isHomeService;
+  final String? alamatLengkap;
+  final double? latitude;
+  final double? longitude;
   final String status; // Pending/Confirmed/Completed/Cancelled
   final DateTime createdAt;
 
@@ -24,6 +28,10 @@ class GroomingBookingModel {
     required this.bookingDate,
     required this.timeSlot,
     required this.totalPrice,
+    required this.isHomeService,
+    this.alamatLengkap,
+    this.latitude,
+    this.longitude,
     required this.status,
     required this.createdAt,
   });
@@ -41,6 +49,10 @@ class GroomingBookingModel {
       bookingDate: (data['bookingDate'] as Timestamp).toDate(),
       timeSlot: data['timeSlot'] ?? '',
       totalPrice: (data['totalPrice'] ?? 0).toDouble(),
+      isHomeService: data['isHomeService'] ?? false,
+      alamatLengkap: data['alamatLengkap'] as String?,
+      latitude: (data['latitude'] as num?)?.toDouble(),
+      longitude: (data['longitude'] as num?)?.toDouble(),
       status: data['status'] ?? 'Pending',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
     );
@@ -57,6 +69,10 @@ class GroomingBookingModel {
       'bookingDate': Timestamp.fromDate(bookingDate),
       'timeSlot': timeSlot,
       'totalPrice': totalPrice,
+      'isHomeService': isHomeService,
+      if (alamatLengkap != null) 'alamatLengkap': alamatLengkap,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
       'status': status,
       'createdAt': Timestamp.fromDate(createdAt),
     };
@@ -73,6 +89,10 @@ class GroomingBookingModel {
     DateTime? bookingDate,
     String? timeSlot,
     double? totalPrice,
+    bool? isHomeService,
+    String? alamatLengkap,
+    double? latitude,
+    double? longitude,
     String? status,
     DateTime? createdAt,
   }) {
@@ -86,6 +106,10 @@ class GroomingBookingModel {
       bookingDate: bookingDate ?? this.bookingDate,
       timeSlot: timeSlot ?? this.timeSlot,
       totalPrice: totalPrice ?? this.totalPrice,
+      isHomeService: isHomeService ?? this.isHomeService,
+      alamatLengkap: alamatLengkap ?? this.alamatLengkap,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
     );

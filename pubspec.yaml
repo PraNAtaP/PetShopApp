@@ -43,6 +43,11 @@ dependencies:
   firebase_messaging: ^15.2.10
   flutter_local_notifications: ^21.0.0
   intl: ^0.19.0
+  table_calendar: ^3.1.2
+  url_launcher: ^6.3.2
+  geolocator: ^14.0.2
+  osm_search_and_pick: ^0.3.1
+
 
 dev_dependencies:
   flutter_test:

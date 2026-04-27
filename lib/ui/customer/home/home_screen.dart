@@ -52,7 +52,7 @@ class HomeScreen extends StatelessWidget {
                         icon: Icons.content_cut,
                         label: 'Grooming',
                         gradient: const [Color(0xFF003F87), Color(0xFF1565C0)],
-                        onTap: () {},
+                        onTap: () => context.push('/grooming-service'),
                       ),
                       const SizedBox(width: 12),
                       _buildServiceCard(

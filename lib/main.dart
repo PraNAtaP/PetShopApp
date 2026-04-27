@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:petshopapp/providers/cart_provider.dart';
+import 'package:petshopapp/providers/grooming_provider.dart';
+
 import 'core/theme/app_theme.dart';
 import 'services/auth_service.dart';
 import 'services/notification_service.dart';
@@ -14,6 +18,8 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting('id_ID', null);
+
   
   try {
     // For Web, if options are missing, this throws an error.
@@ -92,6 +98,7 @@ class _AdminAppState extends State<AdminApp> {
           create: (_) => CartProvider(),
           update: (_, auth, cart) => cart!..update(auth.currentUser?.uid),
         ),
+        ChangeNotifierProvider(create: (_) => GroomingProvider()),
       ],
       child: MaterialApp.router(
         title: 'Pet Point Admin',
@@ -137,6 +144,7 @@ class _CustomerAppState extends State<CustomerApp> {
           create: (_) => CartProvider(),
           update: (_, auth, cart) => cart!..update(auth.currentUser?.uid),
         ),
+        ChangeNotifierProvider(create: (_) => GroomingProvider()),
       ],
       child: MaterialApp.router(
         title: 'Pet Point',
