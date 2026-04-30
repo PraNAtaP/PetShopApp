@@ -15,11 +15,35 @@
       },
       "oauth_client": [
         {
+          "client_id": "416976631560-lqbmn9m1n8sd7hooaafjq4488gpeff60.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.petpoint.app",
+            "certificate_hash": "f63cf3fc79bb096605eac8829ebf56ee7184c317"
+          }
+        },
+        {
           "client_id": "416976631560-o5kq5p30h8h4vipr4sttt7afrm2ipj90.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.petpoint.app",
             "certificate_hash": "2ca16893817bb5b8159d17df1d7a05474491b0ea"
+          }
+        },
+        {
+          "client_id": "416976631560-v56uvog8udkm9f2dp8h84jotoug2sgps.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.petpoint.app",
+            "certificate_hash": "10871065db34fc58c55890481b5d99034dc028c1"
+          }
+        },
+        {
+          "client_id": "416976631560-v819h6nqaorim9cvg1o9u4i1144nma7c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.petpoint.app",
+            "certificate_hash": "d8faec27f55660e94e2a22338f4e58666496d81a"
           }
         },
         {
