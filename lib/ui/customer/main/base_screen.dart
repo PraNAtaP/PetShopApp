@@ -7,6 +7,7 @@ import '../home/home_screen.dart';
 import '../profile/profile_screen.dart';
 import '../shop/shop_screen.dart';
 import '../grooming/grooming_service_screen.dart';
+import '../adoption/adoption_catalog_screen.dart';
 
 
 class BaseScreen extends StatefulWidget {
@@ -34,6 +35,7 @@ class _BaseScreenState extends State<BaseScreen> {
 
     final List<Widget> screens = const [
       HomeScreen(),
+      AdoptionCatalogScreen(),
       ShopScreen(),
       GroomingServiceScreen(),
       ChatScreen(),
@@ -72,24 +74,30 @@ class _BaseScreenState extends State<BaseScreen> {
               ),
               _buildNavItem(
                 index: 1,
+                icon: Icons.pets_outlined,
+                activeIcon: Icons.pets,
+                label: 'Adopsi',
+              ),
+              _buildNavItem(
+                index: 2,
                 icon: Icons.storefront_outlined,
                 activeIcon: Icons.storefront_rounded,
                 label: 'Shop',
               ),
               _buildNavItem(
-                index: 2,
+                index: 3,
                 icon: Icons.wash_outlined,
                 activeIcon: Icons.wash,
                 label: 'Grooming',
               ),
               _buildNavItem(
-                index: 3,
+                index: 4,
                 icon: Icons.chat_bubble_outline_rounded,
                 activeIcon: Icons.chat_bubble_rounded,
                 label: 'Chat',
               ),
               _buildNavItem(
-                index: 4,
+                index: 5,
                 icon: Icons.person_outline_rounded,
                 activeIcon: Icons.person_rounded,
                 label: 'Profile',
@@ -116,7 +124,7 @@ class _BaseScreenState extends State<BaseScreen> {
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeInOut,
         padding: EdgeInsets.symmetric(
-          horizontal: isSelected ? 16 : 12,
+          horizontal: isSelected ? 12 : 8, // Reduced padding to fit 6 items
           vertical: 8,
         ),
         decoration: BoxDecoration(
@@ -129,7 +137,7 @@ class _BaseScreenState extends State<BaseScreen> {
             Icon(
               isSelected ? activeIcon : icon,
               color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.5),
-              size: isSelected ? 26 : 24,
+              size: isSelected ? 24 : 22, // Slightly reduced icon size to fit 6 items
             ),
             const SizedBox(height: 4),
             Text(

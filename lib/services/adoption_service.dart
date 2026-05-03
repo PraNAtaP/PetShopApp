@@ -15,6 +15,19 @@ class AdoptionService {
     });
   }
 
+  /// Stream of animals filtered by status.
+  Stream<List<AnimalModel>> getAnimalsByStatus(String status) {
+    return _firestore
+        .collection(_collectionPath)
+        .where('status', isEqualTo: status)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => AnimalModel.fromMap(doc.data(), doc.id))
+          .toList();
+    });
+  }
+
   /// Adds a new animal to the catalog.
   Future<void> addAnimal(AnimalModel animal) async {
     try {

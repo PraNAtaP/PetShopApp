@@ -6,6 +6,7 @@ import '../management/management_screen.dart'; // We should probably move manage
 import '../admin/add_pet_screen.dart'; // This is also an admin feature
 import '../profile/admin_profile_screen.dart';
 import '../grooming/booking_management_screen.dart';
+import '../adoption/admin_adoption_management_screen.dart';
 
 
 class AdminLayout extends StatefulWidget {
@@ -37,7 +38,7 @@ class _AdminLayoutState extends State<AdminLayout> {
       const ManagementScreen(),       // Manage/View Inventory, Users, etc.
       const BookingManagementScreen(), // Grooming Bookings
       const AddPetScreen(),           // Pet insertion
-      const Center(child: Text("Adoption Requests Table", style: TextStyle(fontSize: 24))),
+      const AdminAdoptionManagementScreen(), // Adoptions Management
       const AdminProfileScreen(),     // Admin Profile
     ];
 
