@@ -20,6 +20,7 @@ class _AdminAddAnimalScreenState extends State<AdminAddAnimalScreen> {
   final _breedController = TextEditingController();
   final _ageController = TextEditingController();
   final _weightController = TextEditingController();
+  final _descriptionController = TextEditingController();
   String _selectedType = 'Kucing';
   String _selectedGender = 'Jantan';
   XFile? _imageFile;
@@ -69,6 +70,7 @@ class _AdminAddAnimalScreenState extends State<AdminAddAnimalScreen> {
         breed: _breedController.text.trim(),
         age: _ageController.text.trim(),
         weight: double.tryParse(_weightController.text.trim()),
+        description: _descriptionController.text.trim(),
         status: 'available',
         imageUrl: imageUrl,
       );
@@ -97,6 +99,7 @@ class _AdminAddAnimalScreenState extends State<AdminAddAnimalScreen> {
     _breedController.dispose();
     _ageController.dispose();
     _weightController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -238,6 +241,20 @@ class _AdminAddAnimalScreenState extends State<AdminAddAnimalScreen> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _descriptionController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Deskripsi (Misal: Sehat, lincah, sudah vaksin)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                        ),
+                      ),
+                      validator: (value) => value == null || value.isEmpty ? 'Deskripsi tidak boleh kosong' : null,
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(

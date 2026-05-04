@@ -23,6 +23,7 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
   late TextEditingController _breedController;
   late TextEditingController _ageController;
   late TextEditingController _weightController;
+  late TextEditingController _descriptionController;
   late String _selectedType;
   late String _selectedGender;
   late String _selectedStatus;
@@ -41,6 +42,7 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
     _breedController = TextEditingController(text: widget.animal.breed);
     _ageController = TextEditingController(text: widget.animal.age);
     _weightController = TextEditingController(text: widget.animal.weight?.toString() ?? '');
+    _descriptionController = TextEditingController(text: widget.animal.description);
     _selectedType = _animalTypes.contains(widget.animal.type) ? widget.animal.type : 'Lainnya';
     _selectedGender = _genderOptions.contains(widget.animal.gender) ? widget.animal.gender : 'Jantan';
     _selectedStatus = _statusOptions.contains(widget.animal.status) ? widget.animal.status : 'available';
@@ -83,6 +85,7 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
         'breed': _breedController.text.trim(),
         'age': _ageController.text.trim(),
         'weight': double.tryParse(_weightController.text.trim()),
+        'description': _descriptionController.text.trim(),
         'status': _selectedStatus,
         'imageUrl': imageUrl,
       };
@@ -116,6 +119,7 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
     _breedController.dispose();
     _ageController.dispose();
     _weightController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -266,6 +270,20 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _descriptionController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Deskripsi (Misal: Sehat, lincah, sudah vaksin)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                        ),
+                      ),
+                      validator: (value) => value == null || value.isEmpty ? 'Deskripsi tidak boleh kosong' : null,
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(

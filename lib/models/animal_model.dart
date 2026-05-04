@@ -9,6 +9,7 @@ class AnimalModel {
   final String breed;
   final String age;
   final double? weight;
+  final String description;
   final String status;
   final String? bookedBy;
   final String imageUrl;
@@ -22,6 +23,7 @@ class AnimalModel {
     required this.breed,
     required this.age,
     this.weight,
+    required this.description,
     required this.status,
     this.bookedBy,
     required this.imageUrl,
@@ -38,6 +40,7 @@ class AnimalModel {
       breed: data['breed'] ?? '',
       age: data['age'] ?? '',
       weight: data['weight']?.toDouble(),
+      description: data['description'] ?? '',
       status: data['status'] ?? 'available',
       bookedBy: data['bookedBy'],
       imageUrl: data['imageUrl'] ?? '',
@@ -54,6 +57,7 @@ class AnimalModel {
       'breed': breed,
       'age': age,
       'weight': weight,
+      'description': description,
       'status': status,
       'imageUrl': imageUrl,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
@@ -73,6 +77,7 @@ class AnimalModel {
     String? breed,
     String? age,
     double? weight,
+    String? description,
     String? status,
     String? bookedBy,
     String? imageUrl,
@@ -86,6 +91,7 @@ class AnimalModel {
       breed: breed ?? this.breed,
       age: age ?? this.age,
       weight: weight ?? this.weight,
+      description: description ?? this.description,
       status: status ?? this.status,
       bookedBy: bookedBy ?? this.bookedBy,
       imageUrl: imageUrl ?? this.imageUrl,
