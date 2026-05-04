@@ -5,17 +5,27 @@ class AnimalModel {
   final String id;
   final String name;
   final String type;
+  final String gender;
+  final String breed;
+  final String age;
+  final double? weight;
   final String status;
   final String? bookedBy;
   final String imageUrl;
+  final DateTime? createdAt;
 
   const AnimalModel({
     required this.id,
     required this.name,
     required this.type,
+    required this.gender,
+    required this.breed,
+    required this.age,
+    this.weight,
     required this.status,
     this.bookedBy,
     required this.imageUrl,
+    this.createdAt,
   });
 
   /// Factory constructor to map Firestore data to [AnimalModel].
@@ -24,9 +34,14 @@ class AnimalModel {
       id: documentId,
       name: data['name'] ?? '',
       type: data['type'] ?? '',
+      gender: data['gender'] ?? '',
+      breed: data['breed'] ?? '',
+      age: data['age'] ?? '',
+      weight: data['weight']?.toDouble(),
       status: data['status'] ?? 'available',
       bookedBy: data['bookedBy'],
       imageUrl: data['imageUrl'] ?? '',
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -35,8 +50,13 @@ class AnimalModel {
     final map = <String, dynamic>{
       'name': name,
       'type': type,
+      'gender': gender,
+      'breed': breed,
+      'age': age,
+      'weight': weight,
       'status': status,
       'imageUrl': imageUrl,
+      'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
     };
     if (bookedBy != null) {
       map['bookedBy'] = bookedBy;
@@ -49,17 +69,27 @@ class AnimalModel {
     String? id,
     String? name,
     String? type,
+    String? gender,
+    String? breed,
+    String? age,
+    double? weight,
     String? status,
     String? bookedBy,
     String? imageUrl,
+    DateTime? createdAt,
   }) {
     return AnimalModel(
       id: id ?? this.id,
       name: name ?? this.name,
       type: type ?? this.type,
+      gender: gender ?? this.gender,
+      breed: breed ?? this.breed,
+      age: age ?? this.age,
+      weight: weight ?? this.weight,
       status: status ?? this.status,
       bookedBy: bookedBy ?? this.bookedBy,
       imageUrl: imageUrl ?? this.imageUrl,
+      createdAt: createdAt ?? this.createdAt,
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -19,20 +20,29 @@ class AdminEditAnimalScreen extends StatefulWidget {
 class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
+  late TextEditingController _breedController;
+  late TextEditingController _ageController;
+  late TextEditingController _weightController;
   late String _selectedType;
+  late String _selectedGender;
   late String _selectedStatus;
   
-  File? _imageFile;
+  XFile? _imageFile;
   bool _isLoading = false;
 
   final List<String> _animalTypes = ['Kucing', 'Anjing', 'Burung', 'Lainnya'];
+  final List<String> _genderOptions = ['Jantan', 'Betina'];
   final List<String> _statusOptions = ['available', 'booked', 'adopted'];
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.animal.name);
+    _breedController = TextEditingController(text: widget.animal.breed);
+    _ageController = TextEditingController(text: widget.animal.age);
+    _weightController = TextEditingController(text: widget.animal.weight?.toString() ?? '');
     _selectedType = _animalTypes.contains(widget.animal.type) ? widget.animal.type : 'Lainnya';
+    _selectedGender = _genderOptions.contains(widget.animal.gender) ? widget.animal.gender : 'Jantan';
     _selectedStatus = _statusOptions.contains(widget.animal.status) ? widget.animal.status : 'available';
   }
 
@@ -42,7 +52,7 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
 
     if (pickedFile != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
+        _imageFile = pickedFile;
       });
     }
   }
@@ -57,13 +67,22 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
 
       // 1. Upload new image if selected
       if (_imageFile != null) {
-        imageUrl = await ImgbbService.uploadImage(_imageFile!);
+        if (kIsWeb) {
+          final bytes = await _imageFile!.readAsBytes();
+          imageUrl = await ImgbbService.uploadImageBytes(bytes, _imageFile!.name);
+        } else {
+          imageUrl = await ImgbbService.uploadImage(File(_imageFile!.path));
+        }
       }
 
       // 2. Update metadata in Firestore
       final updatedData = {
         'name': _nameController.text.trim(),
         'type': _selectedType,
+        'gender': _selectedGender,
+        'breed': _breedController.text.trim(),
+        'age': _ageController.text.trim(),
+        'weight': double.tryParse(_weightController.text.trim()),
         'status': _selectedStatus,
         'imageUrl': imageUrl,
       };
@@ -94,6 +113,9 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _breedController.dispose();
+    _ageController.dispose();
+    _weightController.dispose();
     super.dispose();
   }
 
@@ -127,7 +149,9 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
                         child: _imageFile != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
-                                child: Image.file(_imageFile!, fit: BoxFit.cover),
+                                child: kIsWeb
+                                    ? Image.network(_imageFile!.path, fit: BoxFit.cover, width: double.infinity)
+                                    : Image.file(File(_imageFile!.path), fit: BoxFit.cover, width: double.infinity),
                               )
                             : ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
@@ -179,6 +203,69 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
                           setState(() => _selectedType = value);
                         }
                       },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _selectedGender,
+                      decoration: InputDecoration(
+                        labelText: 'Jenis Kelamin',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      items: _genderOptions.map((gender) {
+                        return DropdownMenuItem(value: gender, child: Text(gender));
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _selectedGender = value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _breedController,
+                      decoration: InputDecoration(
+                        labelText: 'Ras (Misal: Persia, Golden)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                        ),
+                      ),
+                      validator: (value) => value == null || value.isEmpty ? 'Ras tidak boleh kosong' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _ageController,
+                            decoration: InputDecoration(
+                              labelText: 'Umur (Misal: 2 Bulan)',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                              ),
+                            ),
+                            validator: (value) => value == null || value.isEmpty ? 'Umur tidak boleh kosong' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _weightController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              labelText: 'Berat (kg)',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(

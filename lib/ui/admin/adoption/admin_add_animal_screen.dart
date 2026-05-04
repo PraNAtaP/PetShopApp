@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
@@ -16,11 +17,16 @@ class AdminAddAnimalScreen extends StatefulWidget {
 class _AdminAddAnimalScreenState extends State<AdminAddAnimalScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _breedController = TextEditingController();
+  final _ageController = TextEditingController();
+  final _weightController = TextEditingController();
   String _selectedType = 'Kucing';
-  File? _imageFile;
+  String _selectedGender = 'Jantan';
+  XFile? _imageFile;
   bool _isLoading = false;
 
   final List<String> _animalTypes = ['Kucing', 'Anjing', 'Burung', 'Lainnya'];
+  final List<String> _genderOptions = ['Jantan', 'Betina'];
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
@@ -28,7 +34,7 @@ class _AdminAddAnimalScreenState extends State<AdminAddAnimalScreen> {
 
     if (pickedFile != null) {
       setState(() {
-        _imageFile = File(pickedFile.path);
+        _imageFile = pickedFile;
       });
     }
   }
@@ -46,13 +52,23 @@ class _AdminAddAnimalScreenState extends State<AdminAddAnimalScreen> {
 
     try {
       // 1. Upload image to ImgBB
-      final imageUrl = await ImgbbService.uploadImage(_imageFile!);
+      String imageUrl;
+      if (kIsWeb) {
+        final bytes = await _imageFile!.readAsBytes();
+        imageUrl = await ImgbbService.uploadImageBytes(bytes, _imageFile!.name);
+      } else {
+        imageUrl = await ImgbbService.uploadImage(File(_imageFile!.path));
+      }
 
       // 2. Save metadata to Firestore
       final animal = AnimalModel(
         id: '', // Firestore will auto-generate this
         name: _nameController.text.trim(),
         type: _selectedType,
+        gender: _selectedGender,
+        breed: _breedController.text.trim(),
+        age: _ageController.text.trim(),
+        weight: double.tryParse(_weightController.text.trim()),
         status: 'available',
         imageUrl: imageUrl,
       );
@@ -78,6 +94,9 @@ class _AdminAddAnimalScreenState extends State<AdminAddAnimalScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _breedController.dispose();
+    _ageController.dispose();
+    _weightController.dispose();
     super.dispose();
   }
 
@@ -111,7 +130,9 @@ class _AdminAddAnimalScreenState extends State<AdminAddAnimalScreen> {
                         child: _imageFile != null
                             ? ClipRRect(
                                 borderRadius: BorderRadius.circular(16),
-                                child: Image.file(_imageFile!, fit: BoxFit.cover),
+                                child: kIsWeb
+                                    ? Image.network(_imageFile!.path, fit: BoxFit.cover, width: double.infinity)
+                                    : Image.file(File(_imageFile!.path), fit: BoxFit.cover, width: double.infinity),
                               )
                             : Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -154,6 +175,69 @@ class _AdminAddAnimalScreenState extends State<AdminAddAnimalScreen> {
                           setState(() => _selectedType = value);
                         }
                       },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: _selectedGender,
+                      decoration: InputDecoration(
+                        labelText: 'Jenis Kelamin',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      items: _genderOptions.map((gender) {
+                        return DropdownMenuItem(value: gender, child: Text(gender));
+                      }).toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _selectedGender = value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _breedController,
+                      decoration: InputDecoration(
+                        labelText: 'Ras (Misal: Persia, Golden)',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                        ),
+                      ),
+                      validator: (value) => value == null || value.isEmpty ? 'Ras tidak boleh kosong' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _ageController,
+                            decoration: InputDecoration(
+                              labelText: 'Umur (Misal: 2 Bulan)',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                              ),
+                            ),
+                            validator: (value) => value == null || value.isEmpty ? 'Umur tidak boleh kosong' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _weightController,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            decoration: InputDecoration(
+                              labelText: 'Berat (kg)',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: AppColors.primary, width: 2),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(

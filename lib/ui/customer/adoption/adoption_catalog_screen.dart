@@ -170,8 +170,10 @@ class _AdoptionCatalogScreenState extends State<AdoptionCatalogScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  animal.type,
+                  '${animal.type} • ${animal.breed} • ${animal.age}',
                   style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 8),
                 Container(

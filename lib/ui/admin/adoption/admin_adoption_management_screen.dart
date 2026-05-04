@@ -174,7 +174,10 @@ class _AdminAdoptionManagementScreenState extends State<AdminAdoptionManagementS
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 4),
-                  Text(animal.type, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
+                  Text(
+                    '${animal.type} • ${animal.breed} • ${animal.age}',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
