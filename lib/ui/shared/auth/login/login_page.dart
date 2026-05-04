@@ -53,6 +53,24 @@ class _LoginPageState extends State<LoginPage> {
     // On success (result == null), GoRouter's refreshListenable → /home
   }
 
+  Future<void> _handleGoogleSignIn() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final authService = context.read<AuthService>();
+    final result = await authService.loginWithGoogle();
+
+    if (!mounted) return;
+    setState(() => _isLoading = false);
+
+    if (result != null) {
+      setState(() => _errorMessage = result);
+    }
+    // On success (result == null), GoRouter's refreshListenable → /home
+  } 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -70,15 +88,17 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               const SizedBox(height: 16),
 
+              // ── Header ───────────────────────────────────────────────
               Center(
                 child: Column(
                   children: [
                     Image.asset(
                       'lib/assets/img/1776076564947.png',
-                      width: 120, // Increased size
+                      width: 120,
                       height: 120,
                       fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
+                      errorBuilder: (context, error, stackTrace) =>
+                          const Icon(
                         Icons.pets,
                         size: 80,
                         color: AppColors.primary,
@@ -87,8 +107,10 @@ class _LoginPageState extends State<LoginPage> {
                     const SizedBox(height: 16),
                     Text(
                       'Selamat Datang Kembali!',
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context)
+                          .textTheme
+                          .headlineSmall
+                          ?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: AppColors.textDark,
                           ),
@@ -97,14 +119,15 @@ class _LoginPageState extends State<LoginPage> {
                     Text(
                       'Masuk ke akun Pet Point Anda',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textLight,
-                      ),
+                            color: AppColors.textLight,
+                          ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 36),
 
+              // ── Pesan Error ──────────────────────────────────────────
               if (_errorMessage != null) ...[
                 Container(
                   width: double.infinity,
@@ -136,6 +159,7 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 20),
               ],
 
+              // ── Field Email ──────────────────────────────────────────
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
@@ -156,6 +180,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 16),
 
+              // ── Field Password ───────────────────────────────────────
               TextFormField(
                 controller: _passwordController,
                 obscureText: _obscurePassword,
@@ -167,8 +192,8 @@ class _LoginPageState extends State<LoginPage> {
                     icon: Icon(_obscurePassword
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined),
-                    onPressed: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
+                    onPressed: () => setState(
+                        () => _obscurePassword = !_obscurePassword),
                   ),
                 ),
                 validator: (value) {
@@ -180,6 +205,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 32),
 
+              // ── Tombol Login ─────────────────────────────────────────
               ElevatedButton(
                 onPressed: _isLoading ? null : _handleLogin,
                 child: _isLoading
@@ -193,8 +219,37 @@ class _LoginPageState extends State<LoginPage> {
                       )
                     : const Text('Login'),
               ),
+              const SizedBox(height: 24),
+
+              // ── Divider ──────────────────────────────────────────────
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      'ATAU MASUK DENGAN',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textLight,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
               const SizedBox(height: 16),
 
+              // ── Tombol Google ────────────────────────────────────────
+              OutlinedButton.icon(
+                onPressed: _isLoading ? null : _handleGoogleSignIn,
+                icon: const Icon(Icons.g_mobiledata, size: 26),
+                label: const Text('Masuk dengan Google'),
+              ),
+              const SizedBox(height: 16),
+
+              // ── Link ke Register ─────────────────────────────────────
               Center(
                 child: TextButton(
                   onPressed:
@@ -203,8 +258,8 @@ class _LoginPageState extends State<LoginPage> {
                     text: TextSpan(
                       text: 'Belum punya akun? ',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textLight,
-                      ),
+                            color: AppColors.textLight,
+                          ),
                       children: const [
                         TextSpan(
                           text: 'Daftar',
