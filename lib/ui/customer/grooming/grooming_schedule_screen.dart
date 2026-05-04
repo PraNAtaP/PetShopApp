@@ -20,6 +20,25 @@ class _GroomingScheduleScreenState extends State<GroomingScheduleScreen> {
     '14:00', '15:00', '16:00', '17:00'
   ];
 
+  Widget _buildLegendItem(Color color, String label, {Color? borderColor}) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            border: borderColor != null ? Border.all(color: borderColor) : null,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+      ],
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -96,6 +115,19 @@ class _GroomingScheduleScreenState extends State<GroomingScheduleScreen> {
                 ],
               ),
             ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: [
+                  _buildLegendItem(Colors.grey.shade300, 'Terisi'),
+                  const SizedBox(width: 16),
+                  _buildLegendItem(Colors.white, 'Tersedia', borderColor: AppColors.primary),
+                  const SizedBox(width: 16),
+                  _buildLegendItem(AppColors.secondary, 'Dipilih'),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
             if (provider.selectedDate == null)
               const Center(child: Text('Harap pilih tanggal terlebih dahulu'))
@@ -117,12 +149,12 @@ class _GroomingScheduleScreenState extends State<GroomingScheduleScreen> {
                         decoration: BoxDecoration(
                           color: isBooked 
                               ? Colors.grey.shade200 
-                              : (isSelected ? AppColors.primary : Colors.white),
+                              : (isSelected ? AppColors.secondary : Colors.white),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: isBooked 
                                 ? Colors.grey.shade300 
-                                : (isSelected ? AppColors.primary : AppColors.primary.withOpacity(0.3)),
+                                : (isSelected ? AppColors.secondary : AppColors.primary.withOpacity(0.5)),
                           ),
                         ),
                         child: Center(
