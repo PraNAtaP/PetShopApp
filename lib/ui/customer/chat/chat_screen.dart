@@ -63,16 +63,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Icon(Icons.pets, color: Colors.black54, size: 20),
                   ),
                   const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(chat.receiverName, 
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                      const Text("Online sekarang", 
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.normal)),
-                    ],
-                  ),
+                  Text(chat.receiverName, 
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               ),
               backgroundColor: const Color(0xFF0D47A1),
