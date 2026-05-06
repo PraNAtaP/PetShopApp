@@ -57,7 +57,7 @@ class AdoptionService {
 
   /// UC-003: Customer books an animal.
   /// Uses a transaction to ensure first-come-first-served logic and prevents double-booking.
-  Future<void> requestAdoption(String animalId, String userId) async {
+  Future<void> requestAdoption(String animalId, String userId, {DateTime? pickupDate, String? pickupTime}) async {
     final docRef = _firestore.collection(_collectionPath).doc(animalId);
 
     try {
@@ -75,10 +75,18 @@ class AdoptionService {
           throw Exception('Animal is no longer available.');
         }
 
-        transaction.update(docRef, {
+        final updateData = <String, dynamic>{
           'status': 'booked',
           'bookedBy': userId,
-        });
+        };
+        if (pickupDate != null) {
+          updateData['pickupDate'] = Timestamp.fromDate(pickupDate);
+        }
+        if (pickupTime != null) {
+          updateData['pickupTime'] = pickupTime;
+        }
+
+        transaction.update(docRef, updateData);
       });
     } catch (e) {
       throw Exception('Failed to request adoption: $e');

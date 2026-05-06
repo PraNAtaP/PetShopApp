@@ -3,6 +3,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/animal_model.dart';
 import 'package:petshopapp/services/adoption_service.dart';
+import 'package:petshopapp/ui/customer/adoption/adoption_detail_screen.dart';
 
 class AdoptionCatalogScreen extends StatefulWidget {
   const AdoptionCatalogScreen({super.key});
@@ -193,7 +194,12 @@ class _AdoptionCatalogScreenState extends State<AdoptionCatalogScreen> {
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: () {
-                      // Navigate to detail or trigger adoption logic (UC-003)
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AdoptionDetailScreen(animal: animal),
+                        ),
+                      );
                     },
                     style: OutlinedButton.styleFrom(
                       side: const BorderSide(color: AppColors.primary),
