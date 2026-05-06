@@ -111,15 +111,10 @@ class AdminChatListScreen extends StatelessWidget {
                       ],
                     ),
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChatScreen(
-                            receiverId: otherUid,
-                            receiverName: displayName,
-                          ),
-                        ),
-                      );
+                      context.push('/chat', extra: {
+                        'receiverId': otherUid,
+                        'receiverName': displayName,
+                      });
                     },
                   );
                 },

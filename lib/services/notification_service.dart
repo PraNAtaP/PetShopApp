@@ -22,12 +22,36 @@ class NotificationService {
 
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin = FlutterLocalNotificationsPlugin();
+  
+  /// Callback for handling notification taps.
+  static Function(String?)? onNotificationTap;
+  
+  /// Stores a pending payload if the app was opened from a terminated state.
+  static String? pendingPayload;
 
   /// Initializes the notification service. Must be called in main.dart after Firebase.initializeApp().
   static Future<void> initialize() async {
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
     await instance._initLocalNotifications();
     instance._setupForegroundMessaging();
+    
+    // Check for initial message (terminated state)
+    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      pendingPayload = _convertDataToString(initialMessage.data);
+    }
+  }
+
+  static String _convertDataToString(Map<String, dynamic> data) {
+    // Use JSON to avoid issues with special characters (like colons in names)
+    if (data.containsKey('type') && data['type'] == 'chat') {
+      return jsonEncode({
+        'type': 'chat',
+        'receiverId': data['senderId'],
+        'receiverName': data['senderName'],
+      });
+    }
+    return '';
   }
 
   /// Sets up flutter_local_notifications for foreground notifications.
@@ -50,8 +74,11 @@ class NotificationService {
     await _localNotificationsPlugin.initialize(
       settings: initSettings,
       onDidReceiveNotificationResponse: (NotificationResponse response) {
-        // Handle notification tap when the app is in the foreground
-        debugPrint('Notification tapped in foreground: ${response.payload}');
+        if (onNotificationTap != null) {
+          onNotificationTap!(response.payload);
+        } else {
+          pendingPayload = response.payload;
+        }
       },
     );
 
@@ -141,21 +168,18 @@ class NotificationService {
               presentSound: true,
             ),
           ),
+          payload: _convertDataToString(message.data),
         );
       }
     });
 
     // Handle when a user taps a notification while the app is in the background
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-      debugPrint('A new onMessageOpenedApp event was published!');
-      // Navigate or handle your routing here based on message.data
-    });
-
-    // Handle case where app was terminated and opened via a notification
-    FirebaseMessaging.instance.getInitialMessage().then((RemoteMessage? message) {
-      if (message != null) {
-        debugPrint('App launched from terminated state via message!');
-        // Navigate or handle routing here
+      final payload = _convertDataToString(message.data);
+      if (onNotificationTap != null) {
+        onNotificationTap!(payload);
+      } else {
+        pendingPayload = payload;
       }
     });
   }

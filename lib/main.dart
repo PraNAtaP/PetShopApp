@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -81,6 +82,32 @@ class _AdminAppState extends State<AdminApp> {
   void initState() {
     super.initState();
     _router = AdminRouter.router(widget.authService);
+    _setupNotificationListener();
+  }
+
+  void _setupNotificationListener() {
+    if (!kIsWeb) {
+      NotificationService.onNotificationTap = (payload) {
+        if (payload == null || payload.isEmpty) return;
+        try {
+          final data = jsonDecode(payload);
+          if (data['type'] == 'chat') {
+            _router.push('/chat', extra: {
+              'receiverId': data['receiverId'],
+              'receiverName': data['receiverName'],
+            });
+          }
+        } catch (e) {
+          debugPrint('Notification payload error: $e');
+        }
+      };
+
+      if (NotificationService.pendingPayload != null) {
+        final payload = NotificationService.pendingPayload!;
+        NotificationService.pendingPayload = null;
+        Future.microtask(() => NotificationService.onNotificationTap!(payload));
+      }
+    }
   }
 
   @override
@@ -127,6 +154,32 @@ class _CustomerAppState extends State<CustomerApp> {
   void initState() {
     super.initState();
     _router = CustomerRouter.router(widget.authService);
+    _setupNotificationListener();
+  }
+
+  void _setupNotificationListener() {
+    if (!kIsWeb) {
+      NotificationService.onNotificationTap = (payload) {
+        if (payload == null || payload.isEmpty) return;
+        try {
+          final data = jsonDecode(payload);
+          if (data['type'] == 'chat') {
+            _router.push('/chat', extra: {
+              'receiverId': data['receiverId'],
+              'receiverName': data['receiverName'],
+            });
+          }
+        } catch (e) {
+          debugPrint('Notification payload error: $e');
+        }
+      };
+
+      if (NotificationService.pendingPayload != null) {
+        final payload = NotificationService.pendingPayload!;
+        NotificationService.pendingPayload = null;
+        Future.microtask(() => NotificationService.onNotificationTap!(payload));
+      }
+    }
   }
 
   @override

@@ -20,6 +20,7 @@ import 'package:petshopapp/ui/customer/grooming/grooming_service_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_schedule_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_summary_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_location_screen.dart';
+import 'package:petshopapp/ui/customer/chat/chat_screen.dart';
 
 
 /// Customer application route configuration using GoRouter.
@@ -154,6 +155,17 @@ class CustomerRouter {
           path: '/grooming-location',
           name: 'grooming-location',
           builder: (context, state) => const GroomingLocationScreen(),
+        ),
+        GoRoute(
+          path: '/chat',
+          name: 'chat',
+          builder: (context, state) {
+            final args = state.extra as Map<String, dynamic>?;
+            return ChatScreen(
+              receiverId: args?['receiverId'],
+              receiverName: args?['receiverName'],
+            );
+          },
         ),
       ],
     );

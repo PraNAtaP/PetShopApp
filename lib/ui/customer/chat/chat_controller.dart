@@ -16,7 +16,8 @@ class ChatController extends ChangeNotifier {
   
   String? _receiverId;
   String? _receiverName;
-  String? _currentUserName; // To store the real name of the current user
+  String? _currentUserName; 
+  String? _currentUserRole;
 
   List<ChatMessageModel> messages = [];
   StreamSubscription? _messagesSub;
@@ -26,12 +27,9 @@ class ChatController extends ChangeNotifier {
   bool isLoading = true;
   bool isUploading = false;
 
-  bool _isAdmin = false;
-
   ChatController({String? receiverId, String? receiverName}) 
       : _receiverId = receiverId,
         _receiverName = receiverName {
-    if (receiverId != null) _isAdmin = true;
     _init();
   }
 
@@ -49,20 +47,23 @@ class ChatController extends ChangeNotifier {
 
       _currentUid = user.uid;
 
-      // Fetch current user's profile to get their name
+      // Fetch current user's profile
       final userDoc = await FirebaseFirestore.instance.collection('users').doc(_currentUid).get();
       if (userDoc.exists) {
         _currentUserName = userDoc.data()?['nama'];
+        _currentUserRole = userDoc.data()?['role'];
       }
 
-      // If no receiver provided, it's a Customer chatting with Admin
-      if (!_isAdmin) {
+      // Logic for determining the other person in the chat
+      if (_receiverId == null) {
+        // Typical flow for Customer starting a chat with Admin
         final adminInfo = await _chatService.getAdminInfo();
         _receiverId = adminInfo['uid'];
-        _receiverName = 'Pet Min'; // User requested "Pet Min" for Admin
+        _receiverName = 'Pet Min'; 
       }
 
       _chatId = _chatService.getChatId(_currentUid!, _receiverId!);
+      debugPrint('ChatController: Initialized room $_chatId between $_currentUid and $_receiverId');
 
       // Listen to realtime messages
       _messagesSub = _chatService.getMessages(_chatId!).listen((msgs) {
@@ -74,6 +75,7 @@ class ChatController extends ChangeNotifier {
         _chatService.markAsRead(_chatId!, _currentUid!);
       });
     } catch (e) {
+      debugPrint('ChatController Error: $e');
       isLoading = false;
       notifyListeners();
     }
@@ -89,7 +91,8 @@ class ChatController extends ChangeNotifier {
       receiverId: _receiverId!,
       text: text.trim(),
       receiverName: _receiverName,
-      customerName: _isAdmin ? null : _currentUserName,
+      // Only send customerName if the sender is a Customer
+      customerName: _currentUserRole == 'admin' ? null : _currentUserName,
     );
   }
 
@@ -123,7 +126,7 @@ class ChatController extends ChangeNotifier {
         text: '',
         imageUrl: imageUrl,
         receiverName: _receiverName,
-        customerName: _isAdmin ? null : _currentUserName,
+        customerName: _currentUserRole == 'admin' ? null : _currentUserName,
       );
     } catch (e) {
       debugPrint('Error sending image: $e');
