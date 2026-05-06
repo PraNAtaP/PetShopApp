@@ -15,7 +15,7 @@ class AdoptionCatalogScreen extends StatefulWidget {
 class _AdoptionCatalogScreenState extends State<AdoptionCatalogScreen> {
   final AdoptionService _adoptionService = AdoptionService();
   String _selectedFilter = 'Semua';
-  final List<String> _filters = ['Semua', 'Kucing', 'Anjing', 'Burung', 'Lainnya'];
+  final List<String> _filters = ['Semua', 'Kucing', 'Anjing'];
 
   @override
   Widget build(BuildContext context) {

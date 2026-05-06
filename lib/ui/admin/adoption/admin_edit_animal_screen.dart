@@ -31,7 +31,7 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
   XFile? _imageFile;
   bool _isLoading = false;
 
-  final List<String> _animalTypes = ['Kucing', 'Anjing', 'Burung', 'Lainnya'];
+  final List<String> _animalTypes = ['Kucing', 'Anjing'];
   final List<String> _genderOptions = ['Jantan', 'Betina'];
   final List<String> _statusOptions = ['available', 'booked', 'adopted'];
 
@@ -43,7 +43,7 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
     _ageController = TextEditingController(text: widget.animal.age);
     _weightController = TextEditingController(text: widget.animal.weight?.toString() ?? '');
     _descriptionController = TextEditingController(text: widget.animal.description);
-    _selectedType = _animalTypes.contains(widget.animal.type) ? widget.animal.type : 'Lainnya';
+    _selectedType = _animalTypes.contains(widget.animal.type) ? widget.animal.type : 'Kucing';
     _selectedGender = _genderOptions.contains(widget.animal.gender) ? widget.animal.gender : 'Jantan';
     _selectedStatus = _statusOptions.contains(widget.animal.status) ? widget.animal.status : 'available';
   }

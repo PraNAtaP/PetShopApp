@@ -26,7 +26,7 @@ class _AdminAddAnimalScreenState extends State<AdminAddAnimalScreen> {
   XFile? _imageFile;
   bool _isLoading = false;
 
-  final List<String> _animalTypes = ['Kucing', 'Anjing', 'Burung', 'Lainnya'];
+  final List<String> _animalTypes = ['Kucing', 'Anjing'];
   final List<String> _genderOptions = ['Jantan', 'Betina'];
 
   Future<void> _pickImage() async {
