@@ -4,9 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:petshopapp/core/theme/app_colors.dart';
 
-/// Service to handle in-app chat notifications (Sound & SnackBar).
-/// Listens to Firestore changes instead of FCM for low-latency in-app alerts.
+/// Service to handle premium top-positioned in-app chat notifications.
 class InAppChatNotifier {
   static final InAppChatNotifier instance = InAppChatNotifier._internal();
   InAppChatNotifier._internal();
@@ -14,6 +14,8 @@ class InAppChatNotifier {
   final AudioPlayer _audioPlayer = AudioPlayer();
   StreamSubscription? _subscription;
   String? _lastNotifiedMessageId;
+  OverlayEntry? _currentOverlay;
+  Timer? _dismissTimer;
 
   /// Starts listening for new messages in all rooms where the user is a participant.
   void startListening(BuildContext context) {
@@ -22,7 +24,6 @@ class InAppChatNotifier {
 
     _subscription?.cancel();
 
-    // Listen to 'chats' collection where user is a participant
     _subscription = FirebaseFirestore.instance
         .collection('chats')
         .where('participants', arrayContains: user.uid)
@@ -40,7 +41,6 @@ class InAppChatNotifier {
     final data = doc.data() as Map<String, dynamic>?;
     if (data == null) return;
 
-    // Check if the update is a new message and NOT from the current user
     final messagesSnapshot = await doc.reference
         .collection('messages')
         .orderBy('timestamp', descending: true)
@@ -54,14 +54,13 @@ class InAppChatNotifier {
     final senderId = lastMessageData['senderId'];
     final messageId = lastMessageDoc.id;
 
-    // Condition: New message, not from me, and not already notified
     if (senderId != currentUid && _lastNotifiedMessageId != messageId) {
       final isRead = lastMessageData['isRead'] ?? false;
       
       if (!isRead) {
         _lastNotifiedMessageId = messageId;
         _playNotificationSound();
-        _showInAppBanner(context, data, lastMessageData);
+        _showTopOverlay(context, data, lastMessageData);
       }
     }
   }
@@ -74,13 +73,10 @@ class InAppChatNotifier {
     }
   }
 
-  void _showInAppBanner(BuildContext context, Map<String, dynamic> roomData, Map<String, dynamic> messageData) {
+  void _showTopOverlay(BuildContext context, Map<String, dynamic> roomData, Map<String, dynamic> messageData) {
     final String currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
     final String senderId = messageData['senderId'];
     
-    // Determine display name: 
-    // If sender is NOT current user, and current user is NOT admin -> it must be Admin (Pet Min)
-    // If current user IS admin -> it must be Customer (roomData['customerName'])
     String senderName = 'Seseorang';
     if (senderId != currentUid) {
       if (senderId == 'xs2BEOZim6VKKmhlv7PrAIuQWHz2') {
@@ -92,34 +88,175 @@ class InAppChatNotifier {
 
     final String text = messageData['text'] ?? '📷 Mengirim foto';
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(senderName, style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text(text, maxLines: 1, overflow: TextOverflow.ellipsis),
-          ],
-        ),
-        duration: const Duration(seconds: 4),
-        behavior: SnackBarBehavior.floating,
-        action: SnackBarAction(
-          label: 'Balas',
-          onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
-            context.push('/chat', extra: {
-              'receiverId': senderId,
-              'receiverName': senderName,
-            });
-          },
-        ),
+    // Remove existing notification if any
+    _dismissOverlay();
+
+    _currentOverlay = OverlayEntry(
+      builder: (context) => _PremiumNotificationWidget(
+        senderName: senderName,
+        message: text,
+        onTap: () {
+          _dismissOverlay();
+          context.push('/chat', extra: {
+            'receiverId': senderId,
+            'receiverName': senderName,
+          });
+        },
+        onDismiss: _dismissOverlay,
       ),
     );
+
+    Overlay.of(context).insert(_currentOverlay!);
+
+    // Auto-dismiss after 4 seconds
+    _dismissTimer = Timer(const Duration(seconds: 4), () {
+      _dismissOverlay();
+    });
+  }
+
+  void _dismissOverlay() {
+    _dismissTimer?.cancel();
+    _currentOverlay?.remove();
+    _currentOverlay = null;
   }
 
   void stopListening() {
     _subscription?.cancel();
+    _dismissOverlay();
+  }
+}
+
+/// A custom widget for the premium top notification.
+class _PremiumNotificationWidget extends StatefulWidget {
+  final String senderName;
+  final String message;
+  final VoidCallback onTap;
+  final VoidCallback onDismiss;
+
+  const _PremiumNotificationWidget({
+    required this.senderName,
+    required this.message,
+    required this.onTap,
+    required this.onDismiss,
+  });
+
+  @override
+  State<_PremiumNotificationWidget> createState() => _PremiumNotificationWidgetState();
+}
+
+class _PremiumNotificationWidgetState extends State<_PremiumNotificationWidget> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<Offset> _offsetAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+
+    _offsetAnimation = Tween<Offset>(
+      begin: const Offset(0.0, -1.5),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _controller,
+      curve: Curves.elasticOut,
+    ));
+
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: MediaQuery.of(context).padding.top + 10,
+      left: 16,
+      right: 16,
+      child: SlideTransition(
+        position: _offsetAnimation,
+        child: Material(
+          color: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+              border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: InkWell(
+                onTap: widget.onTap,
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.chat_bubble_rounded, color: AppColors.primary, size: 24),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.senderName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            Text(
+                              widget.message,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      TextButton(
+                        onPressed: widget.onTap,
+                        style: TextButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        ),
+                        child: const Text('Balas', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
