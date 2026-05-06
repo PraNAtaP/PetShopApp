@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:petshopapp/models/chat_message_model.dart';
 import 'package:petshopapp/services/chat_service.dart';
@@ -15,6 +16,7 @@ class ChatController extends ChangeNotifier {
   
   String? _receiverId;
   String? _receiverName;
+  String? _currentUserName; // To store the real name of the current user
 
   List<ChatMessageModel> messages = [];
   StreamSubscription? _messagesSub;
@@ -24,14 +26,17 @@ class ChatController extends ChangeNotifier {
   bool isLoading = true;
   bool isUploading = false;
 
+  bool _isAdmin = false;
+
   ChatController({String? receiverId, String? receiverName}) 
       : _receiverId = receiverId,
         _receiverName = receiverName {
+    if (receiverId != null) _isAdmin = true;
     _init();
   }
 
   String? get currentUid => _currentUid;
-  String get receiverName => _receiverName ?? 'Pet Point Admin';
+  String get receiverName => _receiverName ?? 'Pet Min';
 
   Future<void> _init() async {
     try {
@@ -44,18 +49,28 @@ class ChatController extends ChangeNotifier {
 
       _currentUid = user.uid;
 
-      if (_receiverId == null) {
+      // Fetch current user's profile to get their name
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(_currentUid).get();
+      if (userDoc.exists) {
+        _currentUserName = userDoc.data()?['nama'];
+      }
+
+      // If no receiver provided, it's a Customer chatting with Admin
+      if (!_isAdmin) {
         final adminInfo = await _chatService.getAdminInfo();
         _receiverId = adminInfo['uid'];
-        _receiverName = adminInfo['nama'];
+        _receiverName = 'Pet Min'; // User requested "Pet Min" for Admin
       }
 
       _chatId = _chatService.getChatId(_currentUid!, _receiverId!);
 
+      // Listen to realtime messages
       _messagesSub = _chatService.getMessages(_chatId!).listen((msgs) {
         messages = msgs;
         isLoading = false;
         notifyListeners();
+
+        // Mark incoming messages as read
         _chatService.markAsRead(_chatId!, _currentUid!);
       });
     } catch (e) {
@@ -74,6 +89,7 @@ class ChatController extends ChangeNotifier {
       receiverId: _receiverId!,
       text: text.trim(),
       receiverName: _receiverName,
+      customerName: _isAdmin ? null : _currentUserName,
     );
   }
 
@@ -107,6 +123,7 @@ class ChatController extends ChangeNotifier {
         text: '',
         imageUrl: imageUrl,
         receiverName: _receiverName,
+        customerName: _isAdmin ? null : _currentUserName,
       );
     } catch (e) {
       debugPrint('Error sending image: $e');

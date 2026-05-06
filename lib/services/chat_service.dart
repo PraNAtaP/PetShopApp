@@ -72,6 +72,7 @@ class ChatService {
     required String text,
     String? imageUrl,
     String? receiverName,
+    String? customerName,
   }) async {
     try {
       final chatRef = _firestore.collection('chats').doc(chatId);
@@ -90,8 +91,8 @@ class ChatService {
         'participants': [senderId, receiverId],
         'lastMessage': imageUrl != null && text.isEmpty ? '📷 Foto' : text,
         'lastTime': FieldValue.serverTimestamp(),
-        // For simple apps, we store the receiver name for the customer.
         if (receiverName != null) 'receiverName': receiverName,
+        if (customerName != null) 'customerName': customerName,
       }, SetOptions(merge: true));
     } catch (e) {
       throw Exception('Gagal mengirim pesan: $e');

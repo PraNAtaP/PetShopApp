@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -8,6 +9,15 @@ import 'package:petshopapp/ui/customer/chat/chat_screen.dart';
 
 class AdminChatListScreen extends StatelessWidget {
   const AdminChatListScreen({super.key});
+
+  Future<String> _fetchUserName(String uid) async {
+    try {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+      return doc.data()?['nama'] ?? 'Pelanggan ($uid)';
+    } catch (_) {
+      return 'Pelanggan ($uid)';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,47 +64,63 @@ class AdminChatListScreen extends StatelessWidget {
             separatorBuilder: (context, index) => const Divider(),
             itemBuilder: (context, index) {
               final room = rooms[index];
-              // In this app, a room is between one customer and one admin.
-              // participants: [customerUid, adminUid]
               final otherUid = room.participants.firstWhere((id) => id != currentUid, orElse: () => 'User');
               
-              return ListTile(
-                leading: const CircleAvatar(
-                  backgroundColor: AppColors.primary,
-                  child: Icon(Icons.person, color: Colors.white),
-                ),
-                title: Text(
-                  // Ideally we'd have the customer's name here. 
-                  // For now we use a fallback or the stored receiverName if applicable.
-                  'Pelanggan ($otherUid)',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text(
-                  room.lastMessage ?? 'No messages yet',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    if (room.lastTime != null)
-                      Text(
-                        DateFormat('HH:mm').format(room.lastTime!),
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
-                  ],
-                ),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatScreen(
-                        receiverId: otherUid,
-                        receiverName: 'Pelanggan',
-                      ),
+              return FutureBuilder<String>(
+                future: room.customerName != null 
+                    ? Future.value(room.customerName) 
+                    : _fetchUserName(otherUid),
+                builder: (context, nameSnapshot) {
+                  final displayName = nameSnapshot.data ?? (room.customerName ?? 'Loading...');
+
+                  return ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: AppColors.primary,
+                      child: Icon(Icons.person, color: Colors.white),
                     ),
+                    title: Text(
+                      displayName,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Row(
+                      children: [
+                        if (room.lastMessage?.contains('📷 Foto') ?? false)
+                          const Padding(
+                            padding: EdgeInsets.only(right: 4),
+                            child: Icon(Icons.camera_alt, size: 14, color: Colors.grey),
+                          ),
+                        Expanded(
+                          child: Text(
+                            room.lastMessage ?? 'No messages yet',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        if (room.lastTime != null)
+                          Text(
+                            DateFormat('HH:mm').format(room.lastTime!),
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
+                      ],
+                    ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatScreen(
+                            receiverId: otherUid,
+                            receiverName: displayName,
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               );

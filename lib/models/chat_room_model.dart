@@ -6,10 +6,8 @@ class ChatRoomModel {
   final List<String> participants;
   final String? lastMessage;
   final DateTime? lastTime;
-  
-  /// The name of the other participant. 
-  /// In the document, this is often stored as a map or individual fields.
   final String? receiverName;
+  final String? customerName; // Added to store the customer's real name
 
   const ChatRoomModel({
     required this.id,
@@ -17,6 +15,7 @@ class ChatRoomModel {
     this.lastMessage,
     this.lastTime,
     this.receiverName,
+    this.customerName,
   });
 
   /// Maps a Firestore document to [ChatRoomModel].
@@ -27,9 +26,8 @@ class ChatRoomModel {
       participants: List<String>.from(data['participants'] ?? []),
       lastMessage: data['lastMessage'] as String?,
       lastTime: (data['lastTime'] as Timestamp?)?.toDate(),
-      // We store a map of names to determine the receiver name dynamically if needed,
-      // but the spec specifically asked for a single receiverName field.
       receiverName: data['receiverName'] as String?,
+      customerName: data['customerName'] as String?,
     );
   }
 
@@ -40,6 +38,7 @@ class ChatRoomModel {
       'lastMessage': lastMessage,
       'lastTime': lastTime != null ? Timestamp.fromDate(lastTime!) : FieldValue.serverTimestamp(),
       'receiverName': receiverName,
+      'customerName': customerName,
     };
   }
 
@@ -49,6 +48,7 @@ class ChatRoomModel {
     String? lastMessage,
     DateTime? lastTime,
     String? receiverName,
+    String? customerName,
   }) {
     return ChatRoomModel(
       id: id ?? this.id,
@@ -56,6 +56,7 @@ class ChatRoomModel {
       lastMessage: lastMessage ?? this.lastMessage,
       lastTime: lastTime ?? this.lastTime,
       receiverName: receiverName ?? this.receiverName,
+      customerName: customerName ?? this.customerName,
     );
   }
 }
