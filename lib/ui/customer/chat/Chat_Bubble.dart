@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'message_model.dart';
+import 'package:petshopapp/models/chat_message_model.dart';
 
 class ChatBubble extends StatelessWidget {
-  final Message message;
+  final ChatMessageModel message;
+  final bool isMe;
 
-  const ChatBubble({super.key, required this.message});
+  const ChatBubble({super.key, required this.message, required this.isMe});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
       child: Row(
-        mainAxisAlignment: message.isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          if (!message.isMe) ...[
+          if (!isMe) ...[
             const CircleAvatar(
               radius: 16,
               backgroundColor: Color(0xFFC5E1A5),
@@ -27,16 +28,16 @@ class ChatBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: message.isMe ? const Color(0xFF0D47A1) : Colors.white,
+                color: isMe ? const Color(0xFF0D47A1) : Colors.white,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(20),
                   topRight: const Radius.circular(20),
-                  bottomLeft: Radius.circular(message.isMe ? 20 : 5),
-                  bottomRight: Radius.circular(message.isMe ? 5 : 20),
+                  bottomLeft: Radius.circular(isMe ? 20 : 5),
+                  bottomRight: Radius.circular(isMe ? 5 : 20),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 5,
                     offset: const Offset(0, 2),
                   )
@@ -45,26 +46,67 @@ class ChatBubble extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
-                    message.text,
-                    style: TextStyle(
-                      color: message.isMe ? Colors.white : Colors.blue[900],
-                      fontSize: 15,
+                  if (message.imageUrl != null) ...[
+                    GestureDetector(
+                      onTap: () {
+                        // Optional: Show full screen image
+                      },
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          message.imageUrl!,
+                          width: 200,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              width: 200,
+                              height: 150,
+                              color: Colors.grey[200],
+                              child: const Center(child: CircularProgressIndicator()),
+                            );
+                          },
+                        ),
+                      ),
                     ),
-                  ),
+                    if (message.text.isNotEmpty) const SizedBox(height: 8),
+                  ],
+                  if (message.text.isNotEmpty)
+                    Text(
+                      message.text,
+                      style: TextStyle(
+                        color: isMe ? Colors.white : Colors.blue[900],
+                        fontSize: 15,
+                      ),
+                    ),
                   const SizedBox(height: 4),
-                  Text(
-                    DateFormat('HH:mm').format(message.time),
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: message.isMe ? Colors.white70 : Colors.grey,
-                    ),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        message.timestamp != null
+                            ? DateFormat('HH:mm').format(message.timestamp!)
+                            : '...',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: isMe ? Colors.white70 : Colors.grey,
+                        ),
+                      ),
+                      if (isMe) ...[
+                        const SizedBox(width: 4),
+                        Icon(
+                          message.isRead ? Icons.done_all : Icons.done,
+                          size: 14,
+                          color: message.isRead ? Colors.lightBlueAccent : Colors.white70,
+                        ),
+                      ],
+                    ],
                   ),
                 ],
               ),
             ),
           ),
-          if (message.isMe) ...[
+          if (isMe) ...[
             const SizedBox(width: 8),
             const CircleAvatar(
               radius: 12,
