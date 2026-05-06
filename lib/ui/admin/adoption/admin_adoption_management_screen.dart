@@ -179,16 +179,27 @@ class _AdminAdoptionManagementScreenState extends State<AdminAdoptionManagementS
                     style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
                   ),
                   const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: statusColor.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: statusColor.withValues(alpha: 0.5)),
-                    ),
-                    child: Text(
-                      animal.status.toUpperCase(),
-                      style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
+                  // Tappable status badge
+                  GestureDetector(
+                    onTap: () => _showStatusPicker(context, animal),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: statusColor.withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            animal.status.toUpperCase(),
+                            style: TextStyle(color: statusColor, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(Icons.swap_horiz, size: 14, color: statusColor),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -215,6 +226,96 @@ class _AdminAdoptionManagementScreenState extends State<AdminAdoptionManagementS
           ],
         ),
       ),
+    );
+  }
+
+  void _showStatusPicker(BuildContext context, AnimalModel animal) {
+    final statuses = ['available', 'booked', 'adopted'];
+
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Text(
+                    'Ubah Status — ${animal.name}',
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const Divider(),
+                ...statuses.map((status) {
+                  final isSelected = animal.status == status;
+                  Color color;
+                  IconData icon;
+                  switch (status) {
+                    case 'available':
+                      color = Colors.green;
+                      icon = Icons.check_circle_outline;
+                      break;
+                    case 'booked':
+                      color = Colors.orange;
+                      icon = Icons.schedule;
+                      break;
+                    case 'adopted':
+                      color = Colors.grey;
+                      icon = Icons.home_outlined;
+                      break;
+                    default:
+                      color = Colors.blue;
+                      icon = Icons.info_outline;
+                  }
+
+                  return ListTile(
+                    leading: Icon(icon, color: color),
+                    title: Text(
+                      status.toUpperCase(),
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? color : Colors.black87,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? Icon(Icons.check, color: color)
+                        : null,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      if (isSelected) return;
+                      try {
+                        final updateData = <String, dynamic>{'status': status};
+                        // Clear booking info if resetting to available
+                        if (status == 'available') {
+                          updateData['bookedBy'] = null;
+                          updateData['pickupDate'] = null;
+                          updateData['pickupTime'] = null;
+                        }
+                        await _adoptionService.updateAnimal(animal.id, updateData);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Status ${animal.name} diubah ke ${status.toUpperCase()}')),
+                        );
+                      } catch (e) {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Gagal mengubah status: $e')),
+                        );
+                      }
+                    },
+                  );
+                }),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

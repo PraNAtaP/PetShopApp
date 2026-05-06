@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/animal_model.dart';
@@ -26,14 +27,12 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
   late TextEditingController _descriptionController;
   late String _selectedType;
   late String _selectedGender;
-  late String _selectedStatus;
   
   XFile? _imageFile;
   bool _isLoading = false;
 
   final List<String> _animalTypes = ['Kucing', 'Anjing'];
   final List<String> _genderOptions = ['Jantan', 'Betina'];
-  final List<String> _statusOptions = ['available', 'booked', 'adopted'];
 
   @override
   void initState() {
@@ -45,7 +44,6 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
     _descriptionController = TextEditingController(text: widget.animal.description);
     _selectedType = _animalTypes.contains(widget.animal.type) ? widget.animal.type : 'Kucing';
     _selectedGender = _genderOptions.contains(widget.animal.gender) ? widget.animal.gender : 'Jantan';
-    _selectedStatus = _statusOptions.contains(widget.animal.status) ? widget.animal.status : 'available';
   }
 
   Future<void> _pickImage() async {
@@ -53,9 +51,30 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
     final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
-      setState(() {
-        _imageFile = pickedFile;
-      });
+      // Crop the image to 1:1 (square)
+      final croppedFile = await ImageCropper().cropImage(
+        sourcePath: pickedFile.path,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Crop Foto',
+            toolbarColor: AppColors.primary,
+            toolbarWidgetColor: Colors.white,
+            activeControlsWidgetColor: AppColors.primary,
+            lockAspectRatio: true,
+          ),
+          IOSUiSettings(
+            title: 'Crop Foto',
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+          ),
+        ],
+      );
+      if (croppedFile != null) {
+        setState(() {
+          _imageFile = XFile(croppedFile.path);
+        });
+      }
     }
   }
 
@@ -86,16 +105,10 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
         'age': _ageController.text.trim(),
         'weight': double.tryParse(_weightController.text.trim()),
         'description': _descriptionController.text.trim(),
-        'status': _selectedStatus,
         'imageUrl': imageUrl,
       };
 
-      // Clear bookedBy if status is set back to available manually
-      if (_selectedStatus == 'available' && widget.animal.status != 'available') {
-        await AdoptionService().cancelAdoption(widget.animal.id);
-      } else {
-        await AdoptionService().updateAnimal(widget.animal.id, updatedData);
-      }
+      await AdoptionService().updateAnimal(widget.animal.id, updatedData);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -284,22 +297,6 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
                         ),
                       ),
                       validator: (value) => value == null || value.isEmpty ? 'Deskripsi tidak boleh kosong' : null,
-                    ),
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      value: _selectedStatus,
-                      decoration: InputDecoration(
-                        labelText: 'Status',
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      items: _statusOptions.map((status) {
-                        return DropdownMenuItem(value: status, child: Text(status.toUpperCase()));
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() => _selectedStatus = value);
-                        }
-                      },
                     ),
                     const SizedBox(height: 32),
                     ElevatedButton(
