@@ -3,18 +3,20 @@ import 'package:petshopapp/models/chat_room_model.dart';
 import 'package:petshopapp/models/chat_message_model.dart';
 
 /// Service to handle realtime chat operations via Firestore.
-///
-/// Firestore structure:
-/// - `chats/{chatId}` — Room metadata (participants, lastMessage, lastTime)
-/// - `chats/{chatId}/messages/{messageId}` — Individual messages
 class ChatService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  /// Generates a deterministic chat ID from two UIDs.
-  /// Sorts alphabetically to guarantee the same room for both users.
+  /// Centralized Admin Identity
+  static const String adminUid = 'xs2BEOZim6VKKmhlv7PrAIuQWHz2';
+  static const String adminName = 'Admin Pranuy';
+
+  /// Generates a standardized chat ID: customerUID_adminUID.
   String getChatId(String uid1, String uid2) {
-    final sorted = [uid1, uid2]..sort();
-    return '${sorted[0]}_${sorted[1]}';
+    if (uid1 == adminUid) {
+      return '${uid2}_$adminUid';
+    } else {
+      return '${uid1}_$adminUid';
+    }
   }
 
   /// Returns a realtime stream of chat rooms where [userId] is a participant.
@@ -29,7 +31,7 @@ class ChatService {
             .map((doc) => ChatRoomModel.fromFirestore(doc))
             .toList();
         
-        // Sort client-side to avoid needing a composite index
+        // Sort client-side
         rooms.sort((a, b) {
           if (a.lastTime == null) return 1;
           if (b.lastTime == null) return -1;
@@ -44,7 +46,6 @@ class ChatService {
   }
 
   /// Returns a realtime stream of messages for a specific [chatId].
-  /// Ordered by [timestamp] descending (newest first).
   Stream<List<ChatMessageModel>> getMessages(String chatId) {
     try {
       return _firestore
@@ -61,10 +62,7 @@ class ChatService {
     }
   }
 
-  /// Sends a message to a chat room.
-  ///
-  /// Creates the room document if it doesn't exist yet.
-  /// Updates room metadata (lastMessage, lastTime) on every send.
+  /// Sends a message and updates room metadata.
   Future<void> sendMessage({
     required String chatId,
     required String senderId,
@@ -77,7 +75,6 @@ class ChatService {
     try {
       final chatRef = _firestore.collection('chats').doc(chatId);
 
-      // Add message to sub-collection
       await chatRef.collection('messages').add(
         ChatMessageModel(
           senderId: senderId,
@@ -86,12 +83,11 @@ class ChatService {
         ).toMap(),
       );
 
-      // Update or create room metadata
       await chatRef.set({
         'participants': [senderId, receiverId],
         'lastMessage': imageUrl != null && text.isEmpty ? '📷 Foto' : text,
         'lastTime': FieldValue.serverTimestamp(),
-        if (receiverName != null) 'receiverName': receiverName,
+        'receiverName': receiverName ?? (receiverId == adminUid ? adminName : 'Pelanggan'),
         if (customerName != null) 'customerName': customerName,
       }, SetOptions(merge: true));
     } catch (e) {
@@ -99,7 +95,7 @@ class ChatService {
     }
   }
 
-  /// Marks all unread messages in a chat as read for the given [userId].
+  /// Marks unread messages as read.
   Future<void> markAsRead(String chatId, String userId) async {
     try {
       final unread = await _firestore
@@ -118,31 +114,15 @@ class ChatService {
       }
       await batch.commit();
     } catch (e) {
-      // Non-critical, just log it
-      print('ChatService Error (markAsRead): $e');
+      print('ChatService Error: $e');
     }
   }
 
-  /// Fetches the first admin user found in the system.
-  /// Used to determine who the customer should chat with.
+  /// Returns the static admin info.
   Future<Map<String, String>> getAdminInfo() async {
-    try {
-      final snapshot = await _firestore
-          .collection('users')
-          .where('role', isEqualTo: 'admin')
-          .limit(1)
-          .get();
-      
-      if (snapshot.docs.isNotEmpty) {
-        final data = snapshot.docs.first.data();
-        return {
-          'uid': snapshot.docs.first.id,
-          'nama': data['nama'] ?? 'Pet Point Admin',
-        };
-      }
-      return {'uid': 'ADMIN_UID', 'nama': 'Pet Point Admin'};
-    } catch (e) {
-      return {'uid': 'ADMIN_UID', 'nama': 'Pet Point Admin'};
-    }
+    return {
+      'uid': adminUid,
+      'nama': adminName,
+    };
   }
 }

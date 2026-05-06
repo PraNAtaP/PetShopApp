@@ -9,6 +9,8 @@ import '../adoption/admin_adoption_management_screen.dart';
 import '../chat/admin_chat_list_screen.dart';
 
 
+import 'package:petshopapp/services/in_app_chat_notifier.dart';
+
 class AdminLayout extends StatefulWidget {
   const AdminLayout({super.key});
 
@@ -18,6 +20,21 @@ class AdminLayout extends StatefulWidget {
 
 class _AdminLayoutState extends State<AdminLayout> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Start listening for in-app chat notifications
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      InAppChatNotifier.instance.startListening(context);
+    });
+  }
+
+  @override
+  void dispose() {
+    InAppChatNotifier.instance.stopListening();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

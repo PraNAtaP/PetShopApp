@@ -10,6 +10,8 @@ import '../grooming/grooming_service_screen.dart';
 import '../adoption/adoption_catalog_screen.dart';
 
 
+import 'package:petshopapp/services/in_app_chat_notifier.dart';
+
 class BaseScreen extends StatefulWidget {
   const BaseScreen({super.key});
 
@@ -19,6 +21,21 @@ class BaseScreen extends StatefulWidget {
 
 class _BaseScreenState extends State<BaseScreen> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Start listening for in-app chat notifications
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      InAppChatNotifier.instance.startListening(context);
+    });
+  }
+
+  @override
+  void dispose() {
+    InAppChatNotifier.instance.stopListening();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

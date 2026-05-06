@@ -34,7 +34,7 @@ class ChatController extends ChangeNotifier {
   }
 
   String? get currentUid => _currentUid;
-  String get receiverName => _receiverName ?? 'Pet Min';
+  String get receiverName => _receiverName ?? 'Admin Pranuy';
 
   Future<void> _init() async {
     try {
@@ -56,10 +56,10 @@ class ChatController extends ChangeNotifier {
 
       // Logic for determining the other person in the chat
       if (_receiverId == null) {
-        // Typical flow for Customer starting a chat with Admin
+        // If no receiver provided, it's a Customer chatting with Admin
         final adminInfo = await _chatService.getAdminInfo();
         _receiverId = adminInfo['uid'];
-        _receiverName = 'Pet Min'; 
+        _receiverName = adminInfo['nama']; // "Admin Pranuy"
       }
 
       _chatId = _chatService.getChatId(_currentUid!, _receiverId!);
