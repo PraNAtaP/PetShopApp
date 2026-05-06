@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:petshopapp/models/user_model.dart';
-import 'package:petshopapp/models/pet_model.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/models/user_pet_model.dart';
 
@@ -13,24 +12,6 @@ import 'package:petshopapp/models/order_model.dart';
 ///
 /// Example Usage:
 /// ```dart
-/// StreamBuilder<List<PetModel>>(
-///   stream: FirestoreService.instance.getAllPets(),
-///   builder: (context, snapshot) {
-///     if (snapshot.connectionState == ConnectionState.waiting) {
-///       return const CircularProgressIndicator();
-///     }
-///     if (snapshot.hasError) {
-///       return Text('Error: ${snapshot.error}');
-///     }
-///     final pets = snapshot.data ?? [];
-///     return ListView.builder(
-///       itemCount: pets.length,
-///       itemBuilder: (context, index) {
-///         return Text(pets[index].namaHewan);
-///       },
-///     );
-///   },
-/// );
 /// ```
 class FirestoreService {
   FirestoreService._privateConstructor();
@@ -46,12 +27,6 @@ class FirestoreService {
       _db.collection('users').withConverter<UserModel>(
         fromFirestore: (snapshot, _) => UserModel.fromFirestore(snapshot),
         toFirestore: (model, _) => model.toFirestore(),
-      );
-
-  CollectionReference<PetModel> get _petsRef =>
-      _db.collection('pets').withConverter<PetModel>(
-        fromFirestore: (snapshot, _) => PetModel.fromFirestore(snapshot),
-        toFirestore: (model, _) => model.toMap(),
       );
 
   CollectionReference<ProductModel> get _productsRef =>
@@ -100,35 +75,6 @@ class FirestoreService {
       });
     } catch (e) {
       throw Exception('Gagal memperbarui FCM token: $e');
-    }
-  }
-
-  // ==========================================
-  // Pet Management
-  // ==========================================
-
-  /// Returns a stream of all pets for real-time updates.
-  Stream<List<PetModel>> getAllPets() {
-    try {
-      return _petsRef
-          .orderBy('created_at', descending: true)
-          .snapshots()
-          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
-    } catch (e) {
-      throw Exception('Gagal stream data hewan: $e');
-    }
-  }
-
-  /// Adds a new pet to the database.
-  Future<void> addPet(PetModel pet) async {
-    try {
-      if (pet.petId.isEmpty) {
-        await _petsRef.add(pet);
-      } else {
-        await _petsRef.doc(pet.petId).set(pet);
-      }
-    } catch (e) {
-      throw Exception('Gagal menambahkan hewan: $e');
     }
   }
 

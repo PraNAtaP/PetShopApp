@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
-import '../management/management_screen.dart'; // We should probably move management to inventory/dashboard etc, but let's just show it here.
-import '../admin/add_pet_screen.dart'; // This is also an admin feature
+import '../management/management_screen.dart';
 import '../profile/admin_profile_screen.dart';
 import '../grooming/booking_management_screen.dart';
 import '../adoption/admin_adoption_management_screen.dart';
@@ -37,7 +36,6 @@ class _AdminLayoutState extends State<AdminLayout> {
       const Center(child: Text("Dashboard Overview", style: TextStyle(fontSize: 24))),
       const ManagementScreen(),       // Manage/View Inventory, Users, etc.
       const BookingManagementScreen(), // Grooming Bookings
-      const AddPetScreen(),           // Pet insertion
       const AdminAdoptionManagementScreen(), // Adoptions Management
       const AdminProfileScreen(),     // Admin Profile
     ];
@@ -98,12 +96,7 @@ class _AdminLayoutState extends State<AdminLayout> {
                     NavigationRailDestination(
                       icon: Icon(Icons.pets_outlined),
                       selectedIcon: Icon(Icons.pets),
-                      label: Text('Add Pet'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.assignment_ind_outlined),
-                      selectedIcon: Icon(Icons.assignment_ind),
-                      label: Text('Adoptions'),
+                      label: Text('Adopsi'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.person_outline),
@@ -141,12 +134,7 @@ class _AdminLayoutState extends State<AdminLayout> {
                     NavigationRailDestination(
                       icon: Icon(Icons.pets_outlined),
                       selectedIcon: Icon(Icons.pets),
-                      label: Text('Add Pet'),
-                    ),
-                    NavigationRailDestination(
-                      icon: Icon(Icons.assignment_ind_outlined),
-                      selectedIcon: Icon(Icons.assignment_ind),
-                      label: Text('Adoptions'),
+                      label: Text('Adopsi'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.person_outline),
