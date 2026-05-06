@@ -229,9 +229,13 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    final GoogleSignIn googleSignIn = GoogleSignIn();
-    if (await googleSignIn.isSignedIn()) {
-      await googleSignIn.signOut();
+    try {
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      if (await googleSignIn.isSignedIn()) {
+        await googleSignIn.signOut();
+      }
+    } catch (_) {
+      // Google Sign-In not configured or failed — continue logout anyway
     }
     await _auth.signOut();
     _currentUser = null;
