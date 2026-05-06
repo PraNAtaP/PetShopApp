@@ -4,6 +4,7 @@ import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/ui/shared/auth/login/login_page.dart';
 import 'package:petshopapp/ui/admin/dashboard/admin_layout.dart';
 import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
+import 'package:petshopapp/ui/customer/chat/chat_screen.dart';
 
 /// Admin application route configuration using GoRouter.
 class AdminRouter {
@@ -72,6 +73,17 @@ class AdminRouter {
               ),
             ),
           ),
+        ),
+        GoRoute(
+          path: '/chat',
+          name: 'admin-chat',
+          builder: (context, state) {
+            final args = state.extra as Map<String, dynamic>?;
+            return ChatScreen(
+              receiverId: args?['receiverId'],
+              receiverName: args?['receiverName'],
+            );
+          },
         ),
       ],
     );

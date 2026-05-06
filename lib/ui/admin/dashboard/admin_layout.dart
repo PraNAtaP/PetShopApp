@@ -6,7 +6,10 @@ import '../management/management_screen.dart';
 import '../profile/admin_profile_screen.dart';
 import '../grooming/booking_management_screen.dart';
 import '../adoption/admin_adoption_management_screen.dart';
+import '../chat/admin_chat_list_screen.dart';
 
+
+import 'package:petshopapp/services/in_app_chat_notifier.dart';
 
 class AdminLayout extends StatefulWidget {
   const AdminLayout({super.key});
@@ -17,6 +20,21 @@ class AdminLayout extends StatefulWidget {
 
 class _AdminLayoutState extends State<AdminLayout> {
   int _selectedIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    // Start listening for in-app chat notifications
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      InAppChatNotifier.instance.startListening(context);
+    });
+  }
+
+  @override
+  void dispose() {
+    InAppChatNotifier.instance.stopListening();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +55,7 @@ class _AdminLayoutState extends State<AdminLayout> {
       const ManagementScreen(),       // Manage/View Inventory, Users, etc.
       const BookingManagementScreen(), // Grooming Bookings
       const AdminAdoptionManagementScreen(), // Adoptions Management
+      const AdminChatListScreen(),    // Chat with Customers
       const AdminProfileScreen(),     // Admin Profile
     ];
 
@@ -99,6 +118,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       label: Text('Adopsi'),
                     ),
                     NavigationRailDestination(
+                      icon: Icon(Icons.chat_outlined),
+                      selectedIcon: Icon(Icons.chat),
+                      label: Text('Chat'),
+                    ),
+                    NavigationRailDestination(
                       icon: Icon(Icons.person_outline),
                       selectedIcon: Icon(Icons.person),
                       label: Text('Profile'),
@@ -135,6 +159,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       icon: Icon(Icons.pets_outlined),
                       selectedIcon: Icon(Icons.pets),
                       label: Text('Adopsi'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.chat_outlined),
+                      selectedIcon: Icon(Icons.chat),
+                      label: Text('Chat'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.person_outline),

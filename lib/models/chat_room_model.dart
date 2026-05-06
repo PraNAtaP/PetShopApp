@@ -1,52 +1,62 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-/// Represents a chat room between a customer and an admin.
+/// Represents a chat room between two participants.
 class ChatRoomModel {
-  final String roomId;
+  final String id;
   final List<String> participants;
   final String? lastMessage;
-  final DateTime? lastUpdate;
+  final DateTime? lastTime;
+  final String? receiverName;
+  final String? customerName; // Added to store the customer's real name
 
-  /// Creates a new [ChatRoomModel] instance.
   const ChatRoomModel({
-    required this.roomId,
+    required this.id,
     required this.participants,
     this.lastMessage,
-    this.lastUpdate,
+    this.lastTime,
+    this.receiverName,
+    this.customerName,
   });
 
-  /// Factory constructor to map Firestore [DocumentSnapshot] to [ChatRoomModel].
+  /// Maps a Firestore document to [ChatRoomModel].
   factory ChatRoomModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return ChatRoomModel(
-      roomId: doc.id,
+      id: doc.id,
       participants: List<String>.from(data['participants'] ?? []),
-      lastMessage: data['last_message'] as String?,
-      lastUpdate: (data['last_update'] as Timestamp?)?.toDate(),
+      lastMessage: data['lastMessage'] as String?,
+      lastTime: (data['lastTime'] as Timestamp?)?.toDate(),
+      receiverName: data['receiverName'] as String?,
+      customerName: data['customerName'] as String?,
     );
   }
 
-  /// Converts the [ChatRoomModel] instance into a Map.
+  /// Converts this instance to a Firestore-compatible map.
   Map<String, dynamic> toMap() {
     return {
       'participants': participants,
-      'last_message': lastMessage,
-      'last_update': lastUpdate != null ? Timestamp.fromDate(lastUpdate!) : FieldValue.serverTimestamp(),
+      'lastMessage': lastMessage,
+      'lastTime': lastTime != null ? Timestamp.fromDate(lastTime!) : FieldValue.serverTimestamp(),
+      'receiverName': receiverName,
+      'customerName': customerName,
     };
   }
 
-  /// Creates a copy of this [ChatRoomModel] maintaining immutability.
   ChatRoomModel copyWith({
-    String? roomId,
+    String? id,
     List<String>? participants,
     String? lastMessage,
-    DateTime? lastUpdate,
+    DateTime? lastTime,
+    String? receiverName,
+    String? customerName,
   }) {
     return ChatRoomModel(
-      roomId: roomId ?? this.roomId,
+      id: id ?? this.id,
       participants: participants ?? this.participants,
       lastMessage: lastMessage ?? this.lastMessage,
-      lastUpdate: lastUpdate ?? this.lastUpdate,
+      lastTime: lastTime ?? this.lastTime,
+      receiverName: receiverName ?? this.receiverName,
+      customerName: customerName ?? this.customerName,
     );
   }
 }
