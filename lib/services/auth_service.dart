@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/models/user_model.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 /// Authentication service backed by Firebase Auth and Cloud Firestore.
 ///
@@ -102,46 +103,104 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Reloads the current Firebase user and checks emailVerified status.
-  /// On success, fetches Firestore profile and returns `true`.
-  Future<bool> checkEmailVerified() async {
+  /// Login dengan Google. Kalau user baru, otomatis buat profil di Firestore.
+  /// Returns `null` on success, atau pesan error.
+  Future<String?> loginWithGoogle() async {
     _setLoading(true);
     try {
-      await _auth.currentUser?.reload();
-      final user = _auth.currentUser;
-      if (user != null && user.emailVerified) {
-        await _fetchUserProfile(user.uid);
-        _setLoading(false);
-        return true;
-      }
-      _setLoading(false);
-      return false;
-    } catch (_) {
-      _setLoading(false);
-      return false;
-    }
-  }
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
 
-  /// Resends the verification email to the current user.
-  /// Returns `null` on success, or a user-friendly error message.
-  Future<String?> resendVerificationEmail() async {
-    try {
-      await _auth.currentUser?.sendEmailVerification();
+      // User cancel proses Google Sign In
+      if (googleUser == null) {
+        _setLoading(false);
+        return 'Login dibatalkan.';
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredential =
+          await _auth.signInWithCredential(credential);
+
+      final firebaseUser = userCredential.user!;
+      final uid = firebaseUser.uid;
+
+      // Cek apakah user sudah ada di Firestore
+      final doc = await _firestore.collection('users').doc(uid).get();
+
+      if (!doc.exists) {
+        // User baru → buat profil baru di Firestore
+        final userModel = UserModel(
+          uid: uid,
+          nama: firebaseUser.displayName ?? 'User',
+          email: firebaseUser.email ?? '',
+          role: UserRole.customer,
+          fotoUrl: firebaseUser.photoURL,
+        );
+        await _firestore
+            .collection('users')
+            .doc(uid)
+            .set(userModel.toFirestore());
+      }
+
+      await _fetchUserProfile(uid);
+      _setLoading(false);
       return null;
     } on FirebaseAuthException catch (e) {
+      _setLoading(false);
       return _mapAuthError(e.code);
-    } catch (_) {
-      return 'Gagal mengirim ulang email. Coba lagi nanti.';
+    } catch (e) {
+      _setLoading(false);
+      return 'Login Google gagal. Silakan coba lagi.';
     }
   }
 
-  /// Refreshes the cached user profile from Firestore.
-  Future<void> refreshProfile() async {
-    final uid = _auth.currentUser?.uid;
-    if (uid != null) {
-      await _fetchUserProfile(uid);
+    /// Reloads the current Firebase user and checks emailVerified status.
+    /// On success, fetches Firestore profile and returns `true`.
+    Future<bool> checkEmailVerified() async {
+      _setLoading(true);
+      try {
+        await _auth.currentUser?.reload();
+        final user = _auth.currentUser;
+        if (user != null && user.emailVerified) {
+          await _fetchUserProfile(user.uid);
+          _setLoading(false);
+          return true;
+        }
+        _setLoading(false);
+        return false;
+      } catch (_) {
+        _setLoading(false);
+        return false;
+      }
     }
-  }
+
+    /// Resends the verification email to the current user.
+    /// Returns `null` on success, or a user-friendly error message.
+    Future<String?> resendVerificationEmail() async {
+      try {
+        await _auth.currentUser?.sendEmailVerification();
+        return null;
+      } on FirebaseAuthException catch (e) {
+        return _mapAuthError(e.code);
+      } catch (_) {
+        return 'Gagal mengirim ulang email. Coba lagi nanti.';
+      }
+    }
+
+    /// Refreshes the cached user profile from Firestore.
+    Future<void> refreshProfile() async {
+      final uid = _auth.currentUser?.uid;
+      if (uid != null) {
+        await _fetchUserProfile(uid);
+      }
+    }
 
   /// Updates the user's profile data in Firestore and refreshes cache.
   Future<String?> updateProfile({
@@ -170,6 +229,10 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    final GoogleSignIn googleSignIn = GoogleSignIn();
+    if (await googleSignIn.isSignedIn()) {
+      await googleSignIn.signOut();
+    }
     await _auth.signOut();
     _currentUser = null;
     notifyListeners();

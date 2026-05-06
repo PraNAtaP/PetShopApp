@@ -20,40 +20,22 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
   final TextEditingController _alamatController = TextEditingController();
   bool _isHomeService = false;
   final List<UserPetModel> _selectedPets = [];
+  Stream<List<UserPetModel>>? _petsStream;
+  String? _currentUserId;
   final List<Map<String, dynamic>> _services = [
-    {
-      'name': 'Mandi Dasar',
-      'price': 50000.0,
-      'icon': Icons.shower,
-    },
-    {
-      'name': 'Mandi Kutu/Jamur',
-      'price': 80000.0,
-      'icon': Icons.bug_report,
-    },
-    {
-      'name': 'Potong Kuku',
-      'price': 20000.0,
-      'icon': Icons.cut,
-    },
-    {
-      'name': 'Potong Bulu',
-      'price': 60000.0,
-      'icon': Icons.content_cut,
-    },
-    {
-      'name': 'Bersih Telinga',
-      'price': 25000.0,
-      'icon': Icons.hearing,
-    },
-    {
-      'name': 'Paket Lengkap',
-      'price': 150000.0,
-      'icon': Icons.stars,
-    },
+    {'name': 'Mandi Dasar', 'price': 50000.0, 'icon': Icons.shower},
+    {'name': 'Mandi Kutu/Jamur', 'price': 80000.0, 'icon': Icons.bug_report},
+    {'name': 'Potong Kuku', 'price': 20000.0, 'icon': Icons.cut},
+    {'name': 'Potong Bulu', 'price': 60000.0, 'icon': Icons.content_cut},
+    {'name': 'Bersih Telinga', 'price': 25000.0, 'icon': Icons.hearing},
+    {'name': 'Paket Lengkap', 'price': 150000.0, 'icon': Icons.stars},
   ];
 
-  final _currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+  final _currencyFormat = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
 
   @override
   void dispose() {
@@ -76,20 +58,32 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'Pilih Hewan Kesayangan',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
             ),
             const SizedBox(height: 12),
             Consumer<AuthService>(
               builder: (context, auth, _) {
                 if (auth.currentUser == null) return const SizedBox();
+
+                if (_currentUserId != auth.currentUser!.uid) {
+                  _currentUserId = auth.currentUser!.uid;
+                  _petsStream = FirestoreService.instance.getUserPets(
+                    _currentUserId!,
+                  );
+                }
+
                 return StreamBuilder<List<UserPetModel>>(
-                  stream: FirestoreService.instance.getUserPets(auth.currentUser!.uid),
+                  stream: _petsStream,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -147,10 +141,19 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                                         CircleAvatar(
                                           radius: 30,
                                           backgroundColor: Colors.grey.shade100,
-                                          child: const Icon(Icons.add, color: Colors.grey),
+                                          child: const Icon(
+                                            Icons.add,
+                                            color: Colors.grey,
+                                          ),
                                         ),
                                         const SizedBox(height: 8),
-                                        const Text('Tambah', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                                        const Text(
+                                          'Tambah',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
                                       ],
                                     ),
                                   ),
@@ -158,12 +161,16 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                               }
 
                               final pet = pets[index];
-                              final isSelected = _selectedPets.any((p) => p.id == pet.id);
+                              final isSelected = _selectedPets.any(
+                                (p) => p.id == pet.id,
+                              );
                               return GestureDetector(
                                 onTap: () {
                                   setState(() {
                                     if (isSelected) {
-                                      _selectedPets.removeWhere((p) => p.id == pet.id);
+                                      _selectedPets.removeWhere(
+                                        (p) => p.id == pet.id,
+                                      );
                                     } else {
                                       _selectedPets.add(pet);
                                     }
@@ -176,12 +183,20 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                                     children: [
                                       CircleAvatar(
                                         radius: 30,
-                                        backgroundColor: isSelected ? AppColors.primary : Colors.grey.shade200,
-                                        backgroundImage: pet.imageUrl != null ? NetworkImage(pet.imageUrl!) : null,
+                                        backgroundColor: isSelected
+                                            ? AppColors.primary
+                                            : Colors.grey.shade200,
+                                        backgroundImage: pet.imageUrl != null
+                                            ? NetworkImage(pet.imageUrl!)
+                                            : null,
                                         child: pet.imageUrl == null
                                             ? FaIcon(
-                                                pet.type == 'Anjing' ? FontAwesomeIcons.dog : FontAwesomeIcons.cat,
-                                                color: isSelected ? Colors.white : Colors.grey,
+                                                pet.type == 'Anjing'
+                                                    ? FontAwesomeIcons.dog
+                                                    : FontAwesomeIcons.cat,
+                                                color: isSelected
+                                                    ? Colors.white
+                                                    : Colors.grey,
                                                 size: 24,
                                               )
                                             : null,
@@ -193,8 +208,12 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
                                           fontSize: 12,
-                                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                          color: isSelected ? AppColors.primary : Colors.black87,
+                                          fontWeight: isSelected
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                          color: isSelected
+                                              ? AppColors.primary
+                                              : Colors.black87,
                                         ),
                                       ),
                                     ],
@@ -212,16 +231,24 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                               ? Container(
                                   key: const ValueKey('no-selection'),
                                   width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: Colors.grey.shade50,
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: Colors.grey.shade200, style: BorderStyle.solid),
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
+                                      style: BorderStyle.solid,
+                                    ),
                                   ),
                                   child: const Center(
                                     child: Text(
                                       'Silakan pilih satu atau lebih hewan di atas',
-                                      style: TextStyle(color: Colors.grey, fontSize: 13),
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 13,
+                                      ),
                                     ),
                                   ),
                                 )
@@ -232,7 +259,10 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                                   decoration: BoxDecoration(
                                     color: AppColors.primary.withOpacity(0.08),
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 1.5),
+                                    border: Border.all(
+                                      color: AppColors.primary.withOpacity(0.3),
+                                      width: 1.5,
+                                    ),
                                   ),
                                   child: Row(
                                     children: [
@@ -245,18 +275,23 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                                           shape: BoxShape.circle,
                                         ),
                                         child: const Center(
-                                          child: Icon(Icons.pets, color: Colors.white, size: 24),
+                                          child: Icon(
+                                            Icons.pets,
+                                            color: Colors.white,
+                                            size: 24,
+                                          ),
                                         ),
                                       ),
                                       const SizedBox(width: 16),
                                       Expanded(
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              _selectedPets.length == 1 
-                                                ? _selectedPets.first.name 
-                                                : '${_selectedPets.length} Hewan Terpilih',
+                                              _selectedPets.length == 1
+                                                  ? _selectedPets.first.name
+                                                  : '${_selectedPets.length} Hewan Terpilih',
                                               style: const TextStyle(
                                                 fontSize: 18,
                                                 fontWeight: FontWeight.bold,
@@ -266,8 +301,10 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                                             const SizedBox(height: 4),
                                             Text(
                                               _selectedPets.length == 1
-                                                ? '${_selectedPets.first.type} • ${_selectedPets.first.breed}'
-                                                : _selectedPets.map((p) => p.name).join(', '),
+                                                  ? '${_selectedPets.first.type} • ${_selectedPets.first.breed}'
+                                                  : _selectedPets
+                                                        .map((p) => p.name)
+                                                        .join(', '),
                                               maxLines: 1,
                                               overflow: TextOverflow.ellipsis,
                                               style: TextStyle(
@@ -291,7 +328,11 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
             const Divider(height: 30, thickness: 1),
             const Text(
               'Lokasi Layanan',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
             ),
             const SizedBox(height: 12),
             Row(
@@ -351,7 +392,11 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
             const Divider(height: 40, thickness: 1),
             const Text(
               'Pilih Paket Grooming',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
             ),
             const SizedBox(height: 16),
             GridView.builder(
@@ -366,19 +411,26 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
               itemCount: _services.length,
               itemBuilder: (context, index) {
                 final service = _services[index];
-                final isSelected = provider.selectedServices.contains(service['name']);
+                final isSelected = provider.selectedServices.contains(
+                  service['name'],
+                );
 
                 return GestureDetector(
                   onTap: () {
                     provider.toggleService(service['name'], service['price']);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 16,
+                    ),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary.withOpacity(0.05) : Colors.white,
+                      color: isSelected ? AppColors.primary : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSelected ? AppColors.primary : Colors.grey.shade300,
+                        color: isSelected
+                            ? AppColors.primary
+                            : Colors.grey.shade300,
                         width: 2,
                       ),
                       boxShadow: [
@@ -392,7 +444,13 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(service['icon'], color: isSelected ? AppColors.primary : Colors.grey.shade600, size: 32),
+                        Icon(
+                          service['icon'],
+                          color: isSelected
+                              ? Colors.white
+                              : Colors.grey.shade600,
+                          size: 32,
+                        ),
                         const SizedBox(height: 12),
                         Text(
                           service['name'],
@@ -400,14 +458,16 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
-                            color: isSelected ? AppColors.primary : Colors.black87,
+                            color: isSelected ? Colors.white : Colors.black87,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           _currencyFormat.format(service['price']),
                           style: TextStyle(
-                            color: isSelected ? AppColors.primary : Colors.grey.shade600,
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.grey.shade600,
                             fontSize: 12,
                           ),
                         ),
@@ -425,19 +485,31 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                 onPressed: () {
                   if (_selectedPets.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Harap pilih minimal satu hewan peliharaan')),
+                      const SnackBar(
+                        content: Text(
+                          'Harap pilih minimal satu hewan peliharaan',
+                        ),
+                      ),
                     );
                     return;
                   }
                   if (provider.selectedServices.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Pilih minimal satu layanan grooming terlebih dahulu')),
+                      const SnackBar(
+                        content: Text(
+                          'Pilih minimal satu layanan grooming terlebih dahulu',
+                        ),
+                      ),
                     );
                     return;
                   }
                   if (_isHomeService && provider.alamatLengkap.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Harap pilih lokasi pada peta untuk Home Service')),
+                      const SnackBar(
+                        content: Text(
+                          'Harap pilih lokasi pada peta untuk Home Service',
+                        ),
+                      ),
                     );
                     return;
                   }
@@ -449,14 +521,19 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 2,
                 ),
                 child: Text(
                   _selectedPets.length > 1
-                    ? 'Lanjutkan (${_selectedPets.length} Hewan)'
-                    : 'Lanjutkan Pilih Jadwal',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ? 'Lanjutkan (${_selectedPets.length} Hewan)'
+                      : 'Lanjutkan Pilih Jadwal',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -478,7 +555,7 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primary.withOpacity(0.05) : Colors.white,
+            color: isSelected ? AppColors.primary : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected ? AppColors.primary : Colors.grey.shade300,
@@ -490,12 +567,12 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
               icon is IconData
                   ? Icon(
                       icon,
-                      color: isSelected ? AppColors.primary : Colors.grey.shade600,
+                      color: isSelected ? Colors.white : Colors.grey.shade600,
                       size: 32,
                     )
                   : FaIcon(
                       icon,
-                      color: isSelected ? AppColors.primary : Colors.grey.shade600,
+                      color: isSelected ? Colors.white : Colors.grey.shade600,
                       size: 28, // FA icons are sometimes larger
                     ),
               const SizedBox(height: 8),
@@ -503,7 +580,7 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                 label,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: isSelected ? AppColors.primary : Colors.black87,
+                  color: isSelected ? Colors.white : Colors.black87,
                 ),
               ),
             ],
