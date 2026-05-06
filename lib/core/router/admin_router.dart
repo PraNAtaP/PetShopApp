@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/ui/shared/auth/login/login_page.dart';
 import 'package:petshopapp/ui/admin/dashboard/admin_layout.dart';
-import 'package:petshopapp/ui/admin/admin/add_pet_screen.dart';
 import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
 
 /// Admin application route configuration using GoRouter.
@@ -52,11 +51,6 @@ class AdminRouter {
           name: 'admin-dashboard',
           // The AdminLayout will render the Dashboard UI initially or route sub-screens
           builder: (context, state) => const AdminLayout(),
-        ),
-        GoRoute(
-          path: '/admin/add-pet',
-          name: 'add-pet',
-          builder: (context, state) => const AddPetScreen(),
         ),
         GoRoute(
           path: '/forbidden',
