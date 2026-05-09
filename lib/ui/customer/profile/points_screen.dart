@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
 
@@ -164,26 +165,82 @@ class PointsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(32),
-                child: Column(
-                  children: [
-                    Icon(Icons.history, size: 48, color: Color(0xFFE0E0E0)),
-                    SizedBox(height: 12),
-                    Text(
-                      'Belum ada riwayat poin',
-                      style: TextStyle(color: AppColors.textLight),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('point_history')
+                  .where('uid', isEqualTo: user.uid)
+                  .orderBy('created_at', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: CircularProgressIndicator(),
                     ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Lakukan transaksi untuk mendapatkan poin!',
-                      style: TextStyle(color: AppColors.textLight, fontSize: 12),
-                      textAlign: TextAlign.center,
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Text('Gagal memuat riwayat poin.'),
                     ),
-                  ],
-                ),
-              ),
+                  );
+                }
+
+                final docs = snapshot.data?.docs ?? [];
+
+                if (docs.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          Icon(Icons.history, size: 48, color: Color(0xFFE0E0E0)),
+                          SizedBox(height: 12),
+                          Text(
+                            'Belum ada riwayat poin',
+                            style: TextStyle(color: AppColors.textLight),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Lakukan transaksi untuk mendapatkan poin!',
+                            style: TextStyle(color: AppColors.textLight, fontSize: 12),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final data = docs[index].data() as Map<String, dynamic>;
+                    final int poin = data['poin'] ?? 0;
+                    final String keterangan = data['keterangan'] ?? 'Transaksi';
+                    final Timestamp? ts = data['created_at'] as Timestamp?;
+                    final String tanggal = ts != null ? _formatDate(ts.toDate()) : '-';
+                    final bool isPlus = poin > 0;
+
+                    return _buildHistoryItem(
+                      icon: isPlus
+                          ? Icons.add_circle_outline
+                          : Icons.remove_circle_outline,
+                      iconColor: isPlus ? Colors.green : AppColors.error,
+                      title: keterangan,
+                      subtitle: tanggal,
+                      points: '${isPlus ? '+' : ''}$poin poin',
+                      pointsColor: isPlus ? Colors.green : AppColors.error,
+                    );
+                  },
+                );
+              },
             ),
 
             const SizedBox(height: 28),
@@ -226,9 +283,15 @@ class PointsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
         color: Colors.white,
         child: ElevatedButton.icon(
-          onPressed: null,
+          onPressed: user.poin < 1000
+              ? null
+              : () => _showTukarPoinDialog(context, user.poin, user.uid),
           icon: const Icon(Icons.redeem),
-          label: const Text('Tukarkan Poin'),
+          label: Text(
+            user.poin < 1000
+                ? 'Poin belum cukup (min. 1.000)'
+                : 'Tukarkan Poin',
+          ),
         ),
       ),
     );
@@ -239,5 +302,140 @@ class PointsScreen extends StatelessWidget {
     if (poin >= 5000) return '🥇 Gold Member';
     if (poin >= 1000) return '🥈 Silver Member';
     return '🥉 Bronze Member';
+  }
+
+  String _formatDate(DateTime dt) {
+    const bulan = [
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+    ];
+    return '${dt.day} ${bulan[dt.month]} ${dt.year} • ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _showTukarPoinDialog(BuildContext context, int currentPoin, String uid) {
+    final TextEditingController controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tukarkan Poin'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Poin kamu: $currentPoin poin'),
+            const Text(
+              '1.000 poin = Rp5.000 diskon',
+              style: TextStyle(color: AppColors.textLight, fontSize: 12),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Jumlah poin yang ditukar',
+                hintText: 'Min. 1.000 poin',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final int jumlah = int.tryParse(controller.text) ?? 0;
+              if (jumlah < 1000) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Minimal penukaran 1.000 poin')),
+                );
+                return;
+              }
+              if (jumlah > currentPoin) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Poin tidak mencukupi')),
+                );
+                return;
+              }
+              Navigator.pop(ctx);
+              await _prosesTukarPoin(context, uid, currentPoin, jumlah);
+            },
+            child: const Text('Tukar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _prosesTukarPoin(
+      BuildContext context, String uid, int currentPoin, int jumlahTukar) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final int sisaPoin = currentPoin - jumlahTukar;
+      final int nilaiDiskon = (jumlahTukar ~/ 1000) * 5000;
+
+      await firestore.collection('users').doc(uid).update({'poin': sisaPoin});
+
+      await firestore.collection('point_history').add({
+        'uid': uid,
+        'poin': -jumlahTukar,
+        'keterangan': 'Penukaran poin — diskon Rp${_formatRupiah(nilaiDiskon)}',
+        'created_at': FieldValue.serverTimestamp(),
+      });
+
+      if (context.mounted) {
+        await context.read<AuthService>().refreshProfile();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                '$jumlahTukar poin berhasil ditukar! Diskon Rp${_formatRupiah(nilaiDiskon)}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menukar poin: $e')),
+        );
+      }
+    }
+  }
+
+  String _formatRupiah(int value) {
+    return value.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]}.',
+    );
+  }
+
+  Widget _buildHistoryItem({
+    required IconData icon,
+    required Color iconColor,
+    required String title,
+    required String subtitle,
+    required String points,
+    required Color pointsColor,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+      leading: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: iconColor.withValues(alpha: 0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: iconColor),
+      ),
+      title: Text(title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+      subtitle: Text(subtitle,
+          style: const TextStyle(color: AppColors.textLight, fontSize: 12)),
+      trailing: Text(points,
+          style: TextStyle(
+              color: pointsColor, fontWeight: FontWeight.bold, fontSize: 14)),
+    );
   }
 }
