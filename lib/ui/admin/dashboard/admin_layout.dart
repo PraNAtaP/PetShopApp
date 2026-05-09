@@ -7,6 +7,8 @@ import '../profile/admin_profile_screen.dart';
 import '../grooming/booking_management_screen.dart';
 import '../adoption/admin_adoption_management_screen.dart';
 import '../chat/admin_chat_list_screen.dart';
+import 'package:petshopapp/ui/admin/funfact/admin_funfact_screen.dart';
+
 
 
 import 'package:petshopapp/services/in_app_chat_notifier.dart';
@@ -57,6 +59,7 @@ class _AdminLayoutState extends State<AdminLayout> {
       const AdminAdoptionManagementScreen(), // Adoptions Management
       const AdminChatListScreen(),    // Chat with Customers
       const AdminProfileScreen(),     // Admin Profile
+       AdminFunFactScreen(),     // Admin FunFact
     ];
 
     return Scaffold(
@@ -127,6 +130,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       selectedIcon: Icon(Icons.person),
                       label: Text('Profile'),
                     ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.tips_and_updates_outlined),
+                      selectedIcon: Icon(Icons.tips_and_updates),
+                      label: Text('FunFact'),
+                    ),
                   ],
                 )
               else
@@ -169,6 +177,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       icon: Icon(Icons.person_outline),
                       selectedIcon: Icon(Icons.person),
                       label: Text('Profile'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.tips_and_updates_outlined),
+                      selectedIcon: Icon(Icons.tips_and_updates),
+                      label: Text('FunFact'),
                     ),
                   ],
                 ),

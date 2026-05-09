@@ -5,14 +5,17 @@ import 'package:petshopapp/models/chat_message_model.dart';
 import 'chat_controller.dart';
 import 'chat_bubble.dart';
 
+
 class ChatScreen extends StatefulWidget {
   final String? receiverId;
   final String? receiverName;
+  final String? defaultTopic;
 
   const ChatScreen({
     super.key, 
     this.receiverId, 
     this.receiverName,
+    this.defaultTopic,
   });
 
   @override
@@ -20,13 +23,22 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final TextEditingController _controller = TextEditingController();
+ late TextEditingController _controller;
 
   final List<Map<String, dynamic>> quickReplies = [
     {"text": "Hai saya ingin booking grooming", "icon": Icons.bathtub_outlined},
     {"text": "Hai saya ingin info fun fact peliharaan", "icon": Icons.pets},
     {"text": "Hai saya tertarik untuk mengadopsi hewan", "icon": Icons.home_outlined},
   ];
+
+@override
+void initState() {
+  super.initState();
+
+  _controller = TextEditingController(
+    text: widget.defaultTopic ?? '',
+  );
+}
 
   @override
   void dispose() {

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:go_router/go_router.dart';
+import 'widgets/home_funfact_slider.dart';
 
 /// Dashboard utama Pet Point.
 /// Menampilkan greeting, quick-actions, promo banner, dan tips hewan.
@@ -158,35 +159,15 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          SliverToBoxAdapter(
+         SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 16),
             child: SizedBox(
-              height: 170,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                children: [
-                  _buildTipCard(
-                    emoji: '😺',
-                    title: 'Tahukah Kamu?',
-                    content: 'Kucing menghabiskan 70% dari hidupnya untuk tidur. Mereka juga bisa berputar telinganya 180 derajat!',
-                    gradientColors: const [Color(0xFF003F87), Color(0xFF1976D2)],
-                  ),
-                  _buildTipCard(
-                    emoji: '🐕',
-                    title: 'Tips Grooming',
-                    content: 'Sisir bulu anjing setiap hari untuk mencegah kusut dan menjaga kesehatan kulitnya.',
-                    gradientColors: const [Color(0xFF2E7D32), Color(0xFF4CAF50)],
-                  ),
-                  _buildTipCard(
-                    emoji: '⚠️',
-                    title: 'Penting!',
-                    content: 'Jangan pernah berikan cokelat, bawang, atau anggur pada hewan peliharaan Anda!',
-                    gradientColors: const [Color(0xFFC62828), Color(0xFFEF5350)],
-                  ),
-                ],
-              ),
-            ),
-          ),
+               height: 190,
+               child: const HomeFunFactSlider(),
+    ),
+  ),
+),
 
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],

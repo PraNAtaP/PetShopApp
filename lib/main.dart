@@ -16,6 +16,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'core/router/customer_router.dart';
 import 'core/router/admin_router.dart';
 import 'firebase_options.dart';
+import 'package:petshopapp/providers/funfact_banner_provider.dart';
+import 'ui/admin/funfact/admin_funfact_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -126,7 +128,10 @@ class _AdminAppState extends State<AdminApp> {
           update: (_, auth, cart) => cart!..update(auth.currentUser?.uid),
         ),
         ChangeNotifierProvider(create: (_) => GroomingProvider()),
-      ],
+        ChangeNotifierProvider(
+      create: (_) => FunFactBannerProvider(),
+    ),
+  ],
       child: MaterialApp.router(
         title: 'Pet Point Admin',
         debugShowCheckedModeBanner: false,
@@ -198,6 +203,9 @@ class _CustomerAppState extends State<CustomerApp> {
           update: (_, auth, cart) => cart!..update(auth.currentUser?.uid),
         ),
         ChangeNotifierProvider(create: (_) => GroomingProvider()),
+        ChangeNotifierProvider(
+          create: (_) => FunFactBannerProvider(),
+        ),
       ],
       child: MaterialApp.router(
         title: 'Pet Point',

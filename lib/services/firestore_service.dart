@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:flutter/foundation.dart';
 import 'package:petshopapp/models/user_model.dart';
 import 'package:petshopapp/models/product_model.dart';
@@ -6,6 +6,9 @@ import 'package:petshopapp/models/user_pet_model.dart';
 
 import 'package:petshopapp/models/cart_model.dart';
 import 'package:petshopapp/models/order_model.dart';
+import 'package:petshopapp/models/funfact_banner_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 /// Service to handle Cloud Firestore CRUD operations for Pet Point.
 /// Utilizes the Repository pattern and `.withConverter` for type safety.
@@ -50,6 +53,12 @@ class FirestoreService {
   CollectionReference<UserPetModel> get _userPetsRef =>
       _db.collection('user_pets').withConverter<UserPetModel>(
         fromFirestore: (snapshot, _) => UserPetModel.fromFirestore(snapshot),
+        toFirestore: (model, _) => model.toMap(),
+      );
+
+  CollectionReference<FunFactBannerModel> get _funFactBannersRef =>
+      _db.collection('funfact').withConverter<FunFactBannerModel>(
+        fromFirestore: (snapshot, _) => FunFactBannerModel.fromFirestore(snapshot),
         toFirestore: (model, _) => model.toMap(),
       );
 
@@ -310,5 +319,78 @@ class FirestoreService {
     } catch (e) {
       throw Exception('Gagal menghapus data hewan: $e');
     }
+  }
+
+  // =========================
+  // GET FUNFACTS
+  // =========================
+
+  Stream<List<FunFactBannerModel>>
+      getFunFact() {
+
+    return _db
+        .collection('funfact')
+        .orderBy(
+          'createdAt',
+          descending: true,
+        )
+        .snapshots()
+        .map((snapshot) {
+
+      return snapshot.docs.map((doc) {
+
+        return FunFactBannerModel
+            .fromFirestore(doc);
+
+      }).toList();
+    });
+  }
+
+  // =========================
+  // ADD
+  // =========================
+
+  Future<void> addFunFact(
+    FunFactBannerModel banner,
+  ) async {
+
+    await _db
+        .collection('funfact')
+        .add(
+          banner.toMap(),
+        );
+  }
+
+  // =========================
+  // DELETE
+  // =========================
+
+  Future<void> deleteFunFact(
+    String id,
+  ) async {
+
+    await _db
+        .collection('funfact')
+        .doc(id)
+        .delete();
+  }
+
+  // =========================
+  // TOGGLE ACTIVE
+  // =========================
+
+  Future<void> toggleFunFactStatus(
+    String id,
+    bool currentStatus,
+  ) async {
+
+    await _db
+        .collection('funfact')
+        .doc(id)
+        .update({
+
+      'isActive':
+          !currentStatus,
+    });
   }
 }
