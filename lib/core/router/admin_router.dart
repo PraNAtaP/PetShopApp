@@ -6,10 +6,13 @@ import 'package:petshopapp/ui/admin/dashboard/admin_layout.dart';
 import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
 import 'package:petshopapp/ui/customer/chat/chat_screen.dart';
 
+final GlobalKey<NavigatorState> adminNavigatorKey = GlobalKey<NavigatorState>();
+
 /// Admin application route configuration using GoRouter.
 class AdminRouter {
   static GoRouter router(AuthService authService) {
     return GoRouter(
+      navigatorKey: adminNavigatorKey,
       initialLocation: '/splash',
       refreshListenable: authService,
       redirect: (context, state) {

@@ -11,6 +11,7 @@ import 'package:petshopapp/ui/admin/funfact/admin_funfact_screen.dart';
 import '../shop/order_management_screen.dart';
 
 import 'package:petshopapp/services/in_app_chat_notifier.dart';
+import 'package:petshopapp/services/web_notification/web_notification_service.dart';
 
 class AdminLayout extends StatefulWidget {
   const AdminLayout({super.key});
@@ -29,6 +30,9 @@ class _AdminLayoutState extends State<AdminLayout> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       InAppChatNotifier.instance.startListening(context);
     });
+    
+    // Initialize Web Push Notifications
+    WebNotificationService.instance.initialize();
   }
 
   @override
@@ -66,6 +70,20 @@ class _AdminLayoutState extends State<AdminLayout> {
       appBar: AppBar(
         title: const Text('Pet Point Admin Dashboard'),
         actions: [
+          // Manual Web Push Notification Trigger
+          IconButton(
+            icon: const Icon(Icons.notifications_active_outlined),
+            tooltip: 'Aktifkan Notifikasi Browser',
+            onPressed: () async {
+              await WebNotificationService.instance.requestPermissionManually();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Permintaan izin notifikasi telah dikirim ke browser.')),
+                );
+              }
+            },
+          ),
+          const SizedBox(width: 8),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
