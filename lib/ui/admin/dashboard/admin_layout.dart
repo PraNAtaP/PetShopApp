@@ -8,8 +8,7 @@ import '../grooming/booking_management_screen.dart';
 import '../adoption/admin_adoption_management_screen.dart';
 import '../chat/admin_chat_list_screen.dart';
 import 'package:petshopapp/ui/admin/funfact/admin_funfact_screen.dart';
-
-
+import '../shop/order_management_screen.dart';
 
 import 'package:petshopapp/services/in_app_chat_notifier.dart';
 
@@ -55,6 +54,7 @@ class _AdminLayoutState extends State<AdminLayout> {
     final List<Widget> _adminScreens = [
       const Center(child: Text("Dashboard Overview", style: TextStyle(fontSize: 24))),
       const ManagementScreen(),       // Manage/View Inventory, Users, etc.
+      const OrderManagementScreen(),  // Kelola Pesanan (Shop)
       const BookingManagementScreen(), // Grooming Bookings
       const AdminAdoptionManagementScreen(), // Adoptions Management
       const AdminChatListScreen(),    // Chat with Customers
@@ -111,6 +111,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       label: Text('Inventory'),
                     ),
                     NavigationRailDestination(
+                      icon: Icon(Icons.shopping_bag_outlined),
+                      selectedIcon: Icon(Icons.shopping_bag),
+                      label: Text('Pesanan'),
+                    ),
+                    NavigationRailDestination(
                       icon: Icon(Icons.calendar_month_outlined),
                       selectedIcon: Icon(Icons.calendar_month),
                       label: Text('Grooming'),
@@ -157,6 +162,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       icon: Icon(Icons.inventory_2_outlined),
                       selectedIcon: Icon(Icons.inventory_2),
                       label: Text('Inventory'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.shopping_bag_outlined),
+                      selectedIcon: Icon(Icons.shopping_bag),
+                      label: Text('Pesanan'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.calendar_month_outlined),

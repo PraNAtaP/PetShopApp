@@ -254,6 +254,25 @@ class FirestoreService {
     }
   }
 
+  /// Updates both payment and shipping status of an order (Admin).
+  Future<void> updateOrderFullStatus({
+    required String orderId, 
+    String? statusBayar, 
+    String? statusPengiriman
+  }) async {
+    try {
+      final updates = <String, dynamic>{};
+      if (statusBayar != null) updates['status_bayar'] = statusBayar;
+      if (statusPengiriman != null) updates['status_pengiriman'] = statusPengiriman;
+      
+      if (updates.isNotEmpty) {
+        await _db.collection('orders').doc(orderId).update(updates);
+      }
+    } catch (e) {
+      throw Exception('Gagal memperbarui status pesanan: $e');
+    }
+  }
+
   /// Saves the payment proof URL to an existing order.
   Future<void> updateOrderPaymentProof(String orderId, String url) async {
     try {
@@ -274,6 +293,25 @@ class FirestoreService {
           .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
     } catch (e) {
       throw Exception('Gagal stream data pesanan: $e');
+    }
+  }
+
+  /// Returns a real-time stream of ALL orders (for Admin).
+  Stream<List<OrderModel>> getAllOrdersStream() {
+    try {
+      return _ordersRef
+          .orderBy('created_at', descending: true)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    } catch (e) {
+      // If index is missing, fallback to unordered
+      return _ordersRef
+          .snapshots()
+          .map((snapshot) {
+            final list = snapshot.docs.map((doc) => doc.data()).toList();
+            list.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+            return list;
+          });
     }
   }
 
