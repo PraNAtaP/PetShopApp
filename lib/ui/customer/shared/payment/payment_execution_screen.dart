@@ -412,6 +412,15 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
     );
 
     await FirestoreService.instance.createOrder(order);
+
+    final int poinDidapat = auth.hitungPoinDariTransaksi(cart.totalPrice.toInt());
+    if (poinDidapat > 0) {
+      await auth.tambahPoin(
+        jumlahPoin: poinDidapat,
+        keterangan: 'Pembelian produk — ${cart.totalItems} item',
+      );
+    }
+
     await cart.clearCart();
   }
 
@@ -421,8 +430,21 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
     final user = auth.currentUser;
 
     if (user != null) {
-      // In grooming provider, we updated confirmBooking to take buktiBayarUrl and metodePembayaran
-      await provider.confirmBooking(user.uid, user.nama, buktiBayarUrl: imageUrl, metodePembayaran: widget.paymentMethod);
+      await provider.confirmBooking(
+        user.uid,
+        user.nama,
+        buktiBayarUrl: imageUrl,
+        metodePembayaran: widget.paymentMethod,
+      );
+
+      final int totalGrooming = (provider.selectedPrice * provider.selectedPets.length).toInt();
+      final int poinDidapat = auth.hitungPoinDariTransaksi(totalGrooming);
+      if (poinDidapat > 0) {
+        await auth.tambahPoin(
+          jumlahPoin: poinDidapat,
+          keterangan: 'Booking grooming — ${provider.selectedPets.length} hewan',
+        );
+      }
     }
   }
 
