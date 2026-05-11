@@ -229,6 +229,31 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Mengubah password user. Membutuhkan password lama untuk re-autentikasi.
+  Future<String?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) return 'Pengguna tidak ditemukan.';
+
+    try {
+      // Re-autentikasi user
+      final AuthCredential credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+
+      await user.reauthenticateWithCredential(credential);
+      await user.updatePassword(newPassword);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _mapAuthError(e.code);
+    } catch (e) {
+      return 'Gagal mengubah password: $e';
+    }
+  }
+
   /// Menambah atau mengurangi poin user.
   /// [jumlahPoin] positif = tambah, negatif = kurang.
   Future<String?> tambahPoin({

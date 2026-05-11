@@ -59,7 +59,13 @@ class ChatController extends ChangeNotifier {
         // If no receiver provided, it's a Customer chatting with Admin
         final adminInfo = await _chatService.getAdminInfo();
         _receiverId = adminInfo['uid'];
-        _receiverName = adminInfo['nama']; // "Admin Pranuy"
+        _receiverName = adminInfo['nama']; 
+      } else if (_receiverName == null || _receiverName!.startsWith('Pelanggan')) {
+        // Admin viewing customer: Fetch real name if placeholder used
+        final doc = await FirebaseFirestore.instance.collection('users').doc(_receiverId).get();
+        if (doc.exists) {
+          _receiverName = doc.data()?['nama'];
+        }
       }
 
       _chatId = _chatService.getChatId(_currentUid!, _receiverId!);
