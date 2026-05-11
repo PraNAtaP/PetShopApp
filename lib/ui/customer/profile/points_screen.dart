@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
+import 'package:petshopapp/models/point_history_model.dart';
 
 class PointsScreen extends StatelessWidget {
   const PointsScreen({super.key});
@@ -221,12 +222,11 @@ class PointsScreen extends StatelessWidget {
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
-                    final data = docs[index].data() as Map<String, dynamic>;
-                    final int poin = data['poin'] ?? 0;
-                    final String keterangan = data['keterangan'] ?? 'Transaksi';
-                    final Timestamp? ts = data['created_at'] as Timestamp?;
-                    final String tanggal = ts != null ? _formatDate(ts.toDate()) : '-';
-                    final bool isPlus = poin > 0;
+                    final history = PointHistoryModel.fromFirestore(docs[index]);
+                    final int poin = history.poin;
+                    final String keterangan = history.keterangan;
+                    final String tanggal = history.createdAt != null ? _formatDate(history.createdAt!) : '-';
+                    final bool isPlus = history.isEarn;
 
                     return _buildHistoryItem(
                       icon: isPlus
@@ -370,11 +370,14 @@ class PointsScreen extends StatelessWidget {
   }
 
   Future<void> _prosesTukarPoin(
-      BuildContext context, String uid, int currentPoin, int jumlahTukar) async {
+    BuildContext context, String uid, int currentPoin, int jumlahTukar) async {
+    final authService = context.read<AuthService>();
+    final messenger = ScaffoldMessenger.of(context);
+    final int nilaiDiskon = (jumlahTukar ~/ 1000) * 5000;
+
     try {
       final firestore = FirebaseFirestore.instance;
       final int sisaPoin = currentPoin - jumlahTukar;
-      final int nilaiDiskon = (jumlahTukar ~/ 1000) * 5000;
 
       await firestore.collection('users').doc(uid).update({'poin': sisaPoin});
 
@@ -385,22 +388,19 @@ class PointsScreen extends StatelessWidget {
         'created_at': FieldValue.serverTimestamp(),
       });
 
-      if (context.mounted) {
-        await context.read<AuthService>().refreshProfile();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                '$jumlahTukar poin berhasil ditukar! Diskon Rp${_formatRupiah(nilaiDiskon)}'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
+      await authService.refreshProfile();
+
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(
+              '$jumlahTukar poin berhasil ditukar! Diskon Rp${_formatRupiah(nilaiDiskon)}'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal menukar poin: $e')),
-        );
-      }
+      messenger.showSnackBar(
+        SnackBar(content: Text('Gagal menukar poin: $e')),
+      );
     }
   }
 

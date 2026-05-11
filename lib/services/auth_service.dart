@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/models/user_model.dart';
+import 'package:petshopapp/models/point_history_model.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 /// Authentication service backed by Firebase Auth and Cloud Firestore.
@@ -226,6 +227,54 @@ class AuthService extends ChangeNotifier {
     } catch (e) {
       return 'Gagal menyimpan profil: $e';
     }
+  }
+
+  /// Menambah atau mengurangi poin user.
+  /// [jumlahPoin] positif = tambah, negatif = kurang.
+  Future<String?> tambahPoin({
+    required int jumlahPoin,
+    required String keterangan,
+    String? orderId,
+  }) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return 'Pengguna tidak ditemukan.';
+
+    try {
+      final userRef = _firestore.collection('users').doc(uid);
+      final historyRef = _firestore.collection('point_history');
+
+      await _firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(userRef);
+        if (!snapshot.exists) throw Exception('User tidak ditemukan');
+
+        final int currentPoin = snapshot.data()?['poin'] ?? 0;
+        final int newPoin = (currentPoin + jumlahPoin).clamp(0, 999999);
+
+        transaction.update(userRef, {'poin': newPoin});
+
+        final history = PointHistoryModel(
+          id: '',
+          uid: uid,
+          poin: jumlahPoin,
+          type: jumlahPoin > 0 ? PointType.earn : PointType.redeem,
+          keterangan: keterangan,
+          orderId: orderId,
+        );
+
+        transaction.set(historyRef.doc(), history.toFirestore());
+      });
+
+      await refreshProfile();
+      return null;
+    } catch (e) {
+      return 'Gagal memperbarui poin: $e';
+    }
+  }
+
+  /// Menghitung poin dari total harga transaksi.
+  /// Rumus: setiap Rp10.000 = 1 poin.
+  int hitungPoinDariTransaksi(int totalHarga) {
+    return totalHarga ~/ 10000;
   }
 
   Future<void> logout() async {
