@@ -1,13 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:petshopapp/services/auth_service.dart';
 
 class PointsScreen extends StatelessWidget {
   const PointsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthService>().currentUser;
+
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
         title: const Text('Poin Saya'),
         backgroundColor: AppColors.primary,
@@ -22,12 +33,11 @@ class PointsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Green Card
             Container(
               margin: const EdgeInsets.all(20),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFD4EED7), // Light green background
+                color: const Color(0xFFD4EED7),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Column(
@@ -49,9 +59,9 @@ class PointsScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  const Text(
-                    '2.500 Poin',
-                    style: TextStyle(
+                  Text(
+                    '${user.poin} Poin',
+                    style: const TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textDark,
@@ -64,12 +74,12 @@ class PointsScreen extends StatelessWidget {
                       color: Colors.white.withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.info_outline, size: 16, color: AppColors.textDark),
-                        const SizedBox(width: 8),
-                        const Text(
+                        Icon(Icons.info_outline, size: 16, color: AppColors.textDark),
+                        SizedBox(width: 8),
+                        Text(
                           'Poin dapat digunakan saat Checkout',
                           style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                         ),
@@ -80,99 +90,161 @@ class PointsScreen extends StatelessWidget {
               ),
             ),
 
-            // Expiry and Tier
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Poin Akan Berakhir', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
-                        const SizedBox(height: 4),
-                        const Text('31 Des 2024', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.error)),
-                      ],
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                  Container(width: 1, height: 40, color: Colors.grey.shade300),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 16),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Tier Membership', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
+                          const Text(
+                            'Tier Membership',
+                            style: TextStyle(color: AppColors.textLight, fontSize: 12),
+                          ),
                           const SizedBox(height: 4),
-                          const Text('Gold Member', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                          Text(
+                            _getTier(user.poin),
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Riwayat Transaksi section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Riwayat Transaksi',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                    Container(width: 1, height: 40, color: Colors.grey.shade300),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Nilai Tukar',
+                              style: TextStyle(color: AppColors.textLight, fontSize: 12),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              '1.000 poin = Rp5.000',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text('Filter'),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
 
-            // History List
-            _buildHistoryItem(
-              icon: Icons.shopping_bag_outlined,
-              iconColor: Colors.green,
-              title: 'Pembelian #ORD-001',
-              subtitle: '12 Okt 2023 • 14:20',
-              points: '+50 poin',
-              pointsColor: Colors.green,
+            const SizedBox(height: 28),
+
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20),
+              child: Text(
+                'Riwayat Poin',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
             ),
-            _buildHistoryItem(
-              icon: Icons.local_activity_outlined,
-              iconColor: AppColors.error,
-              title: 'Penukaran Voucher',
-              subtitle: '10 Okt 2023 • 09:15',
-              points: '-30 poin',
-              pointsColor: AppColors.error,
-            ),
-            _buildHistoryItem(
-              icon: Icons.rate_review_outlined,
-              iconColor: Colors.green,
-              title: 'Ulasan Produk',
-              subtitle: '05 Okt 2023 • 18:45',
-              points: '+10 poin',
-              pointsColor: Colors.green,
-            ),
-            _buildHistoryItem(
-              icon: Icons.cake_outlined,
-              iconColor: Colors.green,
-              title: 'Bonus Ulang Tahun Anabul',
-              subtitle: '01 Okt 2023 • 00:01',
-              points: '+100 poin',
-              pointsColor: Colors.green,
+            const SizedBox(height: 12),
+
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('point_history')
+                  .where('uid', isEqualTo: user.uid)
+                  .orderBy('created_at', descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: CircularProgressIndicator(),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Text('Gagal memuat riwayat poin.'),
+                    ),
+                  );
+                }
+
+                final docs = snapshot.data?.docs ?? [];
+
+                if (docs.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: Column(
+                        children: [
+                          Icon(Icons.history, size: 48, color: Color(0xFFE0E0E0)),
+                          SizedBox(height: 12),
+                          Text(
+                            'Belum ada riwayat poin',
+                            style: TextStyle(color: AppColors.textLight),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Lakukan transaksi untuk mendapatkan poin!',
+                            style: TextStyle(color: AppColors.textLight, fontSize: 12),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final data = docs[index].data() as Map<String, dynamic>;
+                    final int poin = data['poin'] ?? 0;
+                    final String keterangan = data['keterangan'] ?? 'Transaksi';
+                    final Timestamp? ts = data['created_at'] as Timestamp?;
+                    final String tanggal = ts != null ? _formatDate(ts.toDate()) : '-';
+                    final bool isPlus = poin > 0;
+
+                    return _buildHistoryItem(
+                      icon: isPlus
+                          ? Icons.add_circle_outline
+                          : Icons.remove_circle_outline,
+                      iconColor: isPlus ? Colors.green : AppColors.error,
+                      title: keterangan,
+                      subtitle: tanggal,
+                      points: '${isPlus ? '+' : ''}$poin poin',
+                      pointsColor: isPlus ? Colors.green : AppColors.error,
+                    );
+                  },
+                );
+              },
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 28),
 
-            // Banner Bottom
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -184,7 +256,8 @@ class PointsScreen extends StatelessWidget {
                         color: Colors.blue.withValues(alpha: 0.1),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.card_giftcard, color: AppColors.primary, size: 32),
+                      child: const Icon(Icons.card_giftcard,
+                          color: AppColors.primary, size: 32),
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -202,18 +275,139 @@ class PointsScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 100), // padding for bottom button
+            const SizedBox(height: 100),
           ],
         ),
       ),
       bottomSheet: Container(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
         color: Colors.white,
-        child: ElevatedButton(
-          onPressed: () {},
-          child: const Text('Tukarkan Poin'),
+        child: ElevatedButton.icon(
+          onPressed: user.poin < 1000
+              ? null
+              : () => _showTukarPoinDialog(context, user.poin, user.uid),
+          icon: const Icon(Icons.redeem),
+          label: Text(
+            user.poin < 1000
+                ? 'Poin belum cukup (min. 1.000)'
+                : 'Tukarkan Poin',
+          ),
         ),
       ),
+    );
+  }
+
+  String _getTier(int poin) {
+    if (poin >= 10000) return '💎 Platinum Member';
+    if (poin >= 5000) return '🥇 Gold Member';
+    if (poin >= 1000) return '🥈 Silver Member';
+    return '🥉 Bronze Member';
+  }
+
+  String _formatDate(DateTime dt) {
+    const bulan = [
+      '', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+    ];
+    return '${dt.day} ${bulan[dt.month]} ${dt.year} • ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+  }
+
+  void _showTukarPoinDialog(BuildContext context, int currentPoin, String uid) {
+    final TextEditingController controller = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Tukarkan Poin'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Poin kamu: $currentPoin poin'),
+            const Text(
+              '1.000 poin = Rp5.000 diskon',
+              style: TextStyle(color: AppColors.textLight, fontSize: 12),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Jumlah poin yang ditukar',
+                hintText: 'Min. 1.000 poin',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final int jumlah = int.tryParse(controller.text) ?? 0;
+              if (jumlah < 1000) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Minimal penukaran 1.000 poin')),
+                );
+                return;
+              }
+              if (jumlah > currentPoin) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Poin tidak mencukupi')),
+                );
+                return;
+              }
+              Navigator.pop(ctx);
+              await _prosesTukarPoin(context, uid, currentPoin, jumlah);
+            },
+            child: const Text('Tukar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _prosesTukarPoin(
+      BuildContext context, String uid, int currentPoin, int jumlahTukar) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final int sisaPoin = currentPoin - jumlahTukar;
+      final int nilaiDiskon = (jumlahTukar ~/ 1000) * 5000;
+
+      await firestore.collection('users').doc(uid).update({'poin': sisaPoin});
+
+      await firestore.collection('point_history').add({
+        'uid': uid,
+        'poin': -jumlahTukar,
+        'keterangan': 'Penukaran poin — diskon Rp${_formatRupiah(nilaiDiskon)}',
+        'created_at': FieldValue.serverTimestamp(),
+      });
+
+      if (context.mounted) {
+        await context.read<AuthService>().refreshProfile();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                '$jumlahTukar poin berhasil ditukar! Diskon Rp${_formatRupiah(nilaiDiskon)}'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menukar poin: $e')),
+        );
+      }
+    }
+  }
+
+  String _formatRupiah(int value) {
+    return value.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]}.',
     );
   }
 
@@ -235,22 +429,13 @@ class PointsScreen extends StatelessWidget {
         ),
         child: Icon(icon, color: iconColor),
       ),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-      ),
-      subtitle: Text(
-        subtitle,
-        style: const TextStyle(color: AppColors.textLight, fontSize: 12),
-      ),
-      trailing: Text(
-        points,
-        style: TextStyle(
-          color: pointsColor,
-          fontWeight: FontWeight.bold,
-          fontSize: 14,
-        ),
-      ),
+      title: Text(title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+      subtitle: Text(subtitle,
+          style: const TextStyle(color: AppColors.textLight, fontSize: 12)),
+      trailing: Text(points,
+          style: TextStyle(
+              color: pointsColor, fontWeight: FontWeight.bold, fontSize: 14)),
     );
   }
 }
