@@ -11,12 +11,19 @@ import 'package:petshopapp/ui/customer/chat/chat_screen.dart';
 class AdminChatListScreen extends StatelessWidget {
   const AdminChatListScreen({super.key});
 
-  Future<String> _fetchUserName(String uid) async {
+  Future<Map<String, String>> _fetchUserInfo(String uid) async {
     try {
       final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
-      return doc.data()?['nama'] ?? 'Pelanggan ($uid)';
+      if (doc.exists) {
+        final data = doc.data()!;
+        return {
+          'nama': data['nama'] ?? 'Tanpa Nama',
+          'fotoUrl': data['foto_url'] ?? '',
+        };
+      }
+      return {'nama': 'Pelanggan', 'fotoUrl': ''};
     } catch (_) {
-      return 'Pelanggan ($uid)';
+      return {'nama': 'Pelanggan', 'fotoUrl': ''};
     }
   }
 
@@ -65,19 +72,26 @@ class AdminChatListScreen extends StatelessWidget {
             separatorBuilder: (context, index) => const Divider(),
             itemBuilder: (context, index) {
               final room = rooms[index];
-              final otherUid = room.participants.firstWhere((id) => id != currentUid, orElse: () => 'User');
+              // Cari ID yang bukan ID Admin saat ini
+              final otherUid = room.participants.firstWhere(
+                (id) => id != currentUid, 
+                orElse: () => room.participants.isNotEmpty ? room.participants.first : 'User'
+              );
               
-              return FutureBuilder<String>(
-                future: room.customerName != null 
-                    ? Future.value(room.customerName) 
-                    : _fetchUserName(otherUid),
-                builder: (context, nameSnapshot) {
-                  final displayName = nameSnapshot.data ?? (room.customerName ?? 'Loading...');
+              return FutureBuilder<Map<String, String>>(
+                future: _fetchUserInfo(otherUid),
+                builder: (context, infoSnapshot) {
+                  final info = infoSnapshot.data;
+                  final displayName = info?['nama'] ?? room.customerName ?? 'Loading...';
+                  final photoUrl = info?['fotoUrl'] ?? '';
 
                   return ListTile(
-                    leading: const CircleAvatar(
-                      backgroundColor: AppColors.primary,
-                      child: Icon(Icons.person, color: Colors.white),
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                      backgroundImage: photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                      child: photoUrl.isEmpty 
+                          ? const Icon(Icons.person, color: AppColors.primary) 
+                          : null,
                     ),
                     title: Text(
                       displayName,
@@ -92,7 +106,7 @@ class AdminChatListScreen extends StatelessWidget {
                           ),
                         Expanded(
                           child: Text(
-                            room.lastMessage ?? 'No messages yet',
+                            room.lastMessage ?? 'Belum ada pesan',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -106,7 +120,7 @@ class AdminChatListScreen extends StatelessWidget {
                         if (room.lastTime != null)
                           Text(
                             DateFormat('HH:mm').format(room.lastTime!),
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            style: const TextStyle(fontSize: 11, color: Colors.grey),
                           ),
                         const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
                       ],
