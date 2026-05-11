@@ -15,6 +15,7 @@ class WebNotificationService {
   StreamSubscription? _chatSubscription;
   StreamSubscription? _orderSubscription;
   StreamSubscription? _bookingSubscription;
+  StreamSubscription? _adoptionSubscription;
   
   final Set<String> _processedDocIds = {};
   bool _isInitialized = false;
@@ -56,6 +57,7 @@ class WebNotificationService {
         .collection('chats')
         .where('participants', arrayContains: user.uid)
         .snapshots()
+        .skip(1) // Skip initial load
         .listen((snapshot) {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.modified || change.type == DocumentChangeType.added) {
@@ -68,9 +70,10 @@ class WebNotificationService {
     _orderSubscription = FirebaseFirestore.instance
         .collection('orders')
         .snapshots()
+        .skip(1) // Skip initial load
         .listen((snapshot) {
       for (var change in snapshot.docChanges) {
-        if (change.type == DocumentChangeType.added) {
+        if (change.type == DocumentChangeType.added || change.type == DocumentChangeType.modified) {
           final data = change.doc.data();
           if (data != null && (data['status_bayar'] == 'Pending' || data['status_bayar'] == 'Belum Bayar' || data['status_bayar'] == 'Menunggu Verifikasi')) {
             _showNotification(
@@ -88,15 +91,38 @@ class WebNotificationService {
     _bookingSubscription = FirebaseFirestore.instance
         .collection('grooming_bookings')
         .snapshots()
+        .skip(1) // Skip initial load
         .listen((snapshot) {
       for (var change in snapshot.docChanges) {
-        if (change.type == DocumentChangeType.added) {
+        if (change.type == DocumentChangeType.added || change.type == DocumentChangeType.modified) {
           final data = change.doc.data();
           if (data != null && data['status'] == 'Pending') {
             _showNotification(
               id: change.doc.id,
               title: 'Booking Grooming Baru!',
               body: '${data['customerName'] ?? 'Pelanggan'} memesan untuk ${data['petName'] ?? 'Hewan'}',
+              onClickPath: '/admin/dashboard',
+            );
+          }
+        }
+      }
+    });
+
+    // 4. Listen to Adoption Requests
+    _adoptionSubscription = FirebaseFirestore.instance
+        .collection('animals')
+        .snapshots()
+        .skip(1) // Skip initial load
+        .listen((snapshot) {
+      for (var change in snapshot.docChanges) {
+        if (change.type == DocumentChangeType.modified) {
+          final data = change.doc.data();
+          if (data != null && data['status'] == 'booked') {
+            final compositeId = '${change.doc.id}_${data['bookedBy']}';
+            _showNotification(
+              id: compositeId,
+              title: 'Pesanan Adopsi Baru!',
+              body: 'Ada yang ingin mengadopsi ${data['name'] ?? 'Hewan'}',
               onClickPath: '/admin/dashboard',
             );
           }
@@ -170,8 +196,8 @@ class WebNotificationService {
       try {
         debugPrint('WebNotification: Triggering html.Notification for $title');
         
-        // Use the absolute URL to the standard Flutter Web PWA icon
-        final String iconUrl = '${html.window.location.origin}/icons/Icon-192.png';
+        // Use the absolute URL to the specific Pet Point Logo asset
+        final String iconUrl = '${html.window.location.origin}/assets/lib/assets/img/1776076564947.png';
         
         final notification = html.Notification(
           title,
