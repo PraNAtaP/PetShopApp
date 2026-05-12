@@ -10,6 +10,47 @@ import 'package:petshopapp/providers/cart_provider.dart';
 class CheckoutReviewScreen extends StatelessWidget {
   const CheckoutReviewScreen({super.key});
 
+  Widget _buildSelectableCard({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : Colors.grey.shade300,
+              width: 2,
+            ),
+          ),
+          child: Column(
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? Colors.white : Colors.grey.shade600,
+                size: 32,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isSelected ? Colors.white : Colors.black87,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final currencyFormatter =
@@ -59,10 +100,95 @@ class CheckoutReviewScreen extends StatelessWidget {
                 ),
               ),
 
+              // Delivery Method Section
+              Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Metode Pengambilan',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        _buildSelectableCard(
+                          label: 'Ambil di Toko',
+                          icon: Icons.storefront,
+                          isSelected: !cart.isDelivery,
+                          onTap: () {
+                            cart.setDelivery(false);
+                          },
+                        ),
+                        const SizedBox(width: 12),
+                        _buildSelectableCard(
+                          label: 'Delivery',
+                          icon: Icons.local_shipping_outlined,
+                          isSelected: cart.isDelivery,
+                          onTap: () {
+                            cart.setDelivery(true);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text('Pilih lokasi pengiriman Anda'),
+                                action: SnackBarAction(
+                                  label: 'Pilih Lokasi',
+                                  onPressed: () {
+                                    context.push('/checkout-location');
+                                  },
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    if (cart.isDelivery) ...[
+                      const SizedBox(height: 12),
+                      InkWell(
+                        onTap: () => context.push('/checkout-location'),
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.location_on, color: AppColors.primary),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  cart.alamatLengkap.isEmpty
+                                      ? 'Ketuk untuk pilih lokasi di peta'
+                                      : cart.alamatLengkap,
+                                  style: TextStyle(
+                                    color: cart.alamatLengkap.isEmpty
+                                        ? Colors.grey.shade600
+                                        : Colors.black87,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right, color: Colors.grey),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
               // Item list
               Expanded(
                 child: ListView.separated(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 0),
                   itemCount: cart.items.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
@@ -188,6 +314,14 @@ class CheckoutReviewScreen extends StatelessWidget {
                         height: 55,
                         child: ElevatedButton.icon(
                           onPressed: () {
+                            if (cart.isDelivery && cart.alamatLengkap.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Harap pilih lokasi pada peta untuk Delivery'),
+                                ),
+                              );
+                              return;
+                            }
                             context.pushNamed('payment-method');
                           },
                           style: ElevatedButton.styleFrom(
