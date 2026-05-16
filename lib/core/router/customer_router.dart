@@ -12,6 +12,7 @@ import 'package:petshopapp/ui/customer/profile/add_edit_pet_screen.dart';
 import 'package:petshopapp/ui/customer/profile/points_screen.dart';
 import 'package:petshopapp/ui/customer/profile/profile_screen.dart';
 import 'package:petshopapp/ui/customer/checkout/checkout_review_screen.dart';
+import 'package:petshopapp/ui/customer/checkout/checkout_location_screen.dart';
 import 'package:petshopapp/ui/customer/shared/payment/payment_method_screen.dart';
 import 'package:petshopapp/ui/customer/shared/payment/payment_execution_screen.dart';
 import 'package:petshopapp/ui/customer/order/order_history_screen.dart';
@@ -96,6 +97,11 @@ class CustomerRouter {
           path: '/checkout-review',
           name: 'checkout-review',
           builder: (context, state) => const CheckoutReviewScreen(),
+        ),
+        GoRoute(
+          path: '/checkout-location',
+          name: 'checkout-location',
+          builder: (context, state) => const CheckoutLocationScreen(),
         ),
         GoRoute(
           path: '/payment-method',

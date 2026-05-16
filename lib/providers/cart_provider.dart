@@ -9,6 +9,12 @@ class CartProvider with ChangeNotifier {
   List<CartModel> _items = [];
   StreamSubscription<List<CartModel>>? _cartSubscription;
 
+  // Checkout State
+  bool _isDelivery = false;
+  String _alamatLengkap = '';
+  double? _latitude;
+  double? _longitude;
+
   CartProvider();
 
   /// Updates the provider with the current user ID and re-initializes the stream.
@@ -25,6 +31,29 @@ class CartProvider with ChangeNotifier {
   int get totalItems => _items.fold(0, (sum, item) => sum + item.jumlah);
 
   double get totalPrice => _items.fold(0.0, (sum, item) => sum + (item.hargaSatuan * item.jumlah));
+
+  bool get isDelivery => _isDelivery;
+  String get alamatLengkap => _alamatLengkap;
+  double? get latitude => _latitude;
+  double? get longitude => _longitude;
+
+  void setDelivery(bool value) {
+    _isDelivery = value;
+    notifyListeners();
+  }
+
+  void updateLocationInfo({
+    required bool isDelivery,
+    required String alamat,
+    double? lat,
+    double? lng,
+  }) {
+    _isDelivery = isDelivery;
+    _alamatLengkap = alamat;
+    _latitude = lat;
+    _longitude = lng;
+    notifyListeners();
+  }
 
   void _initCartListener() {
     _cartSubscription?.cancel();
