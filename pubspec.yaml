@@ -84,6 +84,7 @@ flutter:
   assets:
     - lib/assets/img/1776076564947.png
     - lib/assets/img/qris_placeholder.png
+    - lib/assets/img/google_logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
