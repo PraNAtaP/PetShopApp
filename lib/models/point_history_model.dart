@@ -26,7 +26,7 @@ enum PointType {
 class PointHistoryModel {
   final String id;
   final String uid;
-  final int poin;
+  final double poin;
   final PointType type;
   final String keterangan;
   final String? orderId;
@@ -49,7 +49,7 @@ class PointHistoryModel {
     return PointHistoryModel(
       id: doc.id,
       uid: data['uid'] ?? '',
-      poin: data['poin'] ?? 0,
+      poin: (data['poin'] ?? 0).toDouble(),
       type: PointType.fromString(data['type'] ?? 'earn'),
       keterangan: data['keterangan'] ?? '',
       orderId: data['order_id'] as String?,
@@ -73,7 +73,7 @@ class PointHistoryModel {
   PointHistoryModel copyWith({
     String? id,
     String? uid,
-    int? poin,
+    double? poin,
     PointType? type,
     String? keterangan,
     String? orderId,

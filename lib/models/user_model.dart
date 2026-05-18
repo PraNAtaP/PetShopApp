@@ -43,7 +43,7 @@ class UserModel {
   final String? nomorWa;
   final String? alamat;
   final GeoPoint? koordinat;
-  final int poin;
+  final double poin;
   final String? fcmToken;
   final DateTime? createdAt;
 
@@ -57,7 +57,7 @@ class UserModel {
     this.nomorWa,
     this.alamat,
     this.koordinat,
-    this.poin = 0,
+    this.poin = 0.0,
     this.fcmToken,
     this.createdAt,
   });
@@ -74,7 +74,7 @@ class UserModel {
       nomorWa: data['nomor_wa'] as String?,
       alamat: data['alamat'] as String?,
       koordinat: data['koordinat'] as GeoPoint?,
-      poin: data['poin'] ?? 0,
+poin: (data['poin'] ?? 0).toDouble(),
       fcmToken: data['fcm_token'] as String?,
       createdAt: (data['created_at'] as Timestamp?)?.toDate(),
     );
@@ -115,7 +115,7 @@ class UserModel {
     String? nomorWa,
     String? alamat,
     GeoPoint? koordinat,
-    int? poin,
+    double? poin,
     String? fcmToken,
     DateTime? createdAt,
   }) {

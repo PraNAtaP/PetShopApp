@@ -232,7 +232,7 @@ class AuthService extends ChangeNotifier {
   /// Menambah atau mengurangi poin user.
   /// [jumlahPoin] positif = tambah, negatif = kurang.
   Future<String?> tambahPoin({
-    required int jumlahPoin,
+    required double jumlahPoin,
     required String keterangan,
     String? orderId,
   }) async {
@@ -247,8 +247,8 @@ class AuthService extends ChangeNotifier {
         final snapshot = await transaction.get(userRef);
         if (!snapshot.exists) throw Exception('User tidak ditemukan');
 
-        final int currentPoin = snapshot.data()?['poin'] ?? 0;
-        final int newPoin = (currentPoin + jumlahPoin).clamp(0, 999999);
+        final double currentPoin = (snapshot.data()?['poin'] ?? 0).toDouble();
+        final double newPoin = (currentPoin + jumlahPoin).clamp(0.0, 999999.0);
 
         transaction.update(userRef, {'poin': newPoin});
 
@@ -271,10 +271,8 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Menghitung poin dari total harga transaksi.
-  /// Rumus: setiap Rp10.000 = 1 poin.
-  int hitungPoinDariTransaksi(int totalHarga) {
-    return totalHarga ~/ 10000;
+  double hitungPoinDariTransaksi(double totalHarga) {
+    return totalHarga / 1000;
   }
 
   Future<void> logout() async {
