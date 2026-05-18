@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:petshopapp/models/chat_room_model.dart';
+import 'package:petshopapp/services/chat_service.dart';
 import '../management/management_screen.dart';
 import '../profile/admin_profile_screen.dart';
-import '../grooming/booking_management_screen.dart';
+import '../grooming/booking_management_screen.dart'; // Menghapus typo 'q' di ujung import aslimu
 import '../adoption/admin_adoption_management_screen.dart';
 import '../chat/admin_chat_list_screen.dart';
 import 'package:petshopapp/ui/admin/funfact/admin_funfact_screen.dart';
@@ -26,12 +29,9 @@ class _AdminLayoutState extends State<AdminLayout> {
   @override
   void initState() {
     super.initState();
-    // Start listening for in-app chat notifications
     WidgetsBinding.instance.addPostFrameCallback((_) {
       InAppChatNotifier.instance.startListening(context);
     });
-    
-    // Initialize Web Push Notifications
     WebNotificationService.instance.initialize();
   }
 
@@ -54,23 +54,21 @@ class _AdminLayoutState extends State<AdminLayout> {
       );
     }
 
-    // Replace these placeholders with actual Admin screens
     final List<Widget> _adminScreens = [
       const Center(child: Text("Dashboard Overview", style: TextStyle(fontSize: 24))),
-      const ManagementScreen(),       // Manage/View Inventory, Users, etc.
-      const OrderManagementScreen(),  // Kelola Pesanan (Shop)
-      const BookingManagementScreen(), // Grooming Bookings
-      const AdminAdoptionManagementScreen(), // Adoptions Management
-      const AdminChatListScreen(),    // Chat with Customers
-      const AdminProfileScreen(),     // Admin Profile
-       AdminFunFactScreen(),     // Admin FunFact
+      const ManagementScreen(),       
+      const OrderManagementScreen(),  
+      const BookingManagementScreen(), 
+      const AdminAdoptionManagementScreen(), 
+      const AdminChatListScreen(),    
+      AdminFunFactScreen(),     
+      const AdminProfileScreen(),     
     ];
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pet Point Admin Dashboard'),
         actions: [
-          // Manual Web Push Notification Trigger
           IconButton(
             icon: const Icon(Icons.notifications_active_outlined),
             tooltip: 'Aktifkan Notifikasi Browser',
@@ -96,12 +94,11 @@ class _AdminLayoutState extends State<AdminLayout> {
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isDesktop = constraints.maxWidth >= 800;
-
           return Row(
             children: [
               if (isDesktop)
                 NavigationRail(
-                  backgroundColor: AppColors.cardBackground,
+                  backgroundColor: AppColors.accent,
                   selectedIndex: _selectedIndex,
                   onDestinationSelected: (int index) {
                     setState(() {
@@ -109,6 +106,29 @@ class _AdminLayoutState extends State<AdminLayout> {
                     });
                   },
                   extended: true,
+                  selectedIconTheme: const IconThemeData(
+                    color: AppColors.white,
+                    size: 30,
+                  ),
+                  unselectedIconTheme: IconThemeData(
+                    color: Colors.black.withOpacity(0.6),
+                  ),
+                  useIndicator: true, 
+                  indicatorColor: AppColors.secondary, 
+                  indicatorShape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.horizontal(right: Radius.circular(15)),
+                  ),
+                  minExtendedWidth: 250,
+                  selectedLabelTextStyle: const TextStyle(
+                    color: Colors.white, 
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                  unselectedLabelTextStyle: TextStyle(
+                    color: Colors.black.withOpacity(0.7), 
+                    fontSize: 14,
+                    fontWeight: FontWeight.normal,
+                  ),
                   leading: const Padding(
                     padding: EdgeInsets.all(16.0),
                     child: CircleAvatar(
@@ -149,14 +169,14 @@ class _AdminLayoutState extends State<AdminLayout> {
                       label: Text('Chat'),
                     ),
                     NavigationRailDestination(
-                      icon: Icon(Icons.person_outline),
-                      selectedIcon: Icon(Icons.person),
-                      label: Text('Profile'),
-                    ),
-                    NavigationRailDestination(
                       icon: Icon(Icons.tips_and_updates_outlined),
                       selectedIcon: Icon(Icons.tips_and_updates),
                       label: Text('FunFact'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.person_outline),
+                      selectedIcon: Icon(Icons.person),
+                      label: Text('Profile'),
                     ),
                   ],
                 )
@@ -202,19 +222,18 @@ class _AdminLayoutState extends State<AdminLayout> {
                       label: Text('Chat'),
                     ),
                     NavigationRailDestination(
-                      icon: Icon(Icons.person_outline),
-                      selectedIcon: Icon(Icons.person),
-                      label: Text('Profile'),
-                    ),
-                    NavigationRailDestination(
                       icon: Icon(Icons.tips_and_updates_outlined),
                       selectedIcon: Icon(Icons.tips_and_updates),
                       label: Text('FunFact'),
                     ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.person_outline),
+                      selectedIcon: Icon(Icons.person),
+                      label: Text('Profile'),
+                    ),
                   ],
                 ),
               const VerticalDivider(thickness: 1, width: 1),
-              // Main content panel
               Expanded(
                 child: _adminScreens[_selectedIndex],
               ),

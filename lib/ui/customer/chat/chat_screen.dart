@@ -5,7 +5,6 @@ import 'package:petshopapp/models/chat_message_model.dart';
 import 'chat_controller.dart';
 import 'chat_bubble.dart';
 
-
 class ChatScreen extends StatefulWidget {
   final String? receiverId;
   final String? receiverName;
@@ -31,19 +30,34 @@ class _ChatScreenState extends State<ChatScreen> {
     {"text": "Hai saya tertarik untuk mengadopsi hewan", "icon": Icons.home_outlined},
   ];
 
-@override
-void initState() {
-  super.initState();
-
-  _controller = TextEditingController(
-    text: widget.defaultTopic ?? '',
-  );
-}
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.defaultTopic ?? '',
+    );
+  }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  /// Fungsi bantuan untuk mengubah DateTime menjadi teks "Hari ini", "Kemarin", atau Tanggal
+  String _getDateLabel(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+    final messageDate = DateTime(date.year, date.month, date.day);
+
+    if (messageDate == today) {
+      return "Hari ini";
+    } else if (messageDate == yesterday) {
+      return "Kemarin";
+    } else {
+      return DateFormat('d MMMM yyyy', 'id_ID').format(date); 
+    }
   }
 
   @override
@@ -109,7 +123,48 @@ void initState() {
                           itemBuilder: (context, index) {
                             final msg = displayMessages[index];
                             final isMe = msg.senderId == chat.currentUid;
-                            return ChatBubble(message: msg, isMe: isMe);
+
+                            // LOGIKA PEMISAH TANGGAL
+                            bool showDateDivider = false;
+                            if (msg.timestamp != null) {
+                              if (index == 0) {
+                                // Pesan pertama selalu memunculkan tanggal
+                                showDateDivider = true;
+                              } else {
+                                // Cek pesan sebelumnya, jika tanggal berbeda maka munculkan pembatas baru
+                                final prevMsg = displayMessages[index - 1];
+                                if (prevMsg.timestamp != null) {
+                                  final currentLineDate = DateTime(msg.timestamp!.year, msg.timestamp!.month, msg.timestamp!.day);
+                                  final prevLineDate = DateTime(prevMsg.timestamp!.year, prevMsg.timestamp!.month, prevMsg.timestamp!.day);
+                                  if (currentLineDate != prevLineDate) {
+                                    showDateDivider = true;
+                                  }
+                                }
+                              }
+                            }
+
+                            return Column(
+                              children: [
+                                if (showDateDivider && msg.timestamp != null)
+                                  Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 14),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.05),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      _getDateLabel(msg.timestamp!),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ),
+                                ChatBubble(message: msg, isMe: isMe),
+                              ],
+                            );
                           },
                         ),
                 ),
