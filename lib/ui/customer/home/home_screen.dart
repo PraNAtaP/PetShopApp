@@ -27,7 +27,7 @@ class HomeScreen extends StatelessWidget {
       backgroundColor: Colors.grey.shade50,
       body: CustomScrollView(
         slivers: [
-          // ── Custom Header ─────────────────────────────────────────
+          // ── Custom Header (Lonceng diganti Keranjang & Navigasi ke /cart) ──
           SliverToBoxAdapter(child: _buildHeader(context, firstName, user.poin)),
 
           // ── Quick Actions ─────────────────────────────────────────
@@ -69,7 +69,8 @@ class HomeScreen extends StatelessWidget {
                         icon: Icons.shopping_bag_outlined,
                         label: 'Shop',
                         gradient: const [Color(0xFFE65100), Color(0xFFFF9800)],
-                        onTap: () {},
+                        // Menu Shop mengarah ke halaman /shop (ShopScreen)
+                        onTap: () => context.push('/shop'),
                       ),
                       const SizedBox(width: 12),
                       _buildServiceCard(
@@ -77,7 +78,15 @@ class HomeScreen extends StatelessWidget {
                         icon: Icons.local_hospital_outlined,
                         label: 'Konsultasi',
                         gradient: const [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
-                        onTap: () {},
+                        // Mengirimkan template text sebagai extra data ke halaman chat
+                        onTap: () {
+                          const templateMessage = 
+                              'hai sahabat pet point! anabul kamu kenapa? Silahkan isi form nya ya agar kami dapat menganalisa kondisi terkini anabul kamu:\n'
+                              'Nama anabul:\n'
+                              'Jenis anabul:\n'
+                              'Kondisi anabul:';
+                          context.push('/chat', extra: {'autoSendText': templateMessage});
+                        },
                       ),
                     ],
                   ),
@@ -159,15 +168,17 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
-         SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 16),
-            child: SizedBox(
-               height: 190,
-               child: const HomeFunFactSlider(),
-    ),
-  ),
-),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: SizedBox(
+                height: 190,
+                // Catatan: Pastikan di dalam widget HomeFunFactSlider() kamu menangani 
+                // callback onTap untuk me-redirect ke /chat membawa judul/ID FunFact.
+                child: const HomeFunFactSlider(),
+              ),
+            ),
+          ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
@@ -198,7 +209,7 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top row: Logo + Notification
+            // Top row: Logo + Cart (Ubah dari Lonceng ke Keranjang)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -231,8 +242,10 @@ class HomeScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.notifications_none_rounded, color: Colors.white),
-                    onPressed: () {},
+                    // Perubahan Ikon ke Keranjang Belanja
+                    icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
+                    // Navigasi ke Halaman CartScreen
+                    onPressed: () => context.push('/cart'),
                     constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
                     padding: EdgeInsets.zero,
                   ),
@@ -379,76 +392,82 @@ class HomeScreen extends StatelessWidget {
   // ═══════════════════════════════════════════════════════════════════
 
   Widget _buildPromoBanner(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF003F87), Color(0xFF0D47A1)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF003F87).withValues(alpha: 0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+    return GestureDetector(
+      // Ketika banner diklik, arahkan ke halaman pemesanan/chat grooming dan kirim data diskon otomatis
+      onTap: () {
+        context.push('/grooming-service', extra: {'applyPromo20': true});
+      },
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF003F87), Color(0xFF0D47A1)],
           ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.accent,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'PROMO',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 1,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF003F87).withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'PROMO',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 1,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'Grooming Diskon 20%',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Grooming Diskon 20%',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Untuk pelanggan baru! Berlaku s/d 30 April.',
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 12,
+                  const SizedBox(height: 4),
+                  Text(
+                    'Untuk pelanggan baru! Berlaku s/d 30 April.',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 12,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 16),
-          Container(
-            width: 70,
-            height: 70,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(16),
+            const SizedBox(width: 16),
+            Container(
+              width: 70,
+              height: 70,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(Icons.content_cut, color: Colors.white, size: 36),
             ),
-            child: const Icon(Icons.content_cut, color: Colors.white, size: 36),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -509,7 +528,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // Tip Card
+  // Tip Card (Opsional/Bisa dipakai jika diintegrasikan di Slider)
   // ═══════════════════════════════════════════════════════════════════
 
   Widget _buildTipCard({
@@ -517,57 +536,61 @@ class HomeScreen extends StatelessWidget {
     required String title,
     required String content,
     required List<Color> gradientColors,
+    required VoidCallback onTap, // Tambahan parameter onTap
   }) {
-    return Container(
-      width: 260,
-      margin: const EdgeInsets.only(right: 16),
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: gradientColors,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: gradientColors[0].withValues(alpha: 0.25),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 260,
+        margin: const EdgeInsets.only(right: 16),
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradientColors,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 22)),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  fontSize: 15,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: Text(
-              content,
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.white.withValues(alpha: 0.85),
-                height: 1.4,
-              ),
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: gradientColors[0].withValues(alpha: 0.25),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(emoji, style: const TextStyle(fontSize: 22)),
+                const SizedBox(width: 8),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: Text(
+                content,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.white.withValues(alpha: 0.85),
+                  height: 1.4,
+                ),
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
