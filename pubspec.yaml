@@ -53,6 +53,7 @@ dependencies:
   flutter_chat_ui: ^2.11.1
   cached_network_image: ^3.4.1
   image_cropper: ^12.2.1
+  crop_your_image: ^2.0.0
 
 
 

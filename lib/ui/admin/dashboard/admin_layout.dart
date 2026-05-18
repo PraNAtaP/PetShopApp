@@ -98,7 +98,7 @@ class _AdminLayoutState extends State<AdminLayout> {
             children: [
               if (isDesktop)
                 NavigationRail(
-                  backgroundColor: AppColors.accent,
+                  backgroundColor: Colors.white,
                   selectedIndex: _selectedIndex,
                   onDestinationSelected: (int index) {
                     setState(() {
@@ -107,34 +107,34 @@ class _AdminLayoutState extends State<AdminLayout> {
                   },
                   extended: true,
                   selectedIconTheme: const IconThemeData(
-                    color: AppColors.white,
-                    size: 30,
+                    color: AppColors.primary,
+                    size: 26,
                   ),
                   unselectedIconTheme: IconThemeData(
-                    color: Colors.black.withOpacity(0.6),
+                    color: Colors.black.withValues(alpha: 0.54),
                   ),
                   useIndicator: true, 
-                  indicatorColor: AppColors.secondary, 
-                  indicatorShape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.horizontal(right: Radius.circular(15)),
+                  indicatorColor: AppColors.primary.withValues(alpha: 0.08), 
+                  indicatorShape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   minExtendedWidth: 250,
                   selectedLabelTextStyle: const TextStyle(
-                    color: Colors.white, 
+                    color: AppColors.primary, 
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 15,
                   ),
                   unselectedLabelTextStyle: TextStyle(
-                    color: Colors.black.withOpacity(0.7), 
+                    color: Colors.black.withValues(alpha: 0.65), 
                     fontSize: 14,
                     fontWeight: FontWeight.normal,
                   ),
                   leading: const Padding(
-                    padding: EdgeInsets.all(16.0),
+                    padding: EdgeInsets.symmetric(vertical: 24.0),
                     child: CircleAvatar(
-                      radius: 30,
+                      radius: 26,
                       backgroundColor: AppColors.primary,
-                      child: Icon(Icons.admin_panel_settings, color: Colors.white, size: 30),
+                      child: Icon(Icons.admin_panel_settings, color: Colors.white, size: 26),
                     ),
                   ),
                   destinations: const [
