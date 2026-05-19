@@ -47,6 +47,10 @@ class OrderModel {
   final String metodePengambilan;
   final String metodePembayaran;
   final DateTime? createdAt;
+  final bool? cancelRequest;
+  final String? cancelBankName;
+  final String? cancelBankAccount;
+  final String? cancelAccountHolder;
 
   /// Creates a new [OrderModel] instance.
   const OrderModel({
@@ -60,6 +64,10 @@ class OrderModel {
     required this.metodePengambilan,
     required this.metodePembayaran,
     this.createdAt,
+    this.cancelRequest,
+    this.cancelBankName,
+    this.cancelBankAccount,
+    this.cancelAccountHolder,
   });
 
   /// Factory constructor to map Firestore [DocumentSnapshot] to [OrderModel].
@@ -80,6 +88,10 @@ class OrderModel {
       metodePengambilan: data['metode_pengambilan'] ?? '',
       metodePembayaran: data['metode_pembayaran'] ?? '',
       createdAt: (data['created_at'] as Timestamp?)?.toDate(),
+      cancelRequest: data['cancel_request'] as bool?,
+      cancelBankName: data['cancel_bank_name'] as String?,
+      cancelBankAccount: data['cancel_bank_account'] as String?,
+      cancelAccountHolder: data['cancel_account_holder'] as String?,
     );
   }
 
@@ -95,6 +107,10 @@ class OrderModel {
       'metode_pengambilan': metodePengambilan,
       'metode_pembayaran': metodePembayaran,
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'cancel_request': cancelRequest,
+      'cancel_bank_name': cancelBankName,
+      'cancel_bank_account': cancelBankAccount,
+      'cancel_account_holder': cancelAccountHolder,
     };
   }
 
@@ -110,6 +126,10 @@ class OrderModel {
     String? metodePengambilan,
     String? metodePembayaran,
     DateTime? createdAt,
+    bool? cancelRequest,
+    String? cancelBankName,
+    String? cancelBankAccount,
+    String? cancelAccountHolder,
   }) {
     return OrderModel(
       orderId: orderId ?? this.orderId,
@@ -122,6 +142,10 @@ class OrderModel {
       metodePengambilan: metodePengambilan ?? this.metodePengambilan,
       metodePembayaran: metodePembayaran ?? this.metodePembayaran,
       createdAt: createdAt ?? this.createdAt,
+      cancelRequest: cancelRequest ?? this.cancelRequest,
+      cancelBankName: cancelBankName ?? this.cancelBankName,
+      cancelBankAccount: cancelBankAccount ?? this.cancelBankAccount,
+      cancelAccountHolder: cancelAccountHolder ?? this.cancelAccountHolder,
     );
   }
 }

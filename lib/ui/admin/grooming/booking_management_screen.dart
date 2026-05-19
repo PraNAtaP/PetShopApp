@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/services/grooming_service.dart';
 import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
@@ -81,6 +82,8 @@ class BookingManagementScreen extends StatelessWidget {
                   DataColumn(label: Text('Aksi', style: TextStyle(fontWeight: FontWeight.bold))),
                 ],
                 rows: bookings.map((booking) {
+                  final hasCancelRequest = booking.cancelRequest == true;
+
                   return DataRow(
                     cells: [
                       DataCell(
@@ -89,7 +92,25 @@ class BookingManagementScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Text(booking.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            Text('ID: ${booking.userId.substring(0, 5)}...', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                            Row(
+                              children: [
+                                Text('ID: ${booking.userId.substring(0, 5)}...', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                                if (hasCancelRequest) ...[
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      'BATAL',
+                                      style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
                           ],
                         ),
                       ),
@@ -139,28 +160,34 @@ class BookingManagementScreen extends StatelessWidget {
                       ),
                       DataCell(_buildStatusBadge(booking.status)),
                       DataCell(
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            if (booking.status == 'Pending')
-                              IconButton(
-                                icon: const Icon(Icons.check_circle, color: Colors.green),
-                                onPressed: () => _updateStatus(context, booking.bookingId, 'Confirmed'),
-                                tooltip: 'Konfirmasi',
+                        hasCancelRequest
+                            ? IconButton(
+                                icon: const Icon(Icons.info_outline, color: Colors.red),
+                                onPressed: () => _showCancelRequestDialog(context, booking),
+                                tooltip: 'Proses Pembatalan',
+                              )
+                            : Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (booking.status == 'Pending')
+                                    IconButton(
+                                      icon: const Icon(Icons.check_circle, color: Colors.green),
+                                      onPressed: () => _updateStatus(context, booking.bookingId, 'Confirmed'),
+                                      tooltip: 'Konfirmasi',
+                                    ),
+                                  if (booking.status == 'Confirmed')
+                                    IconButton(
+                                      icon: const Icon(Icons.done_all, color: Colors.blue),
+                                      onPressed: () => _updateStatus(context, booking.bookingId, 'Completed'),
+                                      tooltip: 'Selesai',
+                                    ),
+                                  IconButton(
+                                    icon: const Icon(Icons.cancel, color: Colors.red),
+                                    onPressed: () => _updateStatus(context, booking.bookingId, 'Cancelled'),
+                                    tooltip: 'Batalkan',
+                                  ),
+                                ],
                               ),
-                            if (booking.status == 'Confirmed')
-                              IconButton(
-                                icon: const Icon(Icons.done_all, color: Colors.blue),
-                                onPressed: () => _updateStatus(context, booking.bookingId, 'Completed'),
-                                tooltip: 'Selesai',
-                              ),
-                            IconButton(
-                              icon: const Icon(Icons.cancel, color: Colors.red),
-                              onPressed: () => _updateStatus(context, booking.bookingId, 'Cancelled'),
-                              tooltip: 'Batalkan',
-                            ),
-                          ],
-                        ),
                       ),
                     ],
                   );
@@ -231,6 +258,79 @@ class BookingManagementScreen extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Tutup'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCancelRequestDialog(BuildContext context, GroomingBookingModel booking) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red.shade700),
+            const SizedBox(width: 8),
+            const Text('Pengajuan Pembatalan'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Nama Customer: ${booking.customerName}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            if (booking.metodePembayaran != 'COD') ...[
+              Text('Nama Bank: ${booking.cancelBankName ?? '-'}'),
+              const SizedBox(height: 4),
+              Text('Nomor Rekening: ${booking.cancelBankAccount ?? '-'}'),
+              const SizedBox(height: 4),
+              Text('Atas Nama: ${booking.cancelAccountHolder ?? '-'}'),
+            ] else ...[
+              const Text('Metode Pembayaran: COD (Cash on Delivery). Tidak memerlukan transfer refund.', style: TextStyle(fontStyle: FontStyle.italic)),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await GroomingService.instance.updateBookingStatus(booking.bookingId, 'Dibatalkan');
+              await FirebaseFirestore.instance
+                  .collection('grooming_bookings')
+                  .doc(booking.bookingId)
+                  .update({'cancel_request': false});
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Pembatalan grooming disetujui!'), backgroundColor: Colors.green),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+            child: const Text('Setujui'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final isPaid = booking.buktiBayarUrl != null && booking.buktiBayarUrl!.isNotEmpty;
+              await GroomingService.instance.updateBookingStatus(booking.bookingId, isPaid ? 'Confirmed' : 'Pending');
+              await FirebaseFirestore.instance
+                  .collection('grooming_bookings')
+                  .doc(booking.bookingId)
+                  .update({'cancel_request': false});
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Pembatalan grooming ditolak.'), backgroundColor: Colors.orange),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text('Tolak'),
           ),
         ],
       ),

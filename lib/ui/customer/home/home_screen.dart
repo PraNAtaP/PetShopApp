@@ -28,7 +28,7 @@ class HomeScreen extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           // ── Custom Header (Lonceng diganti Keranjang & Navigasi ke /cart) ──
-          SliverToBoxAdapter(child: _buildHeader(context, firstName, user.poin)),
+          SliverToBoxAdapter(child: _buildHeader(context, firstName, user.poin.toInt())),
 
           // ── Quick Actions ─────────────────────────────────────────
           SliverToBoxAdapter(
@@ -142,7 +142,7 @@ class HomeScreen extends StatelessWidget {
                       Expanded(
                         child: _buildStatCard(
                           icon: Icons.stars_rounded,
-                          value: '${user.poin}',
+                          value: '${user.poin.toInt()}',
                           label: 'Poin',
                           color: const Color(0xFFE65100),
                         ),

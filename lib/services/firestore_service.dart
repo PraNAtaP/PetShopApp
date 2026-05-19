@@ -284,6 +284,28 @@ class FirestoreService {
     }
   }
 
+  /// Submits a request to cancel a shop order.
+  Future<void> requestCancelOrder({
+    required String orderId,
+    String? bankName,
+    String? bankAccount,
+    String? accountHolder,
+  }) async {
+    try {
+      final updates = <String, dynamic>{
+        'cancel_request': true,
+        'status_pengiriman': 'Menunggu Persetujuan Pembatalan',
+      };
+      if (bankName != null) updates['cancel_bank_name'] = bankName;
+      if (bankAccount != null) updates['cancel_bank_account'] = bankAccount;
+      if (accountHolder != null) updates['cancel_account_holder'] = accountHolder;
+
+      await _db.collection('orders').doc(orderId).update(updates);
+    } catch (e) {
+      throw Exception('Gagal mengajukan pembatalan pesanan: $e');
+    }
+  }
+
   /// Returns a real-time stream of orders for a specific customer.
   Stream<List<OrderModel>> getOrdersStream(String customerId) {
     try {
