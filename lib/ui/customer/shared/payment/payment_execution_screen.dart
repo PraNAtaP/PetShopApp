@@ -413,7 +413,7 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
 
     await FirestoreService.instance.createOrder(order);
 
-    final int poinDidapat = auth.hitungPoinDariTransaksi(cart.totalPrice.toInt());
+    final double poinDidapat = auth.hitungPoinDariTransaksi(cart.totalPrice);
     if (poinDidapat > 0) {
       await auth.tambahPoin(
         jumlahPoin: poinDidapat,
@@ -437,8 +437,8 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
         metodePembayaran: widget.paymentMethod,
       );
 
-      final int totalGrooming = (provider.selectedPrice * provider.selectedPets.length).toInt();
-      final int poinDidapat = auth.hitungPoinDariTransaksi(totalGrooming);
+      final double totalGrooming = provider.selectedPrice * provider.selectedPets.length;
+      final double poinDidapat = auth.hitungPoinDariTransaksi(totalGrooming);
       if (poinDidapat > 0) {
         await auth.tambahPoin(
           jumlahPoin: poinDidapat,

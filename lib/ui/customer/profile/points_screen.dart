@@ -223,7 +223,7 @@ class PointsScreen extends StatelessWidget {
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final history = PointHistoryModel.fromFirestore(docs[index]);
-                    final int poin = history.poin;
+                    final double poin = history.poin;
                     final String keterangan = history.keterangan;
                     final String tanggal = history.createdAt != null ? _formatDate(history.createdAt!) : '-';
                     final bool isPlus = history.isEarn;
@@ -283,12 +283,12 @@ class PointsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
         color: Colors.white,
         child: ElevatedButton.icon(
-          onPressed: user.poin < 1000
+          onPressed: user.poin < 1000.0
               ? null
               : () => _showTukarPoinDialog(context, user.poin, user.uid),
           icon: const Icon(Icons.redeem),
           label: Text(
-            user.poin < 1000
+            user.poin < 1000.0
                 ? 'Poin belum cukup (min. 1.000)'
                 : 'Tukarkan Poin',
           ),
@@ -297,7 +297,7 @@ class PointsScreen extends StatelessWidget {
     );
   }
 
-  String _getTier(int poin) {
+  String _getTier(double poin) {
     if (poin >= 10000) return '💎 Platinum Member';
     if (poin >= 5000) return '🥇 Gold Member';
     if (poin >= 1000) return '🥈 Silver Member';
@@ -312,7 +312,7 @@ class PointsScreen extends StatelessWidget {
     return '${dt.day} ${bulan[dt.month]} ${dt.year} • ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 
-  void _showTukarPoinDialog(BuildContext context, int currentPoin, String uid) {
+  void _showTukarPoinDialog(BuildContext context, double currentPoin, String uid) {
     final TextEditingController controller = TextEditingController();
     showDialog(
       context: context,
@@ -346,7 +346,7 @@ class PointsScreen extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              final int jumlah = int.tryParse(controller.text) ?? 0;
+              final double jumlah = double.tryParse(controller.text) ?? 0.0;
               if (jumlah < 1000) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Minimal penukaran 1.000 poin')),
@@ -370,20 +370,20 @@ class PointsScreen extends StatelessWidget {
   }
 
   Future<void> _prosesTukarPoin(
-    BuildContext context, String uid, int currentPoin, int jumlahTukar) async {
+    BuildContext context, String uid, double currentPoin, double jumlahTukar) async {
     final authService = context.read<AuthService>();
     final messenger = ScaffoldMessenger.of(context);
-    final int nilaiDiskon = (jumlahTukar ~/ 1000) * 5000;
+    final double nilaiDiskon = (jumlahTukar ~/ 1000) * 5000;
 
     try {
       final firestore = FirebaseFirestore.instance;
-      final int sisaPoin = currentPoin - jumlahTukar;
+      final double sisaPoin = currentPoin - jumlahTukar;
 
       await firestore.collection('users').doc(uid).update({'poin': sisaPoin});
 
       await firestore.collection('point_history').add({
         'uid': uid,
-        'poin': -jumlahTukar,
+        'poin': -jumlahTukar.toDouble(),
         'keterangan': 'Penukaran poin — diskon Rp${_formatRupiah(nilaiDiskon)}',
         'created_at': FieldValue.serverTimestamp(),
       });
@@ -404,8 +404,8 @@ class PointsScreen extends StatelessWidget {
     }
   }
 
-  String _formatRupiah(int value) {
-    return value.toString().replaceAllMapped(
+  String _formatRupiah(double value) {
+    return value.toInt().toString().replaceAllMapped(
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
       (m) => '${m[1]}.',
     );
