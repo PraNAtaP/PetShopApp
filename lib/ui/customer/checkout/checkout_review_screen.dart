@@ -132,17 +132,6 @@ class CheckoutReviewScreen extends StatelessWidget {
                           isSelected: cart.isDelivery,
                           onTap: () {
                             cart.setDelivery(true);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: const Text('Pilih lokasi pengiriman Anda'),
-                                action: SnackBarAction(
-                                  label: 'Pilih Lokasi',
-                                  onPressed: () {
-                                    context.push('/checkout-location');
-                                  },
-                                ),
-                              ),
-                            );
                           },
                         ),
                       ],
