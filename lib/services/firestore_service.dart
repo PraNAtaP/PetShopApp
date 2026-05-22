@@ -302,7 +302,22 @@ class FirestoreService {
   /// Creates a new order in Firestore. Returns the generated document ID.
   Future<String> createOrder(OrderModel order) async {
     try {
-      final docRef = await _ordersRef.add(order);
+      final batch = _db.batch();
+      
+      // 1. Buat dokumen order baru
+      final docRef = _ordersRef.doc();
+      batch.set(docRef, order);
+      
+      // 2. Kurangi stok produk dan tambah jumlah terjual
+      for (final item in order.items) {
+        final productRef = _productsRef.doc(item.productId);
+        batch.update(productRef, {
+          'stok': FieldValue.increment(-item.jumlah),
+          'terjual': FieldValue.increment(item.jumlah),
+        });
+      }
+      
+      await batch.commit();
       return docRef.id;
     } catch (e) {
       throw Exception('Gagal membuat pesanan: $e');

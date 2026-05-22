@@ -254,18 +254,22 @@ class _ShopScreenState extends State<ShopScreen> {
   Widget _buildProductCard(ProductModel product) {
     final isOutOfStock = product.stok <= 0;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
+    return GestureDetector(
+      onTap: () {
+        context.push('/product-detail', extra: product);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -374,8 +378,9 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showCartBottomSheet(BuildContext context) {
     context.read<CartProvider>().refresh();

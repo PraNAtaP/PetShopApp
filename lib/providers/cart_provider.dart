@@ -84,7 +84,7 @@ class CartProvider with ChangeNotifier {
     _initCartListener();
   }
 
-  Future<void> addItem(ProductModel product) async {
+  Future<void> addItem(ProductModel product, {int quantity = 1}) async {
     if (_userId == null) {
       debugPrint('[CART_DEBUG] Cannot add item: userId is null');
       return;
@@ -96,7 +96,7 @@ class CartProvider with ChangeNotifier {
       productId: product.productId,
       nama: product.namaProduk,
       hargaSatuan: product.harga.toDouble(),
-      jumlah: 1,
+      jumlah: quantity,
       fotoUrl: product.fotoUrl,
     );
 
