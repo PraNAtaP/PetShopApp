@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/providers/cart_provider.dart';
+import 'package:petshopapp/models/user_address_model.dart';
+import 'package:petshopapp/ui/customer/profile/address_list_screen.dart';
 
 /// Displays a summary of the customer's cart before proceeding to payment.
 /// Acts as the first step in the checkout flow.
@@ -139,7 +141,20 @@ class CheckoutReviewScreen extends StatelessWidget {
                     if (cart.isDelivery) ...[
                       const SizedBox(height: 12),
                       InkWell(
-                        onTap: () => context.push('/checkout-location'),
+                        onTap: () async {
+                          final UserAddressModel? result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const AddressListScreen(isSelectionMode: true)),
+                          );
+                          if (result != null) {
+                            cart.updateLocationInfo(
+                              isDelivery: true,
+                              alamat: result.fullAddress,
+                              lat: result.latitude,
+                              lng: result.longitude,
+                            );
+                          }
+                        },
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(

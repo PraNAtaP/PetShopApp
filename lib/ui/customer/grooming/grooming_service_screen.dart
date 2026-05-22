@@ -8,6 +8,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/services/firestore_service.dart';
 import 'package:petshopapp/models/user_pet_model.dart';
+import 'package:petshopapp/models/user_address_model.dart';
+import 'package:petshopapp/ui/customer/profile/address_list_screen.dart';
 
 class GroomingServiceScreen extends StatefulWidget {
   const GroomingServiceScreen({super.key});
@@ -358,7 +360,20 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
             if (_isHomeService) ...[
               const SizedBox(height: 12),
               InkWell(
-                onTap: () => context.push('/grooming-location'),
+                onTap: () async {
+                  final UserAddressModel? result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AddressListScreen(isSelectionMode: true)),
+                  );
+                  if (result != null) {
+                    provider.updateLocationInfo(
+                      isHome: true,
+                      alamat: result.fullAddress,
+                      lat: result.latitude,
+                      lng: result.longitude,
+                    );
+                  }
+                },
                 child: Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(

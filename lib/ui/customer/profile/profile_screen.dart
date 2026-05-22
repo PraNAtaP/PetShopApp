@@ -5,6 +5,7 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/ui/customer/order/order_history_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_history_screen.dart';
+import 'package:petshopapp/ui/customer/profile/address_list_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -158,8 +159,27 @@ class ProfileScreen extends StatelessWidget {
                               const Divider(height: 24),
                               _buildInfoRow(
                                 icon: Icons.location_on_outlined,
-                                title: 'Alamat',
-                                subtitle: user?.alamat ?? 'Belum diatur',
+                                title: 'Alamat Utama',
+                                subtitle: user?.alamat ?? 'Belum diatur (Tambahkan di Buku Alamat)',
+                              ),
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => const AddressListScreen()),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.book_outlined, size: 18),
+                                  label: const Text('Buku Alamat'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.primary,
+                                    side: const BorderSide(color: AppColors.primary),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
                               ),
                             ],
                           ),

@@ -1,6 +1,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:petshopapp/models/user_model.dart';
+import 'package:petshopapp/models/user_address_model.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/models/user_pet_model.dart';
 
@@ -84,6 +85,71 @@ class FirestoreService {
       });
     } catch (e) {
       throw Exception('Gagal memperbarui FCM token: $e');
+    }
+  }
+
+  // ==========================================
+  // Address Book Management
+  // ==========================================
+
+  CollectionReference<UserAddressModel> _userAddressesRef(String uid) =>
+      _db.collection('users').doc(uid).collection('addresses').withConverter<UserAddressModel>(
+        fromFirestore: (snapshot, _) => UserAddressModel.fromFirestore(snapshot),
+        toFirestore: (model, _) => model.toMap(),
+      );
+
+  Stream<List<UserAddressModel>> getUserAddressesStream(String uid) {
+    try {
+      return _userAddressesRef(uid)
+          .orderBy('is_primary', descending: true)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    } catch (e) {
+      throw Exception('Gagal stream data alamat: $e');
+    }
+  }
+
+  Future<void> addUserAddress(String uid, UserAddressModel address) async {
+    try {
+      if (address.isPrimary) {
+        // If this new address is primary, we should unset others
+        final query = await _userAddressesRef(uid).where('is_primary', isEqualTo: true).get();
+        final batch = _db.batch();
+        for (var doc in query.docs) {
+          batch.update(doc.reference, {'is_primary': false});
+        }
+        await batch.commit();
+      }
+      
+      if (address.id.isEmpty) {
+        await _userAddressesRef(uid).add(address);
+      } else {
+        await _userAddressesRef(uid).doc(address.id).set(address);
+      }
+    } catch (e) {
+      throw Exception('Gagal menyimpan alamat: $e');
+    }
+  }
+
+  Future<void> deleteUserAddress(String uid, String addressId) async {
+    try {
+      await _userAddressesRef(uid).doc(addressId).delete();
+    } catch (e) {
+      throw Exception('Gagal menghapus alamat: $e');
+    }
+  }
+
+  Future<void> setPrimaryAddress(String uid, String addressId) async {
+    try {
+      final batch = _db.batch();
+      // Unset all primary
+      final query = await _userAddressesRef(uid).get();
+      for (var doc in query.docs) {
+        batch.update(doc.reference, {'is_primary': doc.id == addressId});
+      }
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Gagal mengubah alamat utama: $e');
     }
   }
 

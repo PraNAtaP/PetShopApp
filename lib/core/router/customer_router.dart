@@ -13,7 +13,6 @@ import 'package:petshopapp/ui/customer/profile/add_edit_pet_screen.dart';
 import 'package:petshopapp/ui/customer/profile/points_screen.dart';
 import 'package:petshopapp/ui/customer/profile/profile_screen.dart';
 import 'package:petshopapp/ui/customer/checkout/checkout_review_screen.dart';
-import 'package:petshopapp/ui/customer/checkout/checkout_location_screen.dart';
 import 'package:petshopapp/ui/customer/shared/payment/payment_method_screen.dart';
 import 'package:petshopapp/ui/customer/shared/payment/payment_execution_screen.dart';
 import 'package:petshopapp/ui/customer/order/order_history_screen.dart';
@@ -26,7 +25,6 @@ import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_service_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_schedule_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_summary_screen.dart';
-import 'package:petshopapp/ui/customer/grooming/grooming_location_screen.dart';
 import 'package:petshopapp/ui/customer/chat/chat_screen.dart';
 
 
@@ -110,11 +108,6 @@ class CustomerRouter {
           builder: (context, state) => const CheckoutReviewScreen(),
         ),
         GoRoute(
-          path: '/checkout-location',
-          name: 'checkout-location',
-          builder: (context, state) => const CheckoutLocationScreen(),
-        ),
-        GoRoute(
           path: '/payment-method',
           name: 'payment-method',
           builder: (context, state) => const UniversalPaymentMethodScreen(category: 'shop'),
@@ -167,11 +160,6 @@ class CustomerRouter {
             final method = state.extra as String? ?? 'QRIS';
             return UniversalPaymentExecutionScreen(paymentMethod: method, category: 'grooming');
           },
-        ),
-        GoRoute(
-          path: '/grooming-location',
-          name: 'grooming-location',
-          builder: (context, state) => const GroomingLocationScreen(),
         ),
         GoRoute(
           path: '/chat',
