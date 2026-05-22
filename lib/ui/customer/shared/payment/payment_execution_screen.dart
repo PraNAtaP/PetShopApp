@@ -29,7 +29,7 @@ class UniversalPaymentExecutionScreen extends StatefulWidget {
 class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecutionScreen> with SingleTickerProviderStateMixin {
   bool _isProcessing = false;
   bool _isSuccess = false;
-  File? _selectedImage;
+  XFile? _selectedImage;
   late AnimationController _checkAnimController;
   late Animation<double> _scaleAnimation;
 
@@ -145,7 +145,7 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         children: [
@@ -169,7 +169,7 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,7 +219,7 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -239,7 +239,7 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
               child: _selectedImage != null
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.file(_selectedImage!, fit: BoxFit.cover),
+                      child: Image.network(_selectedImage!.path, fit: BoxFit.cover),
                     )
                   : const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -341,7 +341,7 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: AppColors.primary, size: 32),
@@ -356,7 +356,7 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
   Future<void> _getImage(ImageSource source) async {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: source, imageQuality: 70);
-    if (picked != null) setState(() => _selectedImage = File(picked.path));
+    if (picked != null) setState(() => _selectedImage = picked);
   }
 
   Future<void> _processPayment() async {
@@ -365,7 +365,8 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
     try {
       String? imageUrl;
       if (_selectedImage != null) {
-        imageUrl = await ImgbbService.uploadImage(_selectedImage!);
+        final bytes = await _selectedImage!.readAsBytes();
+        imageUrl = await ImgbbService.uploadImageBytes(bytes, _selectedImage!.name);
       }
 
       if (widget.category == 'shop') {
@@ -407,8 +408,11 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
       buktiBayarUrl: imageUrl,
       statusBayar: widget.paymentMethod == 'COD' ? 'Pending' : (imageUrl != null ? 'Pending' : 'Unpaid'),
       statusPengiriman: 'Menunggu',
-      metodePengambilan: 'Ambil di Toko',
+      metodePengambilan: cart.isDelivery ? 'Kirim ke Alamat' : 'Ambil di Toko',
       metodePembayaran: widget.paymentMethod,
+      alamatLengkap: cart.isDelivery ? cart.alamatLengkap : null,
+      latitude: cart.isDelivery ? cart.latitude : null,
+      longitude: cart.isDelivery ? cart.longitude : null,
     );
 
     await FirestoreService.instance.createOrder(order);

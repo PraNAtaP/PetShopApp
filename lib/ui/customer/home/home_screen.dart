@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:go_router/go_router.dart';
+import '../main/base_screen.dart';
 import 'widgets/home_funfact_slider.dart';
 
 /// Dashboard utama Pet Point.
@@ -69,8 +70,10 @@ class HomeScreen extends StatelessWidget {
                         icon: Icons.shopping_bag_outlined,
                         label: 'Shop',
                         gradient: const [Color(0xFFE65100), Color(0xFFFF9800)],
-                        // Menu Shop mengarah ke halaman /shop (ShopScreen)
-                        onTap: () => context.push('/shop'),
+                        // Pindah ke tab Shop di BaseScreen (Index 1)
+                        onTap: () {
+                          BaseScreen.of(context)?.setTab(1);
+                        },
                       ),
                       const SizedBox(width: 12),
                       _buildServiceCard(

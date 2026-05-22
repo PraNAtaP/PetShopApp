@@ -312,7 +312,11 @@ class FirestoreService {
       return _ordersRef
           .where('customer_id', isEqualTo: customerId)
           .snapshots()
-          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+          .map((snapshot) {
+            final list = snapshot.docs.map((doc) => doc.data()).toList();
+            list.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+            return list;
+          });
     } catch (e) {
       throw Exception('Gagal stream data pesanan: $e');
     }

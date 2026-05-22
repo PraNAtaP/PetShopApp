@@ -46,6 +46,9 @@ class OrderModel {
   final String statusPengiriman;
   final String metodePengambilan;
   final String metodePembayaran;
+  final String? alamatLengkap;
+  final double? latitude;
+  final double? longitude;
   final DateTime? createdAt;
   final bool? cancelRequest;
   final String? cancelBankName;
@@ -63,6 +66,9 @@ class OrderModel {
     required this.statusPengiriman,
     required this.metodePengambilan,
     required this.metodePembayaran,
+    this.alamatLengkap,
+    this.latitude,
+    this.longitude,
     this.createdAt,
     this.cancelRequest,
     this.cancelBankName,
@@ -87,6 +93,9 @@ class OrderModel {
       statusPengiriman: data['status_pengiriman'] ?? '',
       metodePengambilan: data['metode_pengambilan'] ?? '',
       metodePembayaran: data['metode_pembayaran'] ?? '',
+      alamatLengkap: data['alamat_lengkap'] as String?,
+      latitude: (data['latitude'] as num?)?.toDouble(),
+      longitude: (data['longitude'] as num?)?.toDouble(),
       createdAt: (data['created_at'] as Timestamp?)?.toDate(),
       cancelRequest: data['cancel_request'] as bool?,
       cancelBankName: data['cancel_bank_name'] as String?,
@@ -106,6 +115,9 @@ class OrderModel {
       'status_pengiriman': statusPengiriman,
       'metode_pengambilan': metodePengambilan,
       'metode_pembayaran': metodePembayaran,
+      if (alamatLengkap != null) 'alamat_lengkap': alamatLengkap,
+      if (latitude != null) 'latitude': latitude,
+      if (longitude != null) 'longitude': longitude,
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
       'cancel_request': cancelRequest,
       'cancel_bank_name': cancelBankName,
