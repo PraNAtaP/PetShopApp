@@ -70,8 +70,9 @@ class BaseScreenState extends State<BaseScreen> {
         children: screens,
       ),
       extendBody: true,
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), // Dikembalikan ke padding 20 yang lega
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 24), // Dikembalikan ke padding 20 yang lega
         child: Container(
           height: 70,
           decoration: BoxDecoration(
@@ -199,6 +200,7 @@ class BaseScreenState extends State<BaseScreen> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

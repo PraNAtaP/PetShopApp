@@ -233,7 +233,7 @@ class _ShopScreenState extends State<ShopScreen> {
         }
 
         return SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 140),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,

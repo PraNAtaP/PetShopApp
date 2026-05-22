@@ -5,8 +5,7 @@ class FunFactBannerModel {
   final String id;
   final String title;
   final String description;
-  final String emoji;
-  final List<int> gradientColors;
+  final String imageUrl;
   final String topic;
   final DateTime createdAt;
   final bool isActive;
@@ -15,8 +14,7 @@ class FunFactBannerModel {
     required this.id,
     required this.title,
     required this.description,
-    required this.emoji,
-    required this.gradientColors,
+    required this.imageUrl,
     required this.topic,
     required this.createdAt,
     required this.isActive,
@@ -28,8 +26,7 @@ class FunFactBannerModel {
     id: doc.id,
     title: data['title'] ?? '',
     description: data['description'] ?? '',
-    emoji: data['emoji'] ?? '',
-    gradientColors: List<int>.from(data['gradientColors'] ?? []),
+    imageUrl: data['imageUrl'] ?? '',
     topic: data['topic'] ?? '',
     createdAt: (data['createdAt'] as Timestamp).toDate(),
     isActive: data['isActive'] ?? true,
@@ -40,8 +37,7 @@ class FunFactBannerModel {
       return {
         'title': title,
         'description': description,
-        'emoji': emoji,
-        'gradientColors': gradientColors,
+        'imageUrl': imageUrl,
         'topic': topic,
         'createdAt': createdAt,
         'isActive': isActive,

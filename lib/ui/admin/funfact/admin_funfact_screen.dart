@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:petshopapp/models/funfact_banner_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
 import 'widgets/funfact_form.dart';
-
+import 'widgets/edit_funfact_dialog.dart';
 class AdminFunFactScreen extends StatelessWidget {
   const AdminFunFactScreen({super.key});
 
@@ -21,19 +21,55 @@ class AdminFunFactScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            /// FORM INPUT
-            FunFactForm(
-              onSubmit: (banner) async {
-                print("SUBMIT KE FIRESTORE");
-
-                await firestoreService.addFunFact(banner);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Berhasil publish FunFact"),
+            /// ADD BUTTON
+            Align(
+              alignment: Alignment.centerRight,
+              child: SizedBox(
+                height: 50,
+                child: ElevatedButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (dialogContext) {
+                      return Dialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        child: SizedBox(
+                          width: 500,
+                          child: SingleChildScrollView(
+                            child: FunFactForm(
+                              onSubmit: (banner) async {
+                                Navigator.pop(dialogContext);
+                                await firestoreService.addFunFact(banner);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Berhasil publish FunFact"),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+                icon: const Icon(Icons.add, size: 24),
+                label: const Text(
+                  "Tambah Banner Baru",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF248EFC),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                );
-              },
+                  elevation: 2,
+                ),
+                ),
+              ),
             ),
 
             const SizedBox(height: 25),
@@ -66,10 +102,15 @@ class AdminFunFactScreen extends StatelessWidget {
                       padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(24),
-                        gradient: LinearGradient(
-                          colors: item.gradientColors
-                              .map((e) => Color(e))
-                              .toList(),
+                        image: DecorationImage(
+                          image: NetworkImage(item.imageUrl.isNotEmpty 
+                              ? item.imageUrl 
+                              : 'https://via.placeholder.com/400x200?text=Fun+Fact'),
+                          fit: BoxFit.cover,
+                          colorFilter: ColorFilter.mode(
+                            Colors.black.withAlpha(120),
+                            BlendMode.darken,
+                          ),
                         ),
                       ),
                       child: Column(
@@ -134,7 +175,22 @@ class AdminFunFactScreen extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                  ),
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) => EditFunFactDialog(funFact: item),
+                                    );
+                                  },
+                                  child: const Text("Edit"),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: ElevatedButton(
                                   style: ElevatedButton.styleFrom(

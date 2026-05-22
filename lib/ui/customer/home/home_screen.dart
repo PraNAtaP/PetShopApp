@@ -5,6 +5,7 @@ import 'package:petshopapp/services/auth_service.dart';
 import 'package:go_router/go_router.dart';
 import '../main/base_screen.dart';
 import 'widgets/home_funfact_slider.dart';
+import 'widgets/home_product_slider.dart';
 
 /// Dashboard utama Pet Point.
 /// Menampilkan greeting, quick-actions, promo banner, dan tips hewan.
@@ -30,6 +31,14 @@ class HomeScreen extends StatelessWidget {
         slivers: [
           // ── Custom Header (Lonceng diganti Keranjang & Navigasi ke /cart) ──
           SliverToBoxAdapter(child: _buildHeader(context, firstName, user.poin.toInt())),
+
+          // ── Tips & Fun Facts Slider ──────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 24),
+              child: const HomeFunFactSlider(),
+            ),
+          ),
 
           // ── Quick Actions ─────────────────────────────────────────
           SliverToBoxAdapter(
@@ -98,92 +107,50 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          // ── Promo Banner ──────────────────────────────────────────
+          // ── Produk Terbaru ─────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
-              child: _buildPromoBanner(context),
-            ),
-          ),
-
-          // ── Statistik Cepat ───────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
+              padding: const EdgeInsets.only(top: 24, bottom: 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Ringkasan Aktivitas',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Produk Terbaru',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            BaseScreen.of(context)?.setTab(1);
+                          },
+                          child: const Text(
+                            'Lihat Selengkapnya',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          icon: Icons.receipt_long,
-                          value: '0',
-                          label: 'Pesanan',
-                          color: const Color(0xFF1565C0),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          icon: Icons.pets,
-                          value: '0',
-                          label: 'Adopsi',
-                          color: const Color(0xFF2E7D32),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          icon: Icons.stars_rounded,
-                          value: '${user.poin.toInt()}',
-                          label: 'Poin',
-                          color: const Color(0xFFE65100),
-                        ),
-                      ),
-                    ],
-                  ),
+                  const HomeProductSlider(),
                 ],
               ),
             ),
           ),
 
-          // ── Tips & Fun Facts ──────────────────────────────────────
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 0),
-              child: const Text(
-                'Tips & Fun Fact',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
-                ),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 16),
-              child: SizedBox(
-                height: 190,
-                // Catatan: Pastikan di dalam widget HomeFunFactSlider() kamu menangani 
-                // callback onTap untuk me-redirect ke /chat membawa judul/ID FunFact.
-                child: const HomeFunFactSlider(),
-              ),
-            ),
-          ),
-
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          const SliverToBoxAdapter(child: SizedBox(height: 140)),
         ],
       ),
     );
@@ -390,211 +357,5 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════
-  // Promo Banner
-  // ═══════════════════════════════════════════════════════════════════
 
-  Widget _buildPromoBanner(BuildContext context) {
-    return GestureDetector(
-      // Ketika banner diklik, arahkan ke halaman pemesanan/chat grooming dan kirim data diskon otomatis
-      onTap: () {
-        context.push('/grooming-service', extra: {'applyPromo20': true});
-      },
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF003F87), Color(0xFF0D47A1)],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF003F87).withValues(alpha: 0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text(
-                      'PROMO',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: 1,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Grooming Diskon 20%',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Untuk pelanggan baru! Berlaku s/d 30 April.',
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 16),
-            Container(
-              width: 70,
-              height: 70,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: const Icon(Icons.content_cut, color: Colors.white, size: 36),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════════
-  // Stat Card
-  // ═══════════════════════════════════════════════════════════════════
-
-  Widget _buildStatCard({
-    required IconData icon,
-    required String value,
-    required String label,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: color, size: 22),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColors.textLight,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ═══════════════════════════════════════════════════════════════════
-  // Tip Card (Opsional/Bisa dipakai jika diintegrasikan di Slider)
-  // ═══════════════════════════════════════════════════════════════════
-
-  Widget _buildTipCard({
-    required String emoji,
-    required String title,
-    required String content,
-    required List<Color> gradientColors,
-    required VoidCallback onTap, // Tambahan parameter onTap
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 260,
-        margin: const EdgeInsets.only(right: 16),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: gradientColors,
-          ),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: gradientColors[0].withValues(alpha: 0.25),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(emoji, style: const TextStyle(fontSize: 22)),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    fontSize: 15,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Expanded(
-              child: Text(
-                content,
-                style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.white.withValues(alpha: 0.85),
-                  height: 1.4,
-                ),
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
