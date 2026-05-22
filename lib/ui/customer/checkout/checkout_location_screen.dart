@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:petshopapp/providers/cart_provider.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:go_router/go_router.dart';
+import 'package:petshopapp/ui/customer/shared/map_picker_screen.dart';
 
 class CheckoutLocationScreen extends StatefulWidget {
   const CheckoutLocationScreen({super.key});
@@ -13,7 +14,12 @@ class CheckoutLocationScreen extends StatefulWidget {
 }
 
 class _CheckoutLocationScreenState extends State<CheckoutLocationScreen> {
-  late TextEditingController _addressController;
+  late TextEditingController _kotaController;
+  late TextEditingController _kecamatanController;
+  late TextEditingController _kelurahanController;
+  late TextEditingController _kodeposController;
+  late TextEditingController _detailController;
+
   double? _lat;
   double? _lng;
 
@@ -21,15 +27,51 @@ class _CheckoutLocationScreenState extends State<CheckoutLocationScreen> {
   void initState() {
     super.initState();
     final provider = context.read<CartProvider>();
-    _addressController = TextEditingController(text: provider.alamatLengkap);
+    
+    // We try to parse the existing alamatLengkap if any, but since it's just a concatenated string,
+    // we'll just put the whole string in _detailController for existing data, or leave it blank.
+    _kotaController = TextEditingController();
+    _kecamatanController = TextEditingController();
+    _kelurahanController = TextEditingController();
+    _kodeposController = TextEditingController();
+    _detailController = TextEditingController(text: provider.alamatLengkap);
+    
     _lat = provider.latitude;
     _lng = provider.longitude;
   }
 
   @override
   void dispose() {
-    _addressController.dispose();
+    _kotaController.dispose();
+    _kecamatanController.dispose();
+    _kelurahanController.dispose();
+    _kodeposController.dispose();
+    _detailController.dispose();
     super.dispose();
+  }
+
+  Widget _buildTextField(String label, TextEditingController controller, {int maxLines = 1, String hint = ''}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+        ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: controller,
+          maxLines: maxLines,
+          decoration: InputDecoration(
+            hintText: hint,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
   }
 
   @override
@@ -42,65 +84,77 @@ class _CheckoutLocationScreenState extends State<CheckoutLocationScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
       ),
-      body: Column(
-        children: [
-          // Bagian 1: Input Alamat Manual
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Alamat Lengkap (Manual)',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _addressController,
-                  maxLines: 2,
-                  decoration: InputDecoration(
-                    hintText: 'Contoh: Perumahan Bunga Melati No. 123, Blok C...',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    filled: true,
-                    fillColor: Colors.grey.shade50,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Klik titik di peta untuk sinkronisasi GPS',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Alamat Lengkap',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primary),
             ),
-          ),
-          
-          // Bagian 2: Map GPS Picker (HD & Auto-location)
-          Expanded(
-            child: OpenStreetMapSearchAndPick(
-              buttonColor: AppColors.primary,
-              buttonText: 'Gunakan Koordinat Ini',
-              userAgentPackageName: 'com.prana.pet_point',
-              initialCenter: LatLong(-7.9839, 112.6214), // Pusat di Malang
-              initialZoom: 13.0, // Zoom lebih dekat agar fokus ke kota
-              tileUrlTemplate: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png',
-              onPicked: (pickedData) {
-                setState(() {
-                  _lat = pickedData.latLong.latitude;
-                  _lng = pickedData.latLong.longitude;
-                  // Jika field manual kosong, otomatis isi dari peta
-                  if (_addressController.text.isEmpty) {
-                    _addressController.text = pickedData.addressName;
+            const SizedBox(height: 16),
+            
+            _buildTextField('Kota/Kabupaten', _kotaController, hint: 'Contoh: Kota Malang'),
+            _buildTextField('Kecamatan', _kecamatanController, hint: 'Contoh: Lowokwaru'),
+            _buildTextField('Kelurahan', _kelurahanController, hint: 'Contoh: Dinoyo'),
+            _buildTextField('Kode Pos', _kodeposController, hint: 'Contoh: 65144'),
+            _buildTextField('Detail Jalan / Patokan', _detailController, maxLines: 3, hint: 'Contoh: Perumahan Bunga Melati No. 123, Blok C (Rumah cat hijau)'),
+
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 16),
+
+            const Text(
+              'Titik Peta GPS (Opsional)',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primary),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Jika kamu ingin kurir lebih mudah menemukan rumahmu, kamu bisa menandai titik GPS.',
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: () async {
+                  final PickedData? result = await Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const MapPickerScreen()),
+                  );
+                  if (result != null) {
+                    setState(() {
+                      _lat = result.latLong.latitude;
+                      _lng = result.latLong.longitude;
+                      // Autofill city if empty
+                      if (_kotaController.text.isEmpty && result.addressName.isNotEmpty) {
+                        _detailController.text += '\n[Peta]: ${result.addressName}';
+                      }
+                    });
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Titik GPS berhasil disematkan')),
+                      );
+                    }
                   }
-                });
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Koordinat GPS berhasil disematkan')),
-                );
-              },
+                },
+                icon: Icon(_lat != null ? Icons.check_circle : Icons.map, color: _lat != null ? Colors.green : AppColors.primary),
+                label: Text(
+                  _lat != null ? 'Titik GPS Tersimpan' : 'Pilih Titik di Peta',
+                  style: TextStyle(color: _lat != null ? Colors.green : AppColors.primary),
+                ),
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: _lat != null ? Colors.green : AppColors.primary),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-      // Tombol Simpan Final
       bottomNavigationBar: Container(
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
@@ -112,22 +166,28 @@ class _CheckoutLocationScreenState extends State<CheckoutLocationScreen> {
           height: 50,
           child: ElevatedButton(
             onPressed: () {
-              if (_addressController.text.isEmpty) {
+              // Validasi Alamat (GPS boleh kosong)
+              if (_kotaController.text.isEmpty || _detailController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Harap lengkapi alamat manual Anda')),
+                  const SnackBar(content: Text('Kota dan Detail Jalan wajib diisi!')),
                 );
                 return;
               }
-              if (_lat == null || _lng == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Harap tentukan titik GPS pada peta')),
-                );
-                return;
-              }
-              
+
+              // Gabungkan alamat
+              final addressParts = [
+                _detailController.text.trim(),
+                if (_kelurahanController.text.isNotEmpty) 'Kel. ${_kelurahanController.text.trim()}',
+                if (_kecamatanController.text.isNotEmpty) 'Kec. ${_kecamatanController.text.trim()}',
+                _kotaController.text.trim(),
+                if (_kodeposController.text.isNotEmpty) _kodeposController.text.trim(),
+              ];
+
+              final fullAddress = addressParts.join(', ');
+
               provider.updateLocationInfo(
                 isDelivery: true,
-                alamat: _addressController.text,
+                alamat: fullAddress,
                 lat: _lat,
                 lng: _lng,
               );
@@ -145,3 +205,4 @@ class _CheckoutLocationScreenState extends State<CheckoutLocationScreen> {
     );
   }
 }
+
