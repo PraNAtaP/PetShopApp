@@ -5,6 +5,7 @@ import 'package:petshopapp/services/auth_service.dart';
 import 'package:go_router/go_router.dart';
 import '../main/base_screen.dart';
 import 'widgets/home_funfact_slider.dart';
+import 'widgets/home_product_slider.dart';
 
 /// Dashboard utama Pet Point.
 /// Menampilkan greeting, quick-actions, promo banner, dan tips hewan.
@@ -106,7 +107,48 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-
+          // ── Produk Terbaru ─────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 24, bottom: 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Produk Terbaru',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textDark,
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            BaseScreen.of(context)?.setTab(1);
+                          },
+                          child: const Text(
+                            'Lihat Selengkapnya',
+                            style: TextStyle(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const HomeProductSlider(),
+                ],
+              ),
+            ),
+          ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 100)),
         ],
