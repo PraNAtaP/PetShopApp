@@ -13,12 +13,20 @@ import 'package:petshopapp/services/in_app_chat_notifier.dart';
 class BaseScreen extends StatefulWidget {
   const BaseScreen({super.key});
 
+  static BaseScreenState? of(BuildContext context) => context.findAncestorStateOfType<BaseScreenState>();
+
   @override
-  State<BaseScreen> createState() => _BaseScreenState();
+  State<BaseScreen> createState() => BaseScreenState();
 }
 
-class _BaseScreenState extends State<BaseScreen> {
+class BaseScreenState extends State<BaseScreen> {
   int _currentIndex = 0;
+
+  void setTab(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+  }
 
   @override
   void initState() {

@@ -284,13 +284,39 @@ class FirestoreService {
     }
   }
 
+  /// Submits a request to cancel a shop order.
+  Future<void> requestCancelOrder({
+    required String orderId,
+    String? bankName,
+    String? bankAccount,
+    String? accountHolder,
+  }) async {
+    try {
+      final updates = <String, dynamic>{
+        'cancel_request': true,
+        'status_pengiriman': 'Menunggu Persetujuan Pembatalan',
+      };
+      if (bankName != null) updates['cancel_bank_name'] = bankName;
+      if (bankAccount != null) updates['cancel_bank_account'] = bankAccount;
+      if (accountHolder != null) updates['cancel_account_holder'] = accountHolder;
+
+      await _db.collection('orders').doc(orderId).update(updates);
+    } catch (e) {
+      throw Exception('Gagal mengajukan pembatalan pesanan: $e');
+    }
+  }
+
   /// Returns a real-time stream of orders for a specific customer.
   Stream<List<OrderModel>> getOrdersStream(String customerId) {
     try {
       return _ordersRef
           .where('customer_id', isEqualTo: customerId)
           .snapshots()
-          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+          .map((snapshot) {
+            final list = snapshot.docs.map((doc) => doc.data()).toList();
+            list.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+            return list;
+          });
     } catch (e) {
       throw Exception('Gagal stream data pesanan: $e');
     }

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/order_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 class OrderManagementScreen extends StatefulWidget {
   const OrderManagementScreen({super.key});
@@ -96,9 +100,35 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
   }
 
   DataRow _buildOrderRow(OrderModel order) {
+    final hasCancelRequest = order.cancelRequest == true;
+
     return DataRow(
       cells: [
-        DataCell(Text('#${order.orderId.substring(0, 8).toUpperCase()}', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold))),
+        DataCell(
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '#${order.orderId.substring(0, 8).toUpperCase()}',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+              if (hasCancelRequest)
+                Container(
+                  margin: const EdgeInsets.only(top: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Text(
+                    'REK. BATAL',
+                    style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                  ),
+                ),
+            ],
+          ),
+        ),
         DataCell(Text(order.createdAt != null ? DateFormat('dd/MM/yy HH:mm').format(order.createdAt!) : '-')),
         DataCell(
           FutureBuilder<String>(
@@ -130,27 +160,33 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
     );
   }
 
-  Widget _buildStatusChip(String status, {required bool isPayment}) {
-    Color color;
+  Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'lunas':
-      case 'dikirim':
       case 'selesai':
       case 'diambil':
-        color = Colors.green;
-        break;
-      case 'menunggu pembayaran':
-      case 'menunggu verifikasi':
+        return Colors.green;
+      case 'dikirim':
+        return Colors.blue;
       case 'proses':
-        color = Colors.orange;
-        break;
+      case 'diproses':
+        return Colors.purple;
+      case 'menunggu verifikasi':
+        return Colors.teal;
+      case 'menunggu pembayaran':
+      case 'pending':
+        return Colors.orange;
+      case 'menunggu':
+        return Colors.blueGrey;
       case 'dibatalkan':
-        color = Colors.red;
-        break;
+        return Colors.red;
       default:
-        color = Colors.grey;
+        return Colors.grey.shade700;
     }
+  }
 
+  Widget _buildStatusChip(String status, {required bool isPayment}) {
+    final color = _getStatusColor(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -199,6 +235,65 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                     _buildDetailItem('Status Pengiriman', order.statusPengiriman, isBold: true),
                     _buildDetailItem('Metode Pengambilan', order.metodePengambilan),
                     _buildDetailItem('Metode Pembayaran', order.metodePembayaran),
+                    if (order.metodePengambilan == 'Kirim ke Alamat' && order.alamatLengkap != null) ...[
+                      _buildDetailItem('Alamat Pengiriman', order.alamatLengkap!),
+                      if (order.latitude != null && order.longitude != null) ...[
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              GestureDetector(
+                                onTap: () => launchUrl(Uri.parse('https://www.google.com/maps/search/?api=1&query=${order.latitude},${order.longitude}')),
+                                child: SizedBox(
+                                  height: 200,
+                                  width: double.infinity,
+                                  child: IgnorePointer(
+                                    child: FlutterMap(
+                                      options: MapOptions(
+                                        initialCenter: LatLng(order.latitude!, order.longitude!),
+                                        initialZoom: 15.0,
+                                        interactionOptions: const InteractionOptions(flags: InteractiveFlag.none),
+                                      ),
+                                      children: [
+                                        TileLayer(
+                                          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                          userAgentPackageName: 'com.prana.pet_point',
+                                        ),
+                                        MarkerLayer(
+                                          markers: [
+                                            Marker(
+                                              point: LatLng(order.latitude!, order.longitude!),
+                                              width: 40,
+                                              height: 40,
+                                              child: const Icon(Icons.location_on, color: Colors.red, size: 40),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                bottom: 12,
+                                child: ElevatedButton.icon(
+                                  onPressed: () => launchUrl(Uri.parse('https://www.google.com/maps/search/?api=1&query=${order.latitude},${order.longitude}')),
+                                  icon: const Icon(Icons.map, size: 16),
+                                  label: const Text('Buka di Google Maps', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: AppColors.primary,
+                                    elevation: 4,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                     
                     const SizedBox(height: 24),
                     const Text('Daftar Produk', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -251,6 +346,121 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                               child: const Center(child: CircularProgressIndicator()),
                             );
                           },
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () => launchUrl(Uri.parse(order.buktiBayarUrl!)),
+                          icon: const Icon(Icons.open_in_new, size: 16),
+                          label: const Text('Buka Gambar Penuh'),
+                        ),
+                      ),
+                    ],
+
+                    if (order.cancelRequest == true) ...[
+                      const SizedBox(height: 32),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.red.shade200),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.warning_amber_rounded, color: Colors.red.shade700),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Permintaan Pembatalan',
+                                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.red.shade800),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            if (order.metodePembayaran != 'COD') ...[
+                              Text('Nama Bank: ${order.cancelBankName ?? '-'}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 4),
+                              Text('Nomor Rekening: ${order.cancelBankAccount ?? '-'}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 4),
+                              Text('Atas Nama: ${order.cancelAccountHolder ?? '-'}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                              const SizedBox(height: 12),
+                            ] else ...[
+                              const Text('Pesanan COD (Cash on Delivery). Tidak ada detail transfer refund.', style: TextStyle(fontSize: 13, fontStyle: FontStyle.italic)),
+                              const SizedBox(height: 12),
+                            ],
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      await _firestoreService.updateOrderFullStatus(
+                                        orderId: order.orderId,
+                                        statusBayar: 'Dibatalkan',
+                                        statusPengiriman: 'Dibatalkan',
+                                      );
+                                      await FirebaseFirestore.instance
+                                          .collection('orders')
+                                          .doc(order.orderId)
+                                          .update({'cancel_request': false});
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Pembatalan pesanan disetujui!'),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                    ),
+                                    child: const Text('Setujui'),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: ElevatedButton(
+                                    onPressed: () async {
+                                      final isPaid = order.buktiBayarUrl != null && order.buktiBayarUrl!.isNotEmpty;
+                                      await _firestoreService.updateOrderFullStatus(
+                                        orderId: order.orderId,
+                                        statusBayar: isPaid ? 'Lunas' : 'Menunggu Verifikasi',
+                                        statusPengiriman: isPaid ? 'Diproses' : 'Menunggu',
+                                      );
+                                      await FirebaseFirestore.instance
+                                          .collection('orders')
+                                          .doc(order.orderId)
+                                          .update({'cancel_request': false});
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(
+                                            content: Text('Pembatalan pesanan ditolak.'),
+                                            backgroundColor: Colors.orange,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                      foregroundColor: Colors.white,
+                                      elevation: 0,
+                                    ),
+                                    child: const Text('Tolak'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -309,80 +519,150 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
   }
 
   void _showUpdateStatusDialog(OrderModel order) {
-    // List status yang didukung aplikasi
-    final List<String> paymentStatuses = [
-      'Belum Bayar', 
-      'Pending',
-      'Menunggu Verifikasi', 
-      'Paid',
-      'Lunas', 
-      'Dibatalkan'
-    ];
-    
-    final List<String> shippingStatuses = [
-      'Menunggu',
-      'Diproses', 
-      'Dikirim', 
-      'Siap Diambil', 
-      'Selesai', 
-      'Dibatalkan'
-    ];
+    // Validasi Dinamis Berdasarkan Metode Pembayaran dan Pengiriman
+    final bool isCOD = order.metodePembayaran.toUpperCase() == 'COD';
+    final bool isAmbilDiToko = order.metodePengambilan.toLowerCase().contains('ambil');
 
-    // Pastikan nilai awal ada di dalam list agar tidak crash
-    String selectedPaymentStatus = paymentStatuses.contains(order.statusBayar) 
-        ? order.statusBayar 
-        : paymentStatuses.first;
-        
-    String selectedShippingStatus = shippingStatuses.contains(order.statusPengiriman) 
-        ? order.statusPengiriman 
-        : shippingStatuses.first;
+    final List<String> paymentStatuses = isCOD 
+      ? ['Menunggu Pembayaran', 'Lunas', 'Dibatalkan'] 
+      : ['Menunggu Pembayaran', 'Menunggu Verifikasi', 'Lunas', 'Dibatalkan'];
+    
+    final List<String> shippingStatuses = isAmbilDiToko 
+      ? ['Menunggu', 'Proses', 'Diambil', 'Selesai', 'Dibatalkan']
+      : ['Menunggu', 'Proses', 'Dikirim', 'Selesai', 'Dibatalkan'];
+
+    // Pastikan nilai dari database tetap terbaca jika menggunakan format lama
+    if (!paymentStatuses.contains(order.statusBayar)) {
+      paymentStatuses.insert(0, order.statusBayar);
+    }
+    if (!shippingStatuses.contains(order.statusPengiriman)) {
+      shippingStatuses.insert(0, order.statusPengiriman);
+    }
+
+    String selectedPaymentStatus = order.statusBayar;
+    String selectedShippingStatus = order.statusPengiriman;
+    bool isSaving = false;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Update Status Pesanan'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DropdownButtonFormField<String>(
-                value: selectedPaymentStatus,
-                decoration: const InputDecoration(labelText: 'Status Pembayaran', border: OutlineInputBorder()),
-                items: paymentStatuses
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                    .toList(),
-                onChanged: (val) => setState(() => selectedPaymentStatus = val!),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Update Status Pesanan', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: SizedBox(
+            width: 450,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Status Pembayaran (${order.metodePembayaran})', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.grey)),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: paymentStatuses.map((status) {
+                      final isSelected = selectedPaymentStatus == status;
+                      final statusColor = _getStatusColor(status);
+                      return ChoiceChip(
+                        label: Text(status),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) setState(() => selectedPaymentStatus = status);
+                        },
+                        showCheckmark: false,
+                        selectedColor: statusColor.withValues(alpha: 0.15),
+                        backgroundColor: Colors.grey.shade100,
+                        side: BorderSide(
+                          color: isSelected ? statusColor : Colors.transparent,
+                          width: 1.5,
+                        ),
+                        labelStyle: TextStyle(
+                          color: isSelected ? statusColor : Colors.black87,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 13,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 28),
+                  Text('Status Pengiriman (${order.metodePengambilan})', style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.grey)),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: shippingStatuses.map((status) {
+                      final isSelected = selectedShippingStatus == status;
+                      final statusColor = _getStatusColor(status);
+                      return ChoiceChip(
+                        label: Text(status),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          if (selected) setState(() => selectedShippingStatus = status);
+                        },
+                        showCheckmark: false,
+                        selectedColor: statusColor.withValues(alpha: 0.15),
+                        backgroundColor: Colors.grey.shade100,
+                        side: BorderSide(
+                          color: isSelected ? statusColor : Colors.transparent,
+                          width: 1.5,
+                        ),
+                        labelStyle: TextStyle(
+                          color: isSelected ? statusColor : Colors.black87,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontSize: 13,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
               ),
-              const SizedBox(height: 20),
-              DropdownButtonFormField<String>(
-                value: selectedShippingStatus,
-                decoration: const InputDecoration(labelText: 'Status Pengiriman', border: OutlineInputBorder()),
-                items: shippingStatuses
-                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
-                    .toList(),
-                onChanged: (val) => setState(() => selectedShippingStatus = val!),
-              ),
-            ],
+            ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+            TextButton(
+              onPressed: isSaving ? null : () => Navigator.pop(context), 
+              child: const Text('Batal', style: TextStyle(color: Colors.grey))
+            ),
             ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-              onPressed: () async {
-                await _firestoreService.updateOrderFullStatus(
-                  orderId: order.orderId,
-                  statusBayar: selectedPaymentStatus,
-                  statusPengiriman: selectedShippingStatus,
-                );
-                if (mounted) {
-                  Navigator.pop(context); // Close dialog
-                  Navigator.pop(context); // Close bottom sheet
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Status pesanan berhasil diperbarui')),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary, 
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              onPressed: isSaving ? null : () async {
+                setState(() => isSaving = true);
+                try {
+                  await _firestoreService.updateOrderFullStatus(
+                    orderId: order.orderId,
+                    statusBayar: selectedPaymentStatus,
+                    statusPengiriman: selectedShippingStatus,
                   );
+                  if (context.mounted) {
+                    Navigator.pop(context); 
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Status pesanan berhasil diperbarui'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  setState(() => isSaving = false);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Gagal: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
                 }
               },
-              child: const Text('Simpan Perubahan'),
+              child: isSaving 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text('Simpan Perubahan'),
             ),
           ],
         ),

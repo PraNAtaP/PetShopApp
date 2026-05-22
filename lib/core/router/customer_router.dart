@@ -17,6 +17,11 @@ import 'package:petshopapp/ui/customer/checkout/checkout_location_screen.dart';
 import 'package:petshopapp/ui/customer/shared/payment/payment_method_screen.dart';
 import 'package:petshopapp/ui/customer/shared/payment/payment_execution_screen.dart';
 import 'package:petshopapp/ui/customer/order/order_history_screen.dart';
+import 'package:petshopapp/ui/customer/order/order_tracking_screen.dart';
+import 'package:petshopapp/ui/customer/grooming/grooming_history_screen.dart';
+import 'package:petshopapp/ui/customer/grooming/grooming_tracking_screen.dart';
+import 'package:petshopapp/models/order_model.dart';
+import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_service_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_schedule_screen.dart';
@@ -177,6 +182,27 @@ class CustomerRouter {
               receiverId: args?['receiverId'],
               receiverName: args?['receiverName'],
             );
+          },
+        ),
+        GoRoute(
+          path: '/order-tracking',
+          name: 'order-tracking',
+          builder: (context, state) {
+            final order = state.extra as OrderModel;
+            return OrderTrackingScreen(order: order);
+          },
+        ),
+        GoRoute(
+          path: '/grooming-history',
+          name: 'grooming-history',
+          builder: (context, state) => const GroomingHistoryScreen(),
+        ),
+        GoRoute(
+          path: '/grooming-tracking',
+          name: 'grooming-tracking',
+          builder: (context, state) {
+            final booking = state.extra as GroomingBookingModel;
+            return GroomingTrackingScreen(booking: booking);
           },
         ),
       ],

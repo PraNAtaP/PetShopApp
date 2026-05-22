@@ -72,4 +72,43 @@ class GroomingService {
         .snapshots()
         .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
   }
+
+  /// Returns a real-time stream of grooming bookings for a specific customer.
+  Stream<List<GroomingBookingModel>> getCustomerBookingsStream(String userId) {
+    try {
+      return _bookingsRef
+          .where('userId', isEqualTo: userId)
+          .snapshots()
+          .map((snapshot) {
+            final list = snapshot.docs.map((doc) => doc.data()).toList();
+            // Sort by createdAt descending
+            list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+            return list;
+          });
+    } catch (e) {
+      throw Exception('Gagal stream data booking: $e');
+    }
+  }
+
+  /// Submits a request to cancel a grooming booking.
+  Future<void> requestCancelBooking({
+    required String bookingId,
+    String? bankName,
+    String? bankAccount,
+    String? accountHolder,
+  }) async {
+    try {
+      final updates = <String, dynamic>{
+        'cancel_request': true,
+        'status': 'Menunggu Persetujuan Pembatalan',
+      };
+      if (bankName != null) updates['cancel_bank_name'] = bankName;
+      if (bankAccount != null) updates['cancel_bank_account'] = bankAccount;
+      if (accountHolder != null) updates['cancel_account_holder'] = accountHolder;
+
+      await _db.collection('grooming_bookings').doc(bookingId).update(updates);
+    } catch (e) {
+      throw Exception('Gagal mengajukan pembatalan booking: $e');
+    }
+  }
 }
