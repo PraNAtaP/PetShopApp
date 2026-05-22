@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:petshopapp/providers/cart_provider.dart';
 
 /// Allows the customer to select between QRIS and Transfer Bank payment.
 /// Second step in the checkout flow.
@@ -16,6 +19,10 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currencyFormatter =
+        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final cart = context.watch<CartProvider>();
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -37,11 +44,25 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
               color: AppColors.primary,
               borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
             ),
-            child: const Column(
+            child: Column(
               children: [
-                Icon(Icons.account_balance_wallet, color: Colors.white, size: 40),
-                SizedBox(height: 8),
+                const Icon(Icons.account_balance_wallet, color: Colors.white, size: 40),
+                const SizedBox(height: 16),
+                const Text(
+                  'Total Pembayaran',
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 4),
                 Text(
+                  currencyFormatter.format(cart.totalPrice),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
                   'Pilih cara pembayaran Anda',
                   style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
