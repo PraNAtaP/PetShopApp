@@ -1,8 +1,8 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:petshopapp/models/funfact_banner_model.dart';
-import 'emoji_selector.dart';
-import 'gradient_selector.dart';
-
+import 'package:petshopapp/services/imgbb_service.dart';
 
 class FunFactForm extends StatefulWidget {
   final Function(FunFactBannerModel) onSubmit;
@@ -15,17 +15,27 @@ class FunFactForm extends StatefulWidget {
   @override
   State<FunFactForm> createState() => _FunFactFormState();
 }
+
 class _FunFactFormState extends State<FunFactForm> {
   final titleController = TextEditingController();
   final descController = TextEditingController();
   final topicController = TextEditingController();
 
-  String selectedEmoji = '🐱';
+  Uint8List? _imageBytes;
+  String? _imageName;
+  bool _isLoading = false;
 
-  List<Color> selectedGradient = [
-    Colors.blue,
-    Colors.lightBlueAccent,
-  ];
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final xFile = await picker.pickImage(source: ImageSource.gallery);
+    if (xFile != null) {
+      final bytes = await xFile.readAsBytes();
+      setState(() {
+        _imageBytes = bytes;
+        _imageName = xFile.name;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,73 +106,38 @@ class _FunFactFormState extends State<FunFactForm> {
           ),
           const SizedBox(height: 25),
           const Text(
-            'Pilih Emoji',
+            'Background Image',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 15),
-          EmojiSelector(
-            onSelect: (emoji) {
-              setState(() {
-                selectedEmoji = emoji;
-              });
-            },
-          ),
-          const SizedBox(height: 25),
-          const Text(
-            'Background Gradient',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 15),
-          GradientSelector(
-            onSelect: (gradient) {
-              setState(() {
-                selectedGradient = gradient;
-              });
-            },
-          ),
-          const SizedBox(height: 25),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              gradient: LinearGradient(
-                colors: selectedGradient,
-              ),
-            ),
-            child: Row(
-              children: [
-                Text(
-                  selectedEmoji,
-                  style: const TextStyle(fontSize: 36),
+          Center(
+            child: InkWell(
+              onTap: _pickImage,
+              child: Container(
+                height: 150,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: Colors.grey.shade400),
+                  image: _imageBytes != null
+                      ? DecorationImage(
+                          image: MemoryImage(_imageBytes!),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
                 ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        titleController.text.isEmpty
-                            ? 'Preview Banner'
-                            : titleController.text,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        descController.text.isEmpty
-                            ? 'Preview deskripsi banner'
-                            : descController.text,
-                        style: const TextStyle(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              ],
+                child: _imageBytes == null
+                    ? const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add_photo_alternate, size: 40, color: Colors.grey),
+                          SizedBox(height: 8),
+                          Text('Pilih Background Fun Fact', style: TextStyle(color: Colors.grey)),
+                        ],
+                      )
+                    : null,
+              ),
             ),
           ),
           const SizedBox(height: 25),
@@ -170,46 +145,60 @@ class _FunFactFormState extends State<FunFactForm> {
             width: double.infinity,
             height: 55,
             child: ElevatedButton(
-            onPressed: () {
-              print("CLICKED BUTTON");
-
+              onPressed: _isLoading ? null : () async {
                 if (titleController.text.isEmpty ||
-                    descController.text.isEmpty) {
-                 ScaffoldMessenger.of(context).showSnackBar(
+                    descController.text.isEmpty ||
+                    _imageBytes == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                        content: Text("Semua field wajib diisi"),
+                        content: Text("Semua field dan gambar wajib diisi"),
                     ),
-                );
-                    return;
+                  );
+                  return;
                 }
 
-                 widget.onSubmit(
-                   FunFactBannerModel(
-                    id: '', // Firestore auto ID
-                    title: titleController.text,
-                    description: descController.text,
-                    emoji: selectedEmoji,
-                    gradientColors: 
-                        selectedGradient.map((e) => e.value).toList(),
-                    topic: topicController.text,
-                    createdAt: DateTime.now(),
-                    isActive: true,
+                setState(() => _isLoading = true);
+
+                try {
+                  final imageUrl = await ImgbbService.uploadImageBytes(_imageBytes!, _imageName ?? 'funfact.jpg');
+                  
+                  widget.onSubmit(
+                    FunFactBannerModel(
+                      id: '', // Firestore auto ID
+                      title: titleController.text,
+                      description: descController.text,
+                      imageUrl: imageUrl,
+                      topic: topicController.text,
+                      createdAt: DateTime.now(),
+                      isActive: true,
                     ),
-                );
+                  );
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+                } finally {
+                  if (mounted) setState(() => _isLoading = false);
+                }
               },
-               style: ElevatedButton.styleFrom(
+              style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(18),
                 ),
               ),
-              child: const Text(
-                'Publish Banner',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                ),
-              ),
+              child: _isLoading
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                    )
+                  : const Text(
+                      'Publish Banner',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Colors.white,
+                      ),
+                    ),
             ),
           )
         ],

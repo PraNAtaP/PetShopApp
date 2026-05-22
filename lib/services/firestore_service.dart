@@ -507,6 +507,21 @@ class FirestoreService {
   }
 
   // =========================
+  // UPDATE
+  // =========================
+
+  Future<void> updateFunFact(
+    FunFactBannerModel banner,
+  ) async {
+    await _db
+        .collection('funfact')
+        .doc(banner.id)
+        .update(
+          banner.toMap(),
+        );
+  }
+
+  // =========================
   // DELETE
   // =========================
 

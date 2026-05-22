@@ -28,7 +28,8 @@ import 'package:petshopapp/ui/customer/grooming/grooming_service_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_schedule_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_summary_screen.dart';
 import 'package:petshopapp/ui/customer/chat/chat_screen.dart';
-
+import 'package:petshopapp/ui/customer/home/funfact_detail_screen.dart';
+import 'package:petshopapp/models/funfact_banner_model.dart';
 
 /// Customer application route configuration using GoRouter.
 class CustomerRouter {
@@ -201,6 +202,14 @@ class CustomerRouter {
           builder: (context, state) {
             final booking = state.extra as GroomingBookingModel;
             return GroomingTrackingScreen(booking: booking);
+          },
+        ),
+        GoRoute(
+          path: '/funfact-detail',
+          name: 'funfact-detail',
+          builder: (context, state) {
+            final funFact = state.extra as FunFactBannerModel;
+            return FunFactDetailScreen(funFact: funFact);
           },
         ),
       ],

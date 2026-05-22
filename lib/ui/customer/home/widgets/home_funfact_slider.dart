@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:petshopapp/providers/funfact_banner_provider.dart';
 import 'package:petshopapp/ui/customer/chat/chat_screen.dart';
-
+import 'package:go_router/go_router.dart';
 
 
 class HomeFunFactSlider extends StatefulWidget {
@@ -65,7 +65,7 @@ class _HomeFunFactSliderState extends State<HomeFunFactSlider> {
       );
     }
      return SizedBox(
-      height: 220,
+      height: 140,
       child: PageView.builder(
         controller: _pageController,
         itemCount: banners.length,
@@ -74,27 +74,25 @@ class _HomeFunFactSliderState extends State<HomeFunFactSlider> {
 
           return GestureDetector(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ChatScreen(
-                    defaultTopic: item.topic,
-                  ),
-                ),
-                );
+              context.push('/funfact-detail', extra: item);
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 500),
-              margin: const EdgeInsets.symmetric(horizontal: 10),
-              padding: const EdgeInsets.all(22),
+              margin: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                gradient: LinearGradient(
-                  colors: item.gradientColors
-                      .map((e) => Color(e))
-                      .toList(),
+                borderRadius: BorderRadius.circular(20),
+                image: DecorationImage(
+                  image: NetworkImage(item.imageUrl.isNotEmpty 
+                      ? item.imageUrl 
+                      : 'https://via.placeholder.com/400x200?text=Fun+Fact'),
+                  fit: BoxFit.cover,
+                  colorFilter: ColorFilter.mode(
+                    Colors.black.withAlpha(120),
+                    BlendMode.darken,
+                  ),
                 ),
-            boxShadow: const [
+                boxShadow: const [
                   BoxShadow(
                     blurRadius: 10,
                     offset: Offset(0, 4),
@@ -106,33 +104,37 @@ class _HomeFunFactSliderState extends State<HomeFunFactSlider> {
                 children: [
                   Expanded(
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                            item.title,
+                          item.title,
+                          textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 24,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        Text(
-                          item.description,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(50),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            'Tap to see detail',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                   const SizedBox(width: 20),
-                  Text(
-                    item.emoji,
-                    style: const TextStyle(fontSize: 70),
-                  )
                 ],
               ),
             ),
