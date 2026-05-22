@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/models/user_pet_model.dart';
+import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/ui/shared/auth/login/login_page.dart';
 import 'package:petshopapp/ui/shared/auth/register/register_page.dart';
 import 'package:petshopapp/ui/shared/auth/verify/email_verification_page.dart';
@@ -12,6 +13,7 @@ import 'package:petshopapp/ui/customer/profile/user_pets_screen.dart';
 import 'package:petshopapp/ui/customer/profile/add_edit_pet_screen.dart';
 import 'package:petshopapp/ui/customer/profile/points_screen.dart';
 import 'package:petshopapp/ui/customer/profile/profile_screen.dart';
+import 'package:petshopapp/ui/customer/shop/product_detail_screen.dart';
 import 'package:petshopapp/ui/customer/checkout/checkout_review_screen.dart';
 import 'package:petshopapp/ui/customer/shared/payment/payment_method_screen.dart';
 import 'package:petshopapp/ui/customer/shared/payment/payment_execution_screen.dart';
@@ -101,6 +103,14 @@ class CustomerRouter {
           path: '/order-history',
           name: 'order-history',
           builder: (context, state) => const OrderHistoryScreen(),
+        ),
+        GoRoute(
+          path: '/product-detail',
+          name: 'product-detail',
+          builder: (context, state) {
+            final product = state.extra as ProductModel;
+            return ProductDetailScreen(product: product);
+          },
         ),
         GoRoute(
           path: '/checkout-review',
