@@ -21,19 +21,53 @@ class AdminFunFactScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            /// FORM INPUT
-            FunFactForm(
-              onSubmit: (banner) async {
-                print("SUBMIT KE FIRESTORE");
-
-                await firestoreService.addFunFact(banner);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Berhasil publish FunFact"),
+            /// ADD BUTTON
+            SizedBox(
+              width: double.infinity,
+              height: 55,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (dialogContext) {
+                      return Dialog(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        child: SizedBox(
+                          width: 500,
+                          child: SingleChildScrollView(
+                            child: FunFactForm(
+                              onSubmit: (banner) async {
+                                Navigator.pop(dialogContext);
+                                await firestoreService.addFunFact(banner);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Berhasil publish FunFact"),
+                                    ),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  );
+                },
+                icon: const Icon(Icons.add, size: 24),
+                label: const Text(
+                  "Tambah Banner Baru",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF248EFC),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
                   ),
-                );
-              },
+                  elevation: 2,
+                ),
+              ),
             ),
 
             const SizedBox(height: 25),

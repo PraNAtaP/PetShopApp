@@ -23,6 +23,14 @@ class FunFactDetailScreen extends StatelessWidget {
           style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          context.push('/chat', extra: {'defaultTopic': 'Halo admin, saya ingin bertanya tentang topik: ${funFact.topic}'});
+        },
+        icon: const Icon(Icons.chat_bubble_outline, color: Colors.white),
+        label: const Text('Tanya MinPet', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: const Color(0xFF248EFC),
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -64,23 +72,7 @@ class FunFactDetailScreen extends StatelessWidget {
                       color: Colors.black54,
                     ),
                   ),
-                  const SizedBox(height: 40),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        context.push('/chat', extra: {'autoSendText': 'Halo admin, saya ingin bertanya tentang topik: ${funFact.topic}'});
-                      },
-                      icon: const Icon(Icons.chat_bubble_outline),
-                      label: const Text('Tanya MinPet'),
-                      style: ElevatedButton.styleFrom(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-                  )
+                  const SizedBox(height: 80),
                 ],
               ),
             )

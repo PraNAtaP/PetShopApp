@@ -180,6 +180,7 @@ class CustomerRouter {
             return ChatScreen(
               receiverId: args?['receiverId'],
               receiverName: args?['receiverName'],
+              defaultTopic: args?['defaultTopic'],
             );
           },
         ),
