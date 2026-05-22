@@ -227,7 +227,9 @@ class ProfileScreen extends StatelessWidget {
                               _buildActionTile(
                                 icon: Icons.history_outlined,
                                 title: 'Riwayat Adopsi',
-                                onTap: () {},
+                                onTap: () {
+                                  context.push('/adoption-history');
+                                },
                               ),
                               const Divider(height: 1, indent: 56),
                               _buildActionTile(
