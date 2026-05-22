@@ -19,8 +19,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currencyFormatter =
-        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
     final cart = context.watch<CartProvider>();
 
     return Scaffold(
@@ -46,7 +49,11 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ),
             child: Column(
               children: [
-                const Icon(Icons.account_balance_wallet, color: Colors.white, size: 40),
+                const Icon(
+                  Icons.account_balance_wallet,
+                  color: Colors.white,
+                  size: 40,
+                ),
                 const SizedBox(height: 16),
                 const Text(
                   'Total Pembayaran',
@@ -70,7 +77,66 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ),
           ),
 
-          const SizedBox(height: 24),
+          // Total Harga Card
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.monetization_on,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Total Harga',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    currencyFormatter.format(cart.totalPrice),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
 
           // Payment options
           Padding(
@@ -194,16 +260,15 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: isSelected ? AppColors.primary : AppColors.textDark,
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.textDark,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade500,
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
                   ),
                 ],
               ),

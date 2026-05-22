@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:petshopapp/providers/cart_provider.dart';
+import 'package:petshopapp/providers/grooming_provider.dart';
 
 class UniversalPaymentMethodScreen extends StatefulWidget {
   final String category; // 'shop' or 'grooming'
@@ -16,6 +20,18 @@ class _UniversalPaymentMethodScreenState extends State<UniversalPaymentMethodScr
 
   @override
   Widget build(BuildContext context) {
+    final currencyFormatter =
+        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
+    double totalPrice = 0;
+    if (widget.category == 'shop') {
+      final cart = context.watch<CartProvider>();
+      totalPrice = cart.totalPrice.toDouble();
+    } else if (widget.category == 'grooming') {
+      final grooming = context.watch<GroomingProvider>();
+      totalPrice = (grooming.selectedPrice * grooming.selectedPets.length).toDouble();
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -49,7 +65,66 @@ class _UniversalPaymentMethodScreenState extends State<UniversalPaymentMethodScr
             ),
           ),
 
-          const SizedBox(height: 24),
+          // Total Harga Card
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.monetization_on,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Total Harga',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Text(
+                    currencyFormatter.format(totalPrice),
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
 
           // Payment options
           Padding(
