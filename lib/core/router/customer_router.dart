@@ -6,6 +6,7 @@ import 'package:petshopapp/ui/shared/auth/register/register_page.dart';
 import 'package:petshopapp/ui/shared/auth/verify/email_verification_page.dart';
 import 'package:petshopapp/ui/customer/main/base_screen.dart';
 import 'package:petshopapp/ui/customer/adoption/adoption_catalog_screen.dart';
+import 'package:petshopapp/ui/customer/adoption/adoption_history_screen.dart';
 import 'package:petshopapp/ui/customer/profile/edit_profile_screen.dart';
 import 'package:petshopapp/ui/customer/profile/user_pets_screen.dart';
 import 'package:petshopapp/ui/customer/profile/add_edit_pet_screen.dart';
@@ -77,6 +78,11 @@ class CustomerRouter {
           path: '/adoption',
           name: 'adoption',
           builder: (context, state) => const AdoptionCatalogScreen(),
+        ),
+        GoRoute(
+          path: '/adoption-history',
+          name: 'adoption-history',
+          builder: (context, state) => const AdoptionHistoryScreen(),
         ),
         GoRoute(
           path: '/edit-profile',

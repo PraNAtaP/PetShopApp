@@ -115,4 +115,17 @@ class AdoptionService {
       throw Exception('Failed to cancel adoption: $e');
     }
   }
+
+  /// Stream of animals adopted/booked by a specific user.
+  Stream<List<AnimalModel>> getAdoptionsByUser(String userId) {
+    return _firestore
+        .collection(_collectionPath)
+        .where('bookedBy', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => AnimalModel.fromMap(doc.data(), doc.id))
+          .toList();
+    });
+  }
 }
