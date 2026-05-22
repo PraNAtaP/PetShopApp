@@ -22,10 +22,11 @@ class AdminFunFactScreen extends StatelessWidget {
         child: Column(
           children: [
             /// ADD BUTTON
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton.icon(
+            Align(
+              alignment: Alignment.centerRight,
+              child: SizedBox(
+                height: 50,
+                child: ElevatedButton.icon(
                 onPressed: () {
                   showDialog(
                     context: context,
@@ -66,6 +67,7 @@ class AdminFunFactScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   elevation: 2,
+                ),
                 ),
               ),
             ),
