@@ -156,12 +156,6 @@ class ProfileScreen extends StatelessWidget {
                                 title: 'No. Telepon',
                                 subtitle: user?.nomorWa ?? 'Belum diatur',
                               ),
-                              const Divider(height: 24),
-                              _buildInfoRow(
-                                icon: Icons.location_on_outlined,
-                                title: 'Alamat Utama',
-                                subtitle: user?.alamat ?? 'Belum diatur (Tambahkan di Buku Alamat)',
-                              ),
                               const SizedBox(height: 16),
                               SizedBox(
                                 width: double.infinity,

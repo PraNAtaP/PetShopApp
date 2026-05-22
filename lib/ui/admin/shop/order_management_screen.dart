@@ -85,6 +85,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                     DataColumn(label: Text('Tanggal', style: TextStyle(fontWeight: FontWeight.bold))),
                     DataColumn(label: Text('Pelanggan', style: TextStyle(fontWeight: FontWeight.bold))),
                     DataColumn(label: Text('Total', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Tipe Kirim', style: TextStyle(fontWeight: FontWeight.bold))),
                     DataColumn(label: Text('Status Bayar', style: TextStyle(fontWeight: FontWeight.bold))),
                     DataColumn(label: Text('Status Kirim', style: TextStyle(fontWeight: FontWeight.bold))),
                     DataColumn(label: Text('Aksi', style: TextStyle(fontWeight: FontWeight.bold))),
@@ -137,6 +138,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
           ),
         ),
         DataCell(Text(NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0).format(order.totalHarga))),
+        DataCell(_buildDeliveryTypeChip(order.metodePengambilan.toLowerCase().contains('kirim'))),
         DataCell(_buildStatusChip(order.statusBayar, isPayment: true)),
         DataCell(_buildStatusChip(order.statusPengiriman, isPayment: false)),
         DataCell(
@@ -183,6 +185,25 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
       default:
         return Colors.grey.shade700;
     }
+  }
+
+  Widget _buildDeliveryTypeChip(bool isDelivery) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: isDelivery ? Colors.blue.shade50 : Colors.purple.shade50,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isDelivery ? Colors.blue.shade200 : Colors.purple.shade200),
+      ),
+      child: Text(
+        isDelivery ? 'Diantar' : 'Ambil di Toko',
+        style: TextStyle(
+          color: isDelivery ? Colors.blue.shade700 : Colors.purple.shade700,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
   }
 
   Widget _buildStatusChip(String status, {required bool isPayment}) {

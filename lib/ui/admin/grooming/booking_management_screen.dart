@@ -73,6 +73,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                     DataColumn(label: Text('Pelanggan', style: TextStyle(fontWeight: FontWeight.bold))),
                     DataColumn(label: Text('Jadwal Layanan', style: TextStyle(fontWeight: FontWeight.bold))),
                     DataColumn(label: Text('Total Pembayaran', style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(label: Text('Lokasi Layanan', style: TextStyle(fontWeight: FontWeight.bold))),
                     DataColumn(label: Text('Status Grooming', style: TextStyle(fontWeight: FontWeight.bold))),
                     DataColumn(label: Text('Aksi', style: TextStyle(fontWeight: FontWeight.bold))),
                   ],
@@ -123,7 +124,6 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(booking.customerName, style: const TextStyle(fontWeight: FontWeight.bold)),
-              Text(booking.isHomeService ? 'Home Service' : 'Di Toko', style: const TextStyle(fontSize: 10, color: Colors.blue)),
             ],
           ),
         ),
@@ -138,6 +138,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
           ),
         ),
         DataCell(Text(currencyFormat.format(booking.totalPrice))),
+        DataCell(_buildLocationTypeChip(booking.isHomeService)),
         DataCell(_buildStatusChip(booking.status)),
         DataCell(
           Row(
@@ -185,6 +186,25 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
       default:
         return Colors.grey.shade700;
     }
+  }
+
+  Widget _buildLocationTypeChip(bool isHomeService) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: isHomeService ? Colors.blue.shade50 : Colors.purple.shade50,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: isHomeService ? Colors.blue.shade200 : Colors.purple.shade200),
+      ),
+      child: Text(
+        isHomeService ? 'Home Service' : 'Di Toko',
+        style: TextStyle(
+          color: isHomeService ? Colors.blue.shade700 : Colors.purple.shade700,
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
   }
 
   Widget _buildStatusChip(String status) {
