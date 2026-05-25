@@ -198,7 +198,7 @@ class HomeScreen extends StatelessWidget {
   // Header Section
   // ═══════════════════════════════════════════════════════════════════
 
-  Widget _buildHeader(BuildContext context, String firstName, int poin) {
+  Widget _buildHeader(BuildContext context, String firstName, double poin) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
       decoration: const BoxDecoration(

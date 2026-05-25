@@ -417,7 +417,9 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
     if (poinDidapat > 0) {
       await auth.tambahPoin(
         jumlahPoin: poinDidapat,
-        keterangan: 'Pembelian produk — ${cart.totalItems} item',
+        keterangan: 'Pembelian produk (Rp${cart.totalPrice.toInt()}) '
+                    '— ${cart.totalItems} item',
+        orderId: order.orderId,
       );
     }
 

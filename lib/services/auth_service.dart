@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/models/user_model.dart';
 import 'package:petshopapp/models/point_history_model.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:petshopapp/constants/point_constants.dart';
 
 /// Authentication service backed by Firebase Auth and Cloud Firestore.
 ///
@@ -272,7 +273,7 @@ class AuthService extends ChangeNotifier {
   }
 
   double hitungPoinDariTransaksi(double totalHarga) {
-    return totalHarga / 1000;
+    return PointConstants.hitungPoin(totalHarga);
   }
 
   Future<void> logout() async {

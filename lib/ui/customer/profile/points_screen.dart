@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/models/point_history_model.dart';
+import 'package:petshopapp/constants/point_constants.dart';
 
 class PointsScreen extends StatelessWidget {
   const PointsScreen({super.key});
@@ -133,15 +134,16 @@ class PointsScreen extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 16),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
+                          children: [
+                            const Text(
                               'Nilai Tukar',
                               style: TextStyle(color: AppColors.textLight, fontSize: 12),
                             ),
-                            SizedBox(height: 4),
+                            const SizedBox(height: 4),
                             Text(
-                              '1.000 poin = Rp5.000',
-                              style: TextStyle(
+                              '${PointConstants.poinPerRedeem.toInt()} poin = '
+                              'Rp${PointConstants.diskonPerRedeem.toInt()}',
+                              style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.textDark,
                               ),
@@ -283,13 +285,13 @@ class PointsScreen extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
         color: Colors.white,
         child: ElevatedButton.icon(
-          onPressed: user.poin < 1000.0
+          onPressed: user.poin < PointConstants.minPoinRedeem
               ? null
               : () => _showTukarPoinDialog(context, user.poin, user.uid),
           icon: const Icon(Icons.redeem),
           label: Text(
-            user.poin < 1000.0
-                ? 'Poin belum cukup (min. 1.000)'
+            user.poin < PointConstants.minPoinRedeem
+                ? 'Poin belum cukup (min. ${PointConstants.minPoinRedeem})'
                 : 'Tukarkan Poin',
           ),
         ),
@@ -313,7 +315,12 @@ class PointsScreen extends StatelessWidget {
   }
 
   void _showTukarPoinDialog(BuildContext context, double currentPoin, String uid) {
-    final TextEditingController controller = TextEditingController();
+    final preview = {
+      'diskon'       : PointConstants.hitungDiskon(currentPoin),
+      'poinTerpakai' : PointConstants.hitungPoinTerpakai(currentPoin),
+      'sisaPoin'     : PointConstants.sisaPoin(currentPoin),
+    };
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -322,19 +329,60 @@ class PointsScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Poin kamu: $currentPoin poin'),
-            const Text(
-              '1.000 poin = Rp5.000 diskon',
-              style: TextStyle(color: AppColors.textLight, fontSize: 12),
+            // Info poin user
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Poin kamu: ${currentPoin.toStringAsFixed(1)} poin',
+                      style: const TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${PointConstants.minPoinRedeem.toInt()} poin = '
+                    'Rp${PointConstants.diskonPerRedeem.toInt()}',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Jumlah poin yang ditukar',
-                hintText: 'Min. 1.000 poin',
-                border: OutlineInputBorder(),
+
+            // Preview hasil tukar (otomatis semua poin yang bisa ditukar)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Rincian Penukaran:',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  _buildPreviewRow(
+                    'Poin dipakai',
+                    '${preview['poinTerpakai']!.toStringAsFixed(1)} poin',
+                    Colors.red,
+                  ),
+                  _buildPreviewRow(
+                    'Diskon didapat',
+                    'Rp${preview['diskon']!.toInt()}',
+                    Colors.green,
+                  ),
+                  _buildPreviewRow(
+                    'Sisa poin',
+                    '${preview['sisaPoin']!.toStringAsFixed(1)} poin',
+                    Colors.grey,
+                  ),
+                ],
               ),
             ),
           ],
@@ -346,21 +394,13 @@ class PointsScreen extends StatelessWidget {
           ),
           ElevatedButton(
             onPressed: () async {
-              final double jumlah = double.tryParse(controller.text) ?? 0.0;
-              if (jumlah < 1000) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Minimal penukaran 1.000 poin')),
-                );
-                return;
-              }
-              if (jumlah > currentPoin) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Poin tidak mencukupi')),
-                );
-                return;
-              }
               Navigator.pop(ctx);
-              await _prosesTukarPoin(context, uid, currentPoin, jumlah);
+              await _prosesTukarPoin(
+                context,
+                uid,
+                currentPoin,
+                preview['poinTerpakai']!, // otomatis pakai semua poin yang bisa
+              );
             },
             child: const Text('Tukar'),
           ),
@@ -369,23 +409,44 @@ class PointsScreen extends StatelessWidget {
     );
   }
 
+  // Widget helper untuk baris preview
+  Widget _buildPreviewRow(String label, String value, Color valueColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          Text(value,
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: valueColor)),
+        ],
+      ),
+    );
+  }
+
   Future<void> _prosesTukarPoin(
-    BuildContext context, String uid, double currentPoin, double jumlahTukar) async {
+      BuildContext context, String uid, double currentPoin, double jumlahTukar) async {
     final authService = context.read<AuthService>();
     final messenger = ScaffoldMessenger.of(context);
-    final double nilaiDiskon = (jumlahTukar ~/ 1000) * 5000;
+
+    // Hitung diskon pakai konstanta baru
+    final double nilaiDiskon = PointConstants.hitungDiskon(currentPoin);
+    final double sisaPoin    = PointConstants.sisaPoin(currentPoin);
 
     try {
       final firestore = FirebaseFirestore.instance;
-      final double sisaPoin = currentPoin - jumlahTukar;
 
       await firestore.collection('users').doc(uid).update({'poin': sisaPoin});
 
       await firestore.collection('point_history').add({
-        'uid': uid,
-        'poin': -jumlahTukar.toDouble(),
-        'keterangan': 'Penukaran poin — diskon Rp${_formatRupiah(nilaiDiskon)}',
-        'created_at': FieldValue.serverTimestamp(),
+        'uid'        : uid,
+        'poin'       : -jumlahTukar,
+        'type'       : 'redeem',
+        'keterangan' : 'Penukaran poin — diskon Rp${_formatRupiah(nilaiDiskon)}',
+        'created_at' : FieldValue.serverTimestamp(),
       });
 
       await authService.refreshProfile();
@@ -393,7 +454,9 @@ class PointsScreen extends StatelessWidget {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-              '$jumlahTukar poin berhasil ditukar! Diskon Rp${_formatRupiah(nilaiDiskon)}'),
+            '${jumlahTukar.toStringAsFixed(1)} poin ditukar! '
+            'Diskon Rp${_formatRupiah(nilaiDiskon)}',
+          ),
           backgroundColor: Colors.green,
         ),
       );
