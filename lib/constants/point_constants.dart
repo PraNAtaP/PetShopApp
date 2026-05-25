@@ -36,4 +36,9 @@ class PointConstants {
   static double sisaPoin(double poin) {
     return poin - hitungPoinTerpakai(poin);
   }
+
+  /// Tentukan apakah user boleh redeem.
+  static bool canRedeem(double poin) {
+    return poin >= minPoinRedeem;
+  }
 }
