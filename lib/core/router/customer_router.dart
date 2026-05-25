@@ -106,8 +106,13 @@ class CustomerRouter {
           path: '/payment-execution',
           name: 'payment-execution',
           builder: (context, state) {
-            final method = state.extra as String? ?? 'QRIS';
-            return UniversalPaymentExecutionScreen(paymentMethod: method, category: 'shop');
+            final extra = state.extra as Map<String, dynamic>? ?? {};
+            return UniversalPaymentExecutionScreen(
+              paymentMethod: extra['metodePembayaran'] as String? ?? 'QRIS',
+              category: 'shop',
+              usePoints: extra['usePoints'] as bool? ?? false,
+              discount: (extra['discount'] as num?)?.toDouble() ?? 0,
+            );
           },
         ),
         GoRoute(
@@ -147,8 +152,13 @@ class CustomerRouter {
           path: '/grooming-payment-execution',
           name: 'grooming-payment-execution',
           builder: (context, state) {
-            final method = state.extra as String? ?? 'QRIS';
-            return UniversalPaymentExecutionScreen(paymentMethod: method, category: 'grooming');
+            final extra = state.extra as Map<String, dynamic>? ?? {};
+            return UniversalPaymentExecutionScreen(
+              paymentMethod: extra['metodePembayaran'] as String? ?? 'QRIS',
+              category: 'grooming',
+              usePoints: extra['usePoints'] as bool? ?? false,
+              discount: (extra['discount'] as num?)?.toDouble() ?? 0,
+            );
           },
         ),
         GoRoute(

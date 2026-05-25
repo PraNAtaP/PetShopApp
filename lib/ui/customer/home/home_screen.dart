@@ -318,18 +318,21 @@ class HomeScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppColors.accent,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Tukar',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        color: Colors.white,
+                  GestureDetector(
+                    onTap: () => context.pushNamed('points'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.accent,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Tukar',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
