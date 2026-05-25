@@ -15,11 +15,15 @@ import 'package:petshopapp/services/imgbb_service.dart';
 class UniversalPaymentExecutionScreen extends StatefulWidget {
   final String paymentMethod; // 'QRIS', 'Transfer', 'COD'
   final String category; // 'shop', 'grooming'
+  final bool usePoints;
+  final double discount;
 
   const UniversalPaymentExecutionScreen({
     super.key,
     required this.paymentMethod,
     required this.category,
+    this.usePoints = false,
+    this.discount = 0,
   });
 
   @override
@@ -55,12 +59,14 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
   }
 
   double _getTotalAmount() {
+    double base;
     if (widget.category == 'shop') {
-      return context.read<CartProvider>().totalPrice;
+      base = context.read<CartProvider>().totalPrice;
     } else {
       final provider = context.read<GroomingProvider>();
-      return provider.selectedPrice * provider.selectedPets.length;
+      base = provider.selectedPrice * provider.selectedPets.length;
     }
+    return (base - widget.discount).clamp(0, double.infinity);
   }
 
   @override
@@ -115,6 +121,20 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      if (widget.usePoints && widget.discount > 0) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                          child: Text(
+                            'Hemat ${currencyFormatter.format(widget.discount)} dari poin',
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
