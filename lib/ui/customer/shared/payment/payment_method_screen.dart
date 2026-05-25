@@ -23,13 +23,20 @@ class _UniversalPaymentMethodScreenState extends State<UniversalPaymentMethodScr
     final currencyFormatter =
         NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
+    double subtotal = 0;
+    double shippingFee = 0;
     double totalPrice = 0;
+
     if (widget.category == 'shop') {
       final cart = context.watch<CartProvider>();
-      totalPrice = cart.totalPrice.toDouble();
+      subtotal = cart.subtotal;
+      shippingFee = cart.shippingFee;
+      totalPrice = cart.totalPrice;
     } else if (widget.category == 'grooming') {
       final grooming = context.watch<GroomingProvider>();
-      totalPrice = (grooming.selectedPrice * grooming.selectedPets.length).toDouble();
+      subtotal = (grooming.selectedPrice * grooming.selectedPets.length).toDouble();
+      shippingFee = grooming.shippingFee;
+      totalPrice = subtotal + shippingFee;
     }
 
     return Scaffold(
@@ -65,7 +72,7 @@ class _UniversalPaymentMethodScreenState extends State<UniversalPaymentMethodScr
             ),
           ),
 
-          // Total Harga Card
+          // Rincian Pembayaran Card
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Container(
@@ -83,41 +90,86 @@ class _UniversalPaymentMethodScreenState extends State<UniversalPaymentMethodScr
                   ),
                 ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Center(
+                    child: Text(
+                      'Rincian Pembayaran',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.monetization_on,
-                          color: AppColors.primary,
-                          size: 20,
+                      Text(
+                        widget.category == 'shop' ? 'Subtotal Pesanan' : 'Subtotal Layanan',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textLight,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Total Harga',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                      Text(
+                        currencyFormatter.format(subtotal),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                           color: AppColors.textDark,
                         ),
                       ),
                     ],
                   ),
-                  Text(
-                    currencyFormatter.format(totalPrice),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        widget.category == 'shop' ? 'Biaya Pengiriman' : 'Biaya Layanan',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textLight,
+                        ),
+                      ),
+                      Text(
+                        shippingFee == 0.0
+                            ? 'Gratis'
+                            : currencyFormatter.format(shippingFee),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: shippingFee == 0.0
+                              ? Colors.green
+                              : AppColors.textDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 24, thickness: 1),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Total Pembayaran',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      Text(
+                        currencyFormatter.format(totalPrice),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

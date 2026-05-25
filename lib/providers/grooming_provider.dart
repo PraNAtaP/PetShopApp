@@ -42,6 +42,38 @@ class GroomingProvider with ChangeNotifier {
   List<String> get bookedSlots => _bookedSlots;
   bool get isLoadingSlots => _isLoadingSlots;
 
+  double get shippingFee {
+    if (!_isHomeService || _alamatLengkap.isEmpty) return 0.0;
+
+    final address = _alamatLengkap.toLowerCase();
+    
+    // Check if within Kabupaten Malang
+    final bool isKabupaten = address.contains('kabupaten malang') || 
+                             address.contains('kab. malang') || 
+                             address.contains('kab malang');
+
+    if (isKabupaten) {
+      if (address.contains('pujon') || address.contains('ngantang') || address.contains('kasembon') || 
+          address.contains('dampit') || address.contains('turen') || address.contains('gondanglegi') || 
+          address.contains('bantur') || address.contains('sumbermanjing') || address.contains('donomulyo') ||
+          address.contains('gedangan') || address.contains('ampelgading') || address.contains('tirtoyudo')) {
+        return 20000.0;
+      } else if (address.contains('lawang') || address.contains('tumpang') || address.contains('bululawang') || 
+                 address.contains('tajinan') || address.contains('kepanjen') || address.contains('jabung') ||
+                 address.contains('poncokusumo') || address.contains('pagak') || address.contains('kalipare')) {
+        return 15000.0;
+      } else if (address.contains('dau') || address.contains('singosari') || address.contains('pakisaji') || 
+                 address.contains('karangploso') || address.contains('wagir') || address.contains('pakis')) {
+        return 12000.0;
+      } else {
+        final int hashVal = address.codeUnits.fold(0, (sum, char) => sum + char);
+        return 10000.0 + (hashVal % 11) * 1000.0;
+      }
+    }
+    
+    return 0.0;
+  }
+
   // Setters
   void toggleService(String service, double price) {
     if (_selectedServices.contains(service)) {
@@ -90,6 +122,8 @@ class GroomingProvider with ChangeNotifier {
       throw Exception('Harap lengkapi data booking');
     }
 
+    final double feePerPet = shippingFee / _selectedPets.length;
+
     // Create a separate booking for each pet
     for (var pet in _selectedPets) {
       final booking = GroomingBookingModel(
@@ -101,7 +135,7 @@ class GroomingProvider with ChangeNotifier {
         serviceType: _selectedServices.join(', '),
         bookingDate: _selectedDate!,
         timeSlot: _selectedTimeSlot!,
-        totalPrice: _selectedPrice, // Price per pet
+        totalPrice: _selectedPrice + feePerPet, // Price per pet + distributed shipping fee
         isHomeService: _isHomeService,
         alamatLengkap: _isHomeService ? _alamatLengkap : null,
         latitude: _isHomeService ? _latitude : null,

@@ -23,17 +23,24 @@ class UniversalPaymentExecutionScreen extends StatefulWidget {
   });
 
   @override
-  State<UniversalPaymentExecutionScreen> createState() => _UniversalPaymentExecutionScreenState();
+  State<UniversalPaymentExecutionScreen> createState() =>
+      _UniversalPaymentExecutionScreenState();
 }
 
-class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecutionScreen> with SingleTickerProviderStateMixin {
+class _UniversalPaymentExecutionScreenState
+    extends State<UniversalPaymentExecutionScreen>
+    with SingleTickerProviderStateMixin {
   bool _isProcessing = false;
   bool _isSuccess = false;
   XFile? _selectedImage;
   late AnimationController _checkAnimController;
   late Animation<double> _scaleAnimation;
 
-  final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+  final currencyFormatter = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
 
   @override
   void initState() {
@@ -59,7 +66,8 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
       return context.read<CartProvider>().totalPrice;
     } else {
       final provider = context.read<GroomingProvider>();
-      return provider.selectedPrice * provider.selectedPets.length;
+      return (provider.selectedPrice * provider.selectedPets.length) +
+          provider.shippingFee;
     }
   }
 
@@ -145,18 +153,35 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          const Text('Scan QR Code di bawah ini', style: TextStyle(color: AppColors.textLight, fontSize: 14)),
+          const Text(
+            'Scan QR Code di bawah ini',
+            style: TextStyle(color: AppColors.textLight, fontSize: 14),
+          ),
           const SizedBox(height: 16),
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.asset('lib/assets/img/qris_placeholder.png', width: 200, height: 200, fit: BoxFit.contain),
+            child: Image.asset(
+              'lib/assets/img/qris_placeholder.png',
+              width: 200,
+              height: 200,
+              fit: BoxFit.contain,
+            ),
           ),
           const SizedBox(height: 12),
-          const Text('NMID: ID882910291', style: TextStyle(color: Colors.grey, fontSize: 12)),
+          const Text(
+            'NMID: ID882910291',
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
         ],
       ),
     );
@@ -169,7 +194,13 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,12 +250,25 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('UPLOAD BUKTI PEMBAYARAN', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textLight)),
+          const Text(
+            'UPLOAD BUKTI PEMBAYARAN',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textLight,
+            ),
+          ),
           const SizedBox(height: 16),
           GestureDetector(
             onTap: _pickImage,
@@ -239,14 +283,24 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
               child: _selectedImage != null
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(_selectedImage!.path, fit: BoxFit.cover),
+                      child: Image.network(
+                        _selectedImage!.path,
+                        fit: BoxFit.cover,
+                      ),
                     )
                   : const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.cloud_upload_outlined, size: 40, color: Colors.grey),
+                        Icon(
+                          Icons.cloud_upload_outlined,
+                          size: 40,
+                          color: Colors.grey,
+                        ),
                         SizedBox(height: 8),
-                        Text('Tap untuk pilih foto bukti', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                        Text(
+                          'Tap untuk pilih foto bukti',
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
+                        ),
                       ],
                     ),
             ),
@@ -258,11 +312,22 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
 
   Widget _buildBottomButton() {
     bool canProceed = widget.paymentMethod == 'COD' || _selectedImage != null;
-    String label = widget.paymentMethod == 'COD' ? 'Konfirmasi Pesanan' : 'Upload & Kirim';
+    String label = widget.paymentMethod == 'COD'
+        ? 'Konfirmasi Pesanan'
+        : 'Upload & Kirim';
 
     return Container(
       padding: const EdgeInsets.all(24),
-      decoration: const BoxDecoration(color: Colors.white, boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -5))]),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 10,
+            offset: Offset(0, -5),
+          ),
+        ],
+      ),
       child: SafeArea(
         child: SizedBox(
           width: double.infinity,
@@ -272,11 +337,26 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
             ),
             child: _isProcessing
-                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         ),
       ),
@@ -297,7 +377,9 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
+      ),
       builder: (context) => Container(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -305,7 +387,11 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
           children: [
             const Text(
               'Pilih Sumber Foto',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
             ),
             const SizedBox(height: 24),
             Row(
@@ -330,7 +416,11 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
     );
   }
 
-  Widget _buildSourceOption({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _buildSourceOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
     return GestureDetector(
       onTap: () {
         Navigator.pop(context);
@@ -366,7 +456,10 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
       String? imageUrl;
       if (_selectedImage != null) {
         final bytes = await _selectedImage!.readAsBytes();
-        imageUrl = await ImgbbService.uploadImageBytes(bytes, _selectedImage!.name);
+        imageUrl = await ImgbbService.uploadImageBytes(
+          bytes,
+          _selectedImage!.name,
+        );
       }
 
       if (widget.category == 'shop') {
@@ -385,7 +478,9 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
     } catch (e) {
       if (mounted) {
         setState(() => _isProcessing = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Gagal: $e')));
       }
     }
   }
@@ -398,15 +493,21 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
     final order = OrderModel(
       orderId: '',
       customerId: uid,
-      items: cart.items.map((c) => OrderItemModel(
-        productId: c.productId,
-        nama: c.nama,
-        jumlah: c.jumlah,
-        hargaSatuan: c.hargaSatuan,
-      )).toList(),
+      items: cart.items
+          .map(
+            (c) => OrderItemModel(
+              productId: c.productId,
+              nama: c.nama,
+              jumlah: c.jumlah,
+              hargaSatuan: c.hargaSatuan,
+            ),
+          )
+          .toList(),
       totalHarga: cart.totalPrice,
       buktiBayarUrl: imageUrl,
-      statusBayar: widget.paymentMethod == 'COD' ? 'Pending' : (imageUrl != null ? 'Pending' : 'Unpaid'),
+      statusBayar: widget.paymentMethod == 'COD'
+          ? 'Pending'
+          : (imageUrl != null ? 'Pending' : 'Unpaid'),
       statusPengiriman: 'Menunggu',
       metodePengambilan: cart.isDelivery ? 'Kirim ke Alamat' : 'Ambil di Toko',
       metodePembayaran: widget.paymentMethod,
@@ -434,21 +535,13 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
     final user = auth.currentUser;
 
     if (user != null) {
+      // In grooming provider, we updated confirmBooking to take buktiBayarUrl and metodePembayaran
       await provider.confirmBooking(
         user.uid,
         user.nama,
         buktiBayarUrl: imageUrl,
         metodePembayaran: widget.paymentMethod,
       );
-
-      final double totalGrooming = provider.selectedPrice * provider.selectedPets.length;
-      final double poinDidapat = auth.hitungPoinDariTransaksi(totalGrooming);
-      if (poinDidapat > 0) {
-        await auth.tambahPoin(
-          jumlahPoin: poinDidapat,
-          keterangan: 'Booking grooming — ${provider.selectedPets.length} hewan',
-        );
-      }
     }
   }
 
@@ -461,10 +554,17 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
           children: [
             ScaleTransition(
               scale: _scaleAnimation,
-              child: const Icon(Icons.check_circle, color: Colors.green, size: 80),
+              child: const Icon(
+                Icons.check_circle,
+                color: Colors.green,
+                size: 80,
+              ),
             ),
             const SizedBox(height: 24),
-            const Text('Pesanan Berhasil!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+            const Text(
+              'Pesanan Berhasil!',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 12),
             Text(
               widget.paymentMethod == 'COD'
@@ -479,8 +579,13 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
               height: 50,
               child: ElevatedButton(
                 onPressed: () => context.goNamed('home'),
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
-                child: const Text('Ke Beranda', style: TextStyle(color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                ),
+                child: const Text(
+                  'Ke Beranda',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ),
           ],

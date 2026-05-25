@@ -303,7 +303,7 @@ class CheckoutReviewScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            currencyFormatter.format(cart.totalPrice),
+                            currencyFormatter.format(cart.subtotal),
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,

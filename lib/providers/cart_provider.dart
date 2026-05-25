@@ -30,7 +30,41 @@ class CartProvider with ChangeNotifier {
 
   int get totalItems => _items.fold(0, (sum, item) => sum + item.jumlah);
 
-  double get totalPrice => _items.fold(0.0, (sum, item) => sum + (item.hargaSatuan * item.jumlah));
+  double get subtotal => _items.fold(0.0, (sum, item) => sum + (item.hargaSatuan * item.jumlah));
+
+  double get shippingFee {
+    if (!_isDelivery || _alamatLengkap.isEmpty) return 0.0;
+
+    final address = _alamatLengkap.toLowerCase();
+    
+    // Check if within Kabupaten Malang
+    final bool isKabupaten = address.contains('kabupaten malang') || 
+                             address.contains('kab. malang') || 
+                             address.contains('kab malang');
+
+    if (isKabupaten) {
+      if (address.contains('pujon') || address.contains('ngantang') || address.contains('kasembon') || 
+          address.contains('dampit') || address.contains('turen') || address.contains('gondanglegi') || 
+          address.contains('bantur') || address.contains('sumbermanjing') || address.contains('donomulyo') ||
+          address.contains('gedangan') || address.contains('ampelgading') || address.contains('tirtoyudo')) {
+        return 20000.0;
+      } else if (address.contains('lawang') || address.contains('tumpang') || address.contains('bululawang') || 
+                 address.contains('tajinan') || address.contains('kepanjen') || address.contains('jabung') ||
+                 address.contains('poncokusumo') || address.contains('pagak') || address.contains('kalipare')) {
+        return 15000.0;
+      } else if (address.contains('dau') || address.contains('singosari') || address.contains('pakisaji') || 
+                 address.contains('karangploso') || address.contains('wagir') || address.contains('pakis')) {
+        return 12000.0;
+      } else {
+        final int hashVal = address.codeUnits.fold(0, (sum, char) => sum + char);
+        return 10000.0 + (hashVal % 11) * 1000.0;
+      }
+    }
+    
+    return 0.0;
+  }
+
+  double get totalPrice => subtotal + shippingFee;
 
   bool get isDelivery => _isDelivery;
   String get alamatLengkap => _alamatLengkap;

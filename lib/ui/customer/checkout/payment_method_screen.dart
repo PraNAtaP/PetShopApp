@@ -77,7 +77,7 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
             ),
           ),
 
-          // Total Harga Card
+          // Rincian Pembayaran Card
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Container(
@@ -95,41 +95,86 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   ),
                 ],
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  const Center(
+                    child: Text(
+                      'Rincian Pembayaran',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.monetization_on,
-                          color: AppColors.primary,
-                          size: 20,
+                      const Text(
+                        'Subtotal Pesanan',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textLight,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Total Harga',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
+                      Text(
+                        currencyFormatter.format(cart.subtotal),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                           color: AppColors.textDark,
                         ),
                       ),
                     ],
                   ),
-                  Text(
-                    currencyFormatter.format(cart.totalPrice),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Biaya Pengiriman',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textLight,
+                        ),
+                      ),
+                      Text(
+                        cart.shippingFee == 0.0
+                            ? 'Gratis'
+                            : currencyFormatter.format(cart.shippingFee),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: cart.shippingFee == 0.0
+                              ? Colors.green
+                              : AppColors.textDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 24, thickness: 1),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Total Pembayaran',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      Text(
+                        currencyFormatter.format(cart.totalPrice),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
