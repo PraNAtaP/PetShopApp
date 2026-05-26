@@ -1,4 +1,3 @@
-
 import 'package:flutter/foundation.dart';
 import 'package:petshopapp/models/user_model.dart';
 import 'package:petshopapp/models/user_address_model.dart';
@@ -9,6 +8,7 @@ import 'package:petshopapp/models/cart_model.dart';
 import 'package:petshopapp/models/order_model.dart';
 import 'package:petshopapp/models/funfact_banner_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:petshopapp/services/fcm_service.dart';
 
 
 /// Service to handle Cloud Firestore CRUD operations for Pet Point.
@@ -348,6 +348,40 @@ class FirestoreService {
       
       if (updates.isNotEmpty) {
         await _db.collection('orders').doc(orderId).update(updates);
+
+        // -- Trigger FCM Notification ke Customer --
+        if (statusPengiriman != null) {
+          try {
+            final orderDoc = await _db.collection('orders').doc(orderId).get();
+            final uid = orderDoc.data()?['customer_id'] as String?;
+            
+            if (uid != null) {
+              final customerDoc = await _db.collection('users').doc(uid).get();
+              final fcmToken = customerDoc.data()?['fcm_token'] as String?;
+              
+              if (fcmToken != null && fcmToken.isNotEmpty) {
+                String title = 'Status Pesanan Diperbarui';
+                String body = 'Status pengiriman pesananmu (#${orderId.substring(0, 5)}) menjadi: $statusPengiriman';
+
+                if (statusPengiriman == 'Dikirim' || statusPengiriman == 'Sedang Dikirim') {
+                  title = 'Pesanan Sedang Diantar! 📦';
+                  body = 'Siap-siap! Pesanan dari Pet Point sedang dalam perjalanan menuju alamatmu.';
+                } else if (statusPengiriman == 'Selesai' || statusPengiriman == 'Terkirim') {
+                  title = 'Pesanan Telah Sampai 🎉';
+                  body = 'Hore! Pesananmu sudah tiba. Terima kasih telah berbelanja di Pet Point.';
+                }
+
+                await FCMService.instance.sendNotification(
+                  targetFCMToken: fcmToken,
+                  title: title,
+                  body: body,
+                );
+              }
+            }
+          } catch (e) {
+            print('Gagal kirim notif order status: $e');
+          }
+        }
       }
     } catch (e) {
       throw Exception('Gagal memperbarui status pesanan: $e');

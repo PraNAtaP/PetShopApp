@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/models/grooming_booking_model.dart';
+import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:flutter/foundation.dart';
+import 'package:petshopapp/services/fcm_service.dart';
 
 /// Service to handle all Firestore operations related to Grooming Bookings.
 class GroomingService {
@@ -56,10 +58,40 @@ class GroomingService {
     }
   }
 
-  /// Updates the status of a specific booking.
   Future<void> updateBookingStatus(String bookingId, String status) async {
     try {
       await _bookingsRef.doc(bookingId).update({'status': status});
+
+      // -- Trigger Push Notification ke Customer --
+      try {
+        final bookingDoc = await _bookingsRef.doc(bookingId).get();
+        final booking = bookingDoc.data();
+        if (booking != null) {
+          final customerDoc = await _db.collection('users').doc(booking.userId).get();
+          final fcmToken = customerDoc.data()?['fcm_token'] as String?;
+          if (fcmToken != null && fcmToken.isNotEmpty) {
+            String title = 'Status Grooming Diperbarui';
+            String body = 'Status pesanan grooming untuk ${booking.petName} menjadi: $status';
+            
+            if (status == 'Groomer Menuju Lokasi' || status == 'Menuju Lokasi') {
+              title = 'Groomer Sedang OTW! 🛵';
+              body = 'Siap-siap! Groomer kami sedang menuju ke lokasimu untuk grooming ${booking.petName}.';
+            } else if (status == 'Completed' || status == 'Selesai') {
+              title = 'Grooming Selesai ✨';
+              body = '${booking.petName} sudah wangi dan bersih! Terima kasih sudah menggunakan layanan kami.';
+            }
+
+            await FCMService.instance.sendNotification(
+              targetFCMToken: fcmToken,
+              title: title,
+              body: body,
+            );
+          }
+        }
+      } catch (e) {
+        debugPrint('Gagal kirim notif status grooming: $e');
+      }
+
     } catch (e) {
       throw Exception('Gagal memperbarui status: $e');
     }
