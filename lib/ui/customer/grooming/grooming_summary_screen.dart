@@ -143,44 +143,45 @@ class GroomingSummaryScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.grey.shade200),
               ),
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary.withOpacity(0.18),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.info_outline,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Pembayaran di langkah berikutnya',
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.secondary.withOpacity(0.18),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.info_outline,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      const Expanded(
+                        child: Text(
+                          'Syarat & Ketentuan Grooming di Lokasi',
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                             color: AppColors.textDark,
                           ),
                         ),
-                        SizedBox(height: 6),
-                        Text(
-                          'Pembayaran dilakukan melalui QRIS atau Transfer setelah Anda konfirmasi booking.',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: AppColors.textLight,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Pelanggan diharapkan tiba di lokasi 15 menit sebelum jam reservasi.\n\nJika terlambat 15 menit, admin akan menghubungi Anda untuk opsi reschedule atau pembatalan.\n\nApabila reservasi dibatalkan, Down Payment (DP) tidak dapat di-refund.',
+                    textAlign: TextAlign.justify,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textLight,
+                      height: 1.5,
                     ),
                   ),
                 ],
