@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/models/chat_room_model.dart';
 import 'package:petshopapp/models/chat_message_model.dart';
+import 'package:petshopapp/services/fcm_service.dart';
 
 /// Service to handle realtime chat operations via Firestore.
 class ChatService {
@@ -90,6 +91,30 @@ class ChatService {
         'receiverName': receiverName ?? (receiverId == adminUid ? adminName : 'Pelanggan'),
         if (customerName != null) 'customerName': customerName,
       }, SetOptions(merge: true));
+
+      // ── KIRIM FCM NOTIFICATION KETIKA PESAN TERKIRIM ──
+      try {
+        final receiverDoc = await _firestore.collection('users').doc(receiverId).get();
+        if (receiverDoc.exists) {
+          final receiverToken = receiverDoc.data()?['fcm_token'] as String?;
+          if (receiverToken != null && receiverToken.isNotEmpty) {
+            String senderName = senderId == adminUid ? adminName : (customerName ?? 'Pelanggan');
+            
+            await FCMService.instance.sendNotification(
+              targetFCMToken: receiverToken,
+              title: 'Pesan baru dari $senderName',
+              body: text.isNotEmpty ? text : '📷 Mengirim foto',
+              data: {
+                'type': 'chat',
+                'chatId': chatId,
+              }
+            );
+          }
+        }
+      } catch (e) {
+        print('Gagal kirim FCM dari ChatService: $e');
+      }
+
     } catch (e) {
       throw Exception('Gagal mengirim pesan: $e');
     }

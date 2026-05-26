@@ -11,6 +11,7 @@ import 'package:petshopapp/providers/grooming_provider.dart';
 import 'core/theme/app_theme.dart';
 import 'services/auth_service.dart';
 import 'services/notification_service.dart';
+import 'services/fcm_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'core/router/customer_router.dart';
@@ -43,6 +44,7 @@ void main() async {
     
     // Only initialize notifications on mobile since Web lacks firebase-messaging-sw.js and local notifications.
     if (!kIsWeb) {
+      await FCMService.instance.init();
       await NotificationService.initialize();
       NotificationService.instance.requestPermission();
     }

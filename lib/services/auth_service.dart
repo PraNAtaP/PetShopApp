@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/models/user_model.dart';
 import 'package:petshopapp/models/point_history_model.dart';
+import 'package:petshopapp/services/fcm_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 /// Authentication service backed by Firebase Auth and Cloud Firestore.
@@ -318,6 +319,17 @@ class AuthService extends ChangeNotifier {
     final doc = await _firestore.collection('users').doc(uid).get();
     if (doc.exists) {
       _currentUser = UserModel.fromFirestore(doc);
+      
+      try {
+        final fcmToken = await FCMService.instance.getToken();
+        if (fcmToken != null && fcmToken != _currentUser!.fcmToken) {
+          await _firestore.collection('users').doc(uid).update({'fcm_token': fcmToken});
+          // Re-fetch to have the updated token in memory
+          final updatedDoc = await _firestore.collection('users').doc(uid).get();
+          _currentUser = UserModel.fromFirestore(updatedDoc);
+        }
+      } catch (_) {}
+
       notifyListeners();
     }
   }
