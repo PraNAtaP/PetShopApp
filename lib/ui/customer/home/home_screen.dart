@@ -206,20 +206,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: IconButton(
-                    // Perubahan Ikon ke Keranjang Belanja
-                    icon: const Icon(Icons.shopping_cart_outlined, color: Colors.white),
-                    // Navigasi ke Halaman CartScreen
-                    onPressed: () => context.push('/cart'),
-                    constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-                    padding: EdgeInsets.zero,
-                  ),
-                ),
+
               ],
             ),
             const SizedBox(height: 24),
