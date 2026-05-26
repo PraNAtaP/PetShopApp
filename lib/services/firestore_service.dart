@@ -353,7 +353,7 @@ class FirestoreService {
         if (statusPengiriman != null) {
           try {
             final orderDoc = await _db.collection('orders').doc(orderId).get();
-            final uid = orderDoc.data()?['uid'] as String?;
+            final uid = orderDoc.data()?['customer_id'] as String?;
             
             if (uid != null) {
               final customerDoc = await _db.collection('users').doc(uid).get();
