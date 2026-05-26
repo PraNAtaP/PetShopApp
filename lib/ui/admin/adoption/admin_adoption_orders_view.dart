@@ -18,12 +18,31 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
   final FirestoreService _firestoreService = FirestoreService.instance;
 
   Future<void> _handleAction(BuildContext context, AnimalModel animal, bool isAccept) async {
-    final actionName = isAccept ? 'terima' : 'tolak';
+    final isCancelRequest = animal.status == 'cancel_requested';
+    
+    String actionName;
+    String confirmTitle;
+    String confirmContent;
+    
+    if (isCancelRequest) {
+      actionName = isAccept ? 'menyetujui pembatalan' : 'menolak pembatalan';
+      confirmTitle = isAccept ? 'Setujui Pembatalan' : 'Tolak Pembatalan';
+      confirmContent = isAccept 
+          ? 'Apakah Anda yakin ingin menyetujui pengajuan pembatalan adopsi untuk ${animal.name}? Hewan akan tersedia kembali untuk diadopsi.'
+          : 'Apakah Anda yakin ingin menolak pengajuan pembatalan adopsi untuk ${animal.name}? Status hewan tetap booked.';
+    } else {
+      actionName = isAccept ? 'terima' : 'tolak';
+      confirmTitle = isAccept ? 'Konfirmasi Penerimaan' : 'Konfirmasi Penolakan';
+      confirmContent = isAccept 
+          ? 'Apakah Anda yakin ingin menerima pesanan adopsi untuk ${animal.name}?'
+          : 'Apakah Anda yakin ingin menolak pesanan adopsi untuk ${animal.name}?';
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Konfirmasi ${isAccept ? 'Penerimaan' : 'Penolakan'}'),
-        content: Text('Apakah Anda yakin ingin meng-$actionName pesanan adopsi untuk ${animal.name}?'),
+        title: Text(confirmTitle),
+        content: Text(confirmContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -35,7 +54,7 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.pop(context, true),
-            child: Text(isAccept ? 'Terima' : 'Tolak'),
+            child: Text(isAccept ? 'Setuju' : 'Tolak'),
           ),
         ],
       ),
@@ -43,10 +62,18 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
 
     if (confirm == true) {
       try {
-        if (isAccept) {
-          await _adoptionService.markAsAdopted(animal.id);
+        if (isCancelRequest) {
+          if (isAccept) {
+            await _adoptionService.cancelAdoption(animal.id);
+          } else {
+            await _adoptionService.denyCancelAdoption(animal.id);
+          }
         } else {
-          await _adoptionService.cancelAdoption(animal.id);
+          if (isAccept) {
+            await _adoptionService.markAsAdopted(animal.id);
+          } else {
+            await _adoptionService.cancelAdoption(animal.id);
+          }
         }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -66,7 +93,7 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<AnimalModel>>(
-      stream: _adoptionService.getAnimalsByStatus('booked'),
+      stream: _adoptionService.getAnimalsByStatuses(const ['booked', 'cancel_requested']),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator(color: AppColors.primary));
@@ -87,97 +114,171 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
           );
         }
 
-        return SingleChildScrollView(
-          scrollDirection: Axis.vertical,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: DataTable(
-              headingRowColor: WidgetStateProperty.all(Colors.grey.shade100),
-              columns: const [
-                DataColumn(label: Text('Hewan', style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(label: Text('Pelanggan', style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(label: Text('Jadwal Jemput', style: TextStyle(fontWeight: FontWeight.bold))),
-                DataColumn(label: Text('Aksi', style: TextStyle(fontWeight: FontWeight.bold))),
-              ],
-              rows: animals.map((animal) {
-                // Fetch customer details based on bookedBy
-                return DataRow(
-                  cells: [
-                    DataCell(
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: Image.network(
-                              animal.imageUrl,
-                              width: 40,
-                              height: 40,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Container(width: 40, height: 40, color: Colors.grey.shade300, child: const Icon(Icons.pets, size: 20)),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(animal.name, style: const TextStyle(fontWeight: FontWeight.w600)),
-                              Text('${animal.type} • ${animal.breed}', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Card(
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.grey.shade200),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  scrollDirection: Axis.vertical,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: constraints.maxWidth,
+                      ),
+                      child: DataTable(
+                        dataRowMinHeight: 75,
+                        dataRowMaxHeight: 100,
+                        headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
+                        dividerThickness: 1,
+                        horizontalMargin: 24,
+                        columnSpacing: 24,
+                        columns: const [
+                          DataColumn(label: Text('Hewan', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark))),
+                          DataColumn(label: Text('Pelanggan', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark))),
+                          DataColumn(label: Text('Jadwal Jemput', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark))),
+                          DataColumn(label: Text('Aksi', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark))),
+                        ],
+                        rows: animals.map((animal) {
+                          final isCancelRequest = animal.status == 'cancel_requested';
+                          return DataRow(
+                            cells: [
+                              DataCell(
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.network(
+                                        animal.imageUrl,
+                                        width: 48,
+                                        height: 48,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (context, error, stackTrace) =>
+                                            Container(
+                                              width: 48, 
+                                              height: 48, 
+                                              color: Colors.grey.shade100, 
+                                              child: const Icon(Icons.pets, size: 24, color: Colors.grey),
+                                            ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              animal.name, 
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
+                                            ),
+                                            if (isCancelRequest) ...[
+                                              const SizedBox(width: 8),
+                                              Container(
+                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red.shade50,
+                                                  borderRadius: BorderRadius.circular(6),
+                                                  border: Border.all(color: Colors.red.shade200),
+                                                ),
+                                                child: const Text(
+                                                  'Minta Batal',
+                                                  style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold),
+                                                ),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          '${animal.type} • ${animal.breed}', 
+                                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                        ),
+                                        if (isCancelRequest && animal.cancelReason != null)
+                                          Padding(
+                                            padding: const EdgeInsets.only(top: 4),
+                                            child: Text(
+                                              'Alasan: ${animal.cancelReason}',
+                                              style: const TextStyle(fontSize: 11, color: Colors.redAccent, fontStyle: FontStyle.italic),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              DataCell(
+                                animal.bookedBy != null
+                                    ? FutureBuilder<UserModel?>(
+                                        future: _firestoreService.getUserProfile(animal.bookedBy!),
+                                        builder: (context, userSnapshot) {
+                                          if (userSnapshot.connectionState == ConnectionState.waiting) {
+                                            return const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2));
+                                          }
+                                          final userName = userSnapshot.data?.nama ?? 'Unknown Customer';
+                                          return Text(
+                                            userName,
+                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textDark),
+                                          );
+                                        },
+                                      )
+                                    : const Text('-', style: TextStyle(color: Colors.grey)),
+                              ),
+                              DataCell(
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (animal.pickupDate != null)
+                                      Text(
+                                        DateFormat('dd MMM yyyy').format(animal.pickupDate!), 
+                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textDark),
+                                      ),
+                                    if (animal.pickupTime != null)
+                                      Text(
+                                        animal.pickupTime!, 
+                                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                      ),
+                                    if (animal.pickupDate == null && animal.pickupTime == null)
+                                      const Text('-', style: TextStyle(color: Colors.grey)),
+                                  ],
+                                ),
+                              ),
+                              DataCell(
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: const Icon(Icons.check_circle_outline, color: Colors.green, size: 22),
+                                      tooltip: isCancelRequest ? 'Setujui Pembatalan' : 'Terima & Tandai Diadopsi',
+                                      onPressed: () => _handleAction(context, animal, true),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    IconButton(
+                                      icon: const Icon(Icons.cancel_outlined, color: AppColors.error, size: 22),
+                                      tooltip: isCancelRequest ? 'Tolak Pembatalan' : 'Tolak Pesanan',
+                                      onPressed: () => _handleAction(context, animal, false),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
-                          ),
-                        ],
+                          );
+                        }).toList(),
                       ),
                     ),
-                    DataCell(
-                      animal.bookedBy != null
-                          ? FutureBuilder<UserModel?>(
-                              future: _firestoreService.getUserProfile(animal.bookedBy!),
-                              builder: (context, userSnapshot) {
-                                if (userSnapshot.connectionState == ConnectionState.waiting) {
-                                  return const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2));
-                                }
-                                final userName = userSnapshot.data?.nama ?? 'Unknown Customer';
-                                return Text(userName);
-                              },
-                            )
-                          : const Text('-', style: TextStyle(color: Colors.grey)),
-                    ),
-                    DataCell(
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (animal.pickupDate != null)
-                            Text(DateFormat('dd MMM yyyy').format(animal.pickupDate!), style: const TextStyle(fontWeight: FontWeight.w500)),
-                          if (animal.pickupTime != null)
-                            Text(animal.pickupTime!, style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
-                          if (animal.pickupDate == null && animal.pickupTime == null)
-                            const Text('-', style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                    ),
-                    DataCell(
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.check_circle_outline, color: Colors.green),
-                            tooltip: 'Terima & Tandai Diadopsi',
-                            onPressed: () => _handleAction(context, animal, true),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.cancel_outlined, color: AppColors.error),
-                            tooltip: 'Tolak Pesanan',
-                            onPressed: () => _handleAction(context, animal, false),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                  ),
                 );
-              }).toList(),
+              },
             ),
           ),
         );
