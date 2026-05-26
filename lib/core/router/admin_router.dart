@@ -4,6 +4,7 @@ import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/ui/shared/auth/login/login_page.dart';
 import 'package:petshopapp/ui/admin/dashboard/admin_layout.dart';
 import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
+import 'package:petshopapp/ui/web_landing/landing_page_screen.dart';
 import 'package:petshopapp/ui/customer/chat/chat_screen.dart';
 
 final GlobalKey<NavigatorState> adminNavigatorKey = GlobalKey<NavigatorState>();
@@ -13,7 +14,7 @@ class AdminRouter {
   static GoRouter router(AuthService authService) {
     return GoRouter(
       navigatorKey: adminNavigatorKey,
-      initialLocation: '/splash',
+      initialLocation: '/',
       refreshListenable: authService,
       redirect: (context, state) {
         final isLoggedIn = authService.isLoggedIn;
@@ -22,17 +23,17 @@ class AdminRouter {
         final isAuthRoute = location == '/login' || location == '/' || location == '/splash';
 
         if (!isLoggedIn && !isAuthRoute) {
-          return '/splash';
+          return '/';
         }
 
         if (isLoggedIn) {
           final role = authService.currentUser?.role.value;
           if (role == 'admin') {
-            if (location == '/login' || location == '/' || location == '/splash') return '/admin/dashboard';
-            return null; // Let them proceed to their admin page
+            if (location == '/login' || location == '/splash') return '/admin/dashboard';
+            return null; // Let them proceed to their admin page or stay on landing page
           } else {
              // They are logged in but not an admin.
-             if (location != '/forbidden') return '/forbidden';
+             if (location != '/forbidden' && location != '/') return '/forbidden';
              return null;
           }
         }
@@ -40,6 +41,11 @@ class AdminRouter {
         return null;
       },
       routes: [
+        GoRoute(
+          path: '/',
+          name: 'landing',
+          builder: (context, state) => const LandingPageScreen(),
+        ),
         GoRoute(
           path: '/splash',
           name: 'splash',
