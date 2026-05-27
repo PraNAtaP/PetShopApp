@@ -112,6 +112,11 @@ class AdoptionHistoryScreen extends StatelessWidget {
         statusText = 'Booked (Menunggu Penjemputan)';
         statusIcon = Icons.schedule;
         break;
+      case 'cancel_requested':
+        statusColor = Colors.red.shade400;
+        statusText = 'Pengajuan Batal (Menunggu Persetujuan)';
+        statusIcon = Icons.pending_actions;
+        break;
       case 'adopted':
         statusColor = Colors.green;
         statusText = 'Berhasil Diadopsi';
@@ -265,8 +270,151 @@ class AdoptionHistoryScreen extends StatelessWidget {
               ),
             ),
           ],
+
+          if (animal.status == 'cancel_requested' && animal.cancelReason != null) ...[
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.comment_outlined, size: 16, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Alasan Batal: ',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.orange,
+                    ),
+                  ),
+                  Expanded(
+                    child: Text(
+                      animal.cancelReason!,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade700,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          if (animal.status == 'booked') ...[
+            const Divider(height: 1, indent: 16, endIndent: 16),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _showCancelRequestDialog(context, animal),
+                  icon: const Icon(Icons.cancel, color: AppColors.error, size: 16),
+                  label: const Text(
+                    'Batalkan Booking',
+                    style: TextStyle(color: AppColors.error, fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: AppColors.error),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  void _showCancelRequestDialog(BuildContext context, AnimalModel animal) {
+    final reasonController = TextEditingController();
+    final adoptionService = AdoptionService();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          scrollable: true,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            'Ajukan Pembatalan Adopsi',
+            style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Apakah Anda yakin ingin membatalkan booking adopsi untuk ${animal.name}?',
+                style: const TextStyle(fontSize: 14, color: AppColors.textDark),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Alasan Pembatalan:',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: reasonController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  hintText: 'Masukkan alasan pembatalan Anda...',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  filled: true,
+                  fillColor: Colors.grey.shade50,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              onPressed: () async {
+                final reason = reasonController.text.trim();
+                if (reason.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Alasan pembatalan wajib diisi!')),
+                  );
+                  return;
+                }
+                Navigator.pop(context);
+
+                try {
+                  await adoptionService.updateAnimal(animal.id, {
+                    'status': 'cancel_requested',
+                    'cancelReason': reason,
+                  });
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Pengajuan pembatalan berhasil dikirim')),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Gagal mengajukan pembatalan: $e')),
+                    );
+                  }
+                }
+              },
+              child: const Text('Kirim Pengajuan'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

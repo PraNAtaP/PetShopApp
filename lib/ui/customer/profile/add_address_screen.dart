@@ -29,12 +29,13 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   double? _lng;
   bool _isPrimary = false;
   bool _isLoading = false;
+  String _selectedKota = 'Kota Malang';
 
   @override
   void initState() {
     super.initState();
     _labelController = TextEditingController(text: widget.existingAddress?.label ?? 'Rumah');
-    _kotaController = TextEditingController();
+    _kotaController = TextEditingController(text: 'Kota Malang');
     _kecamatanController = TextEditingController();
     _kelurahanController = TextEditingController();
     _kodeposController = TextEditingController();
@@ -70,6 +71,40 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
           maxLines: maxLines,
           decoration: InputDecoration(
             hintText: hint,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            filled: true,
+            fillColor: Colors.grey.shade50,
+          ),
+        ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Widget _buildDropdownField({
+    required String label,
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark),
+        ),
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: value,
+          onChanged: onChanged,
+          items: items.map((String item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(item),
+            );
+          }).toList(),
+          decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             filled: true,
             fillColor: Colors.grey.shade50,
@@ -162,7 +197,19 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                 
                 if (widget.existingAddress == null) ...[
                   // Hanya tampilkan form ekstra jika ini alamat baru. Kalau edit, cukup edit full address di atas.
-                  _buildTextField('Kota/Kabupaten', _kotaController, hint: 'Contoh: Kota Malang'),
+                  _buildDropdownField(
+                    label: 'Kota/Kabupaten',
+                    value: _selectedKota,
+                    items: const ['Kota Malang', 'Kabupaten Malang'],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _selectedKota = val;
+                          _kotaController.text = val;
+                        });
+                      }
+                    },
+                  ),
                   _buildTextField('Kecamatan', _kecamatanController, hint: 'Contoh: Lowokwaru'),
                   _buildTextField('Kelurahan', _kelurahanController, hint: 'Contoh: Dinoyo'),
                   _buildTextField('Kode Pos', _kodeposController, hint: 'Contoh: 65144'),

@@ -14,6 +14,7 @@ class AnimalModel {
   final String? bookedBy;
   final DateTime? pickupDate;
   final String? pickupTime;
+  final String? cancelReason;
   final String imageUrl;
   final DateTime? createdAt;
 
@@ -30,6 +31,7 @@ class AnimalModel {
     this.bookedBy,
     this.pickupDate,
     this.pickupTime,
+    this.cancelReason,
     required this.imageUrl,
     this.createdAt,
   });
@@ -49,6 +51,7 @@ class AnimalModel {
       bookedBy: data['bookedBy'],
       pickupDate: (data['pickupDate'] as Timestamp?)?.toDate(),
       pickupTime: data['pickupTime'],
+      cancelReason: data['cancelReason'],
       imageUrl: data['imageUrl'] ?? '',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
     );
@@ -77,6 +80,9 @@ class AnimalModel {
     if (pickupTime != null) {
       map['pickupTime'] = pickupTime;
     }
+    if (cancelReason != null) {
+      map['cancelReason'] = cancelReason;
+    }
     return map;
   }
 
@@ -94,6 +100,7 @@ class AnimalModel {
     String? bookedBy,
     DateTime? pickupDate,
     String? pickupTime,
+    String? cancelReason,
     String? imageUrl,
     DateTime? createdAt,
   }) {
@@ -110,6 +117,7 @@ class AnimalModel {
       bookedBy: bookedBy ?? this.bookedBy,
       pickupDate: pickupDate ?? this.pickupDate,
       pickupTime: pickupTime ?? this.pickupTime,
+      cancelReason: cancelReason ?? this.cancelReason,
       imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
     );
