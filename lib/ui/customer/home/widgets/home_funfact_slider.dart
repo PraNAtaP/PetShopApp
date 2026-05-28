@@ -87,10 +87,6 @@ class _HomeFunFactSliderState extends State<HomeFunFactSlider> {
                       ? item.imageUrl 
                       : 'https://via.placeholder.com/400x200?text=Fun+Fact'),
                   fit: BoxFit.cover,
-                  colorFilter: ColorFilter.mode(
-                    Colors.black.withAlpha(120),
-                    BlendMode.darken,
-                  ),
                 ),
                 boxShadow: const [
                   BoxShadow(
@@ -114,6 +110,13 @@ class _HomeFunFactSliderState extends State<HomeFunFactSlider> {
                             color: Colors.white,
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                offset: Offset(0, 2),
+                                blurRadius: 4.0,
+                                color: Colors.black45,
+                              ),
+                            ],
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -128,7 +131,14 @@ class _HomeFunFactSliderState extends State<HomeFunFactSlider> {
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 12,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
+                              shadows: [
+                                Shadow(
+                                  offset: Offset(0, 1),
+                                  blurRadius: 3.0,
+                                  color: Colors.black45,
+                                ),
+                              ],
                             ),
                           ),
                         ),

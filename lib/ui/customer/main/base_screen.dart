@@ -79,11 +79,11 @@ class BaseScreenState extends State<BaseScreen> {
         child: Container(
           height: 70,
           decoration: BoxDecoration(
-            color: AppColors.primary,
+            color: Colors.white,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.35),
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 20,
                 offset: const Offset(0, 8),
               ),
@@ -137,7 +137,7 @@ class BaseScreenState extends State<BaseScreen> {
                         vertical: 8,
                       ),
                       decoration: BoxDecoration(
-                        color: isSelected ? Colors.white.withValues(alpha: 0.15) : Colors.transparent,
+                        color: isSelected ? AppColors.background : Colors.transparent,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Column(
@@ -148,7 +148,7 @@ class BaseScreenState extends State<BaseScreen> {
                             children: [
                               Icon(
                                 isSelected ? Icons.chat_bubble_rounded : Icons.chat_bubble_outline_rounded,
-                                color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.5),
+                                color: isSelected ? AppColors.primary : Colors.grey.shade400,
                                 size: isSelected ? 24 : 22,
                               ),
                               if (unreadCountTotal > 0)
@@ -182,7 +182,7 @@ class BaseScreenState extends State<BaseScreen> {
                           Text(
                             'Chat',
                             style: TextStyle(
-                              color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.5),
+                              color: isSelected ? AppColors.primary : Colors.grey.shade400,
                               fontSize: 10,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                             ),
@@ -228,7 +228,7 @@ class BaseScreenState extends State<BaseScreen> {
           vertical: 8,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.white.withValues(alpha: 0.15) : Colors.transparent,
+          color: isSelected ? AppColors.background : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -236,14 +236,14 @@ class BaseScreenState extends State<BaseScreen> {
           children: [
             Icon(
               isSelected ? activeIcon : icon,
-              color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.5),
+              color: isSelected ? AppColors.primary : Colors.grey.shade400,
               size: isSelected ? 24 : 22,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white.withValues(alpha: 0.5),
+                color: isSelected ? AppColors.primary : Colors.grey.shade400,
                 fontSize: 10,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),

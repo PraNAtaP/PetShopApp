@@ -30,7 +30,7 @@ class _ShopScreenState extends State<ShopScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background.withValues(alpha: 0.3),
       body: CustomScrollView(
         slivers: [
           _buildAppBar(),
@@ -48,14 +48,14 @@ class _ShopScreenState extends State<ShopScreen> {
       pinned: true,
       floating: true,
       expandedHeight: 140,
-      backgroundColor: AppColors.primary,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
       ),
       title: const Text(
         'Shop',
         style: TextStyle(
-          color: AppColors.white,
+          color: AppColors.primary,
           fontWeight: FontWeight.bold,
           fontSize: 24,
         ),
@@ -67,7 +67,7 @@ class _ShopScreenState extends State<ShopScreen> {
               alignment: Alignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.white, size: 28),
+                  icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.primary, size: 28),
                   onPressed: () => _showCartBottomSheet(context),
                 ),
                 if (cart.totalItems > 0)

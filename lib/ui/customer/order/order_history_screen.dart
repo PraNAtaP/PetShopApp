@@ -18,7 +18,7 @@ class OrderHistoryScreen extends StatelessWidget {
         NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
           'Riwayat Pesanan',
@@ -305,13 +305,13 @@ class OrderHistoryScreen extends StatelessWidget {
   Color _getStatusColor(String status) {
     switch (status) {
       case 'Paid':
-        return const Color(0xFF2E7D32);
+        return AppColors.secondary;
       case 'Verified':
-        return const Color(0xFF1565C0);
+        return AppColors.primary;
       case 'Pending':
-        return const Color(0xFFE65100);
+        return AppColors.accent;
       case 'Rejected':
-        return const Color(0xFFC62828);
+        return AppColors.error;
       default:
         return AppColors.textLight;
     }

@@ -18,7 +18,7 @@ class ProfileScreen extends StatelessWidget {
         final user = authService.currentUser;
 
         return Scaffold(
-          backgroundColor: AppColors.cardBackground,
+          backgroundColor: AppColors.background.withValues(alpha: 0.2),
           appBar: AppBar(
             title: const Text('Profile'),
             actions: [
@@ -27,6 +27,9 @@ class ProfileScreen extends StatelessWidget {
                 onPressed: () {},
               ),
             ],
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            elevation: 0,
           ),
           body: SingleChildScrollView(
             child: Column(

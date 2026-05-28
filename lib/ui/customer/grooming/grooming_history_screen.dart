@@ -18,7 +18,7 @@ class GroomingHistoryScreen extends StatelessWidget {
     final dateFormat = DateFormat('dd MMM yyyy', 'id_ID');
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: const Text(
           'Riwayat Grooming',
@@ -253,16 +253,16 @@ class GroomingHistoryScreen extends StatelessWidget {
     switch (status) {
       case 'Completed':
       case 'Grooming Selesai':
-        return const Color(0xFF2E7D32);
+        return AppColors.secondary;
       case 'Confirmed':
       case 'Terkonfirmasi':
       case 'Groomer Ditugaskan':
-        return const Color(0xFF1565C0);
+        return AppColors.primary;
       case 'Groomer Dalam Perjalanan':
-        return const Color(0xFF0277BD);
+        return AppColors.background;
       case 'Pending':
       case 'Menunggu Konfirmasi':
-        return const Color(0xFFE65100);
+        return AppColors.accent;
       case 'Cancelled':
       case 'Dibatalkan':
         return AppColors.error;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:petshopapp/models/chat_message_model.dart';
+import 'package:petshopapp/core/theme/app_colors.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessageModel message;
@@ -19,7 +20,7 @@ class ChatBubble extends StatelessWidget {
           if (!isMe) ...[
             const CircleAvatar(
               radius: 16,
-              backgroundColor: Color(0xFFC5E1A5),
+              backgroundColor: AppColors.secondary,
               child: Icon(Icons.pets, size: 16, color: Colors.black54),
             ),
             const SizedBox(width: 8),
@@ -28,7 +29,7 @@ class ChatBubble extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: isMe ? const Color(0xFF0D47A1) : Colors.white,
+                color: isMe ? AppColors.primary : Colors.white,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(20),
                   topRight: const Radius.circular(20),
@@ -75,7 +76,7 @@ class ChatBubble extends StatelessWidget {
                     Text(
                       message.text,
                       style: TextStyle(
-                        color: isMe ? Colors.white : Colors.blue[900],
+                        color: isMe ? Colors.white : AppColors.textDark,
                         fontSize: 15,
                       ),
                     ),

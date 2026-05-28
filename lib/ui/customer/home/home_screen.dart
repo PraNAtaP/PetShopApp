@@ -62,7 +62,7 @@ class HomeScreen extends StatelessWidget {
                         context,
                         icon: Icons.content_cut,
                         label: 'Grooming',
-                        gradient: const [Color(0xFF003F87), Color(0xFF1565C0)],
+                        gradient: const [AppColors.primary, AppColors.primary],
                         onTap: () => context.push('/grooming-service'),
                       ),
                       const SizedBox(width: 12),
@@ -70,7 +70,7 @@ class HomeScreen extends StatelessWidget {
                         context,
                         icon: Icons.pets,
                         label: 'Adopsi',
-                        gradient: const [Color(0xFF2E7D32), Color(0xFF66BB6A)],
+                        gradient: const [AppColors.secondary, AppColors.secondary],
                         onTap: () => context.push('/adoption'),
                       ),
                       const SizedBox(width: 12),
@@ -78,7 +78,7 @@ class HomeScreen extends StatelessWidget {
                         context,
                         icon: Icons.shopping_bag_outlined,
                         label: 'Shop',
-                        gradient: const [Color(0xFFE65100), Color(0xFFFF9800)],
+                        gradient: const [AppColors.accent, AppColors.accent],
                         // Pindah ke tab Shop di BaseScreen (Index 1)
                         onTap: () {
                           BaseScreen.of(context)?.setTab(1);
@@ -89,7 +89,7 @@ class HomeScreen extends StatelessWidget {
                         context,
                         icon: Icons.local_hospital_outlined,
                         label: 'Konsultasi',
-                        gradient: const [Color(0xFF6A1B9A), Color(0xFFAB47BC)],
+                        gradient: const [AppColors.error, AppColors.error],
                         // Mengirimkan template text sebagai extra data ke halaman chat
                         onTap: () {
                           const templateMessage = 
@@ -167,7 +167,7 @@ class HomeScreen extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF003F87), Color(0xFF1565C0)],
+          colors: [AppColors.primary, AppColors.secondary],
         ),
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(32),
@@ -280,7 +280,7 @@ class HomeScreen extends StatelessWidget {
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 12,
-                        color: Colors.white,
+                        color: AppColors.textDark,
                       ),
                     ),
                   ),
@@ -327,7 +327,7 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(icon, color: Colors.white, size: 26),
+              child: Icon(icon, color: Colors.white, size: 28),
             ),
             const SizedBox(height: 10),
             Text(

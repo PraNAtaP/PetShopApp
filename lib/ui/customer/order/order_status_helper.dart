@@ -46,8 +46,8 @@ class StatusStepper extends StatelessWidget {
           lineColor = Colors.grey.shade200;
           textColor = Colors.grey.shade400;
         } else if (isCompleted) {
-          circleColor = const Color(0xFF2E7D32);
-          lineColor = const Color(0xFF2E7D32);
+          circleColor = AppColors.secondary;
+          lineColor = AppColors.secondary;
           textColor = Colors.black87;
         } else if (isActive) {
           circleColor = AppColors.primary;
@@ -109,7 +109,7 @@ class StatusStepper extends StatelessWidget {
                       margin: const EdgeInsets.symmetric(vertical: 4),
                       decoration: BoxDecoration(
                         color: isCompleted
-                            ? const Color(0xFF2E7D32)
+                            ? AppColors.secondary
                             : lineColor,
                         borderRadius: BorderRadius.circular(2),
                       ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:petshopapp/models/chat_message_model.dart';
+import 'package:petshopapp/core/theme/app_colors.dart';
 import 'chat_controller.dart';
 import 'chat_bubble.dart';
 
@@ -73,7 +74,7 @@ class _ChatScreenState extends State<ChatScreen> {
           final displayMessages = chat.messages.reversed.toList();
 
           return Scaffold(
-            backgroundColor: const Color(0xFFF5F7FB),
+            backgroundColor: AppColors.background,
             appBar: AppBar(
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
@@ -85,7 +86,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 children: [
                   const CircleAvatar(
                     radius: 18,
-                    backgroundColor: Color(0xFFC5E1A5),
+                    backgroundColor: AppColors.secondary,
                     child: Icon(Icons.pets, color: Colors.black54, size: 20),
                   ),
                   const SizedBox(width: 10),
@@ -93,7 +94,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ],
               ),
-              backgroundColor: const Color(0xFF0D47A1),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               elevation: 0,
             ),
@@ -221,7 +222,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -2))],
       ),
       child: SafeArea(
@@ -260,7 +261,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   _controller.clear();
                 }
               },
-              icon: const Icon(Icons.send, color: Color(0xFF0D47A1)),
+              icon: const Icon(Icons.send, color: AppColors.primary),
             )
           ],
         ),
