@@ -16,7 +16,7 @@ class CashHistoryScreen extends StatefulWidget {
 class _CashHistoryScreenState extends State<CashHistoryScreen> {
   final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
-  String _selectedDateFilter = 'Semua Waktu'; // Semua Waktu, Hari Ini, Minggu Ini, Bulan Ini, Pilih Tanggal
+  String _selectedDateFilter = 'Hari Ini'; // Semua Waktu, Hari Ini, Minggu Ini, Bulan Ini, Pilih Tanggal
   DateTime? _customDate;
   String _selectedTypeFilter = 'Semua'; // Semua, Grooming, Pesanan
 

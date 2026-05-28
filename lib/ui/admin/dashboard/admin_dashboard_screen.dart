@@ -80,8 +80,11 @@ class AdminDashboardScreen extends StatelessWidget {
             }
           }
 
-          // Gabungkan list terbaru (order + grooming) untuk tabel transaksi
-          List<dynamic> recentTransactions = [...orders, ...groomings];
+          // Gabungkan list terbaru (order + grooming) untuk tabel transaksi HANYA LUNAS/SELESAI HARI INI
+          List<dynamic> recentTransactions = [...lunasOrders, ...paidGroomings].where((item) {
+            final date = item is OrderModel ? (item.createdAt ?? DateTime(0)) : (item as GroomingBookingModel).createdAt;
+            return date.isAfter(todayStart) || date.isAtSameMomentAs(todayStart);
+          }).toList();
           recentTransactions.sort((a, b) {
             final aDate = a is OrderModel ? (a.createdAt ?? DateTime(0)) : a.createdAt;
             final bDate = b is OrderModel ? (b.createdAt ?? DateTime(0)) : b.createdAt;
