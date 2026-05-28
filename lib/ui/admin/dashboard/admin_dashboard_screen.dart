@@ -7,29 +7,10 @@ import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
 import 'package:petshopapp/services/grooming_service.dart';
 
-class AdminDashboardScreen extends StatefulWidget {
+import 'package:petshopapp/ui/admin/dashboard/cash_history_screen.dart';
+
+class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
-
-  @override
-  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
-}
-
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
-  DateTime? _filterDate;
-
-  Future<void> _selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _filterDate ?? DateTime.now(),
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-    );
-    if (picked != null && picked != _filterDate) {
-      setState(() {
-        _filterDate = picked;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -106,14 +87,6 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             final bDate = b is OrderModel ? (b.createdAt ?? DateTime(0)) : b.createdAt;
             return bDate.compareTo(aDate);
           });
-          
-          if (_filterDate != null) {
-            recentTransactions = recentTransactions.where((item) {
-              final date = item is OrderModel ? (item.createdAt ?? DateTime(0)) : (item as GroomingBookingModel).createdAt;
-              return date.year == _filterDate!.year && date.month == _filterDate!.month && date.day == _filterDate!.day;
-            }).toList();
-          }
-
           final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
           return Padding(
@@ -175,23 +148,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                       'Transaksi Terbaru',
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
                     ),
-                    Row(
-                      children: [
-                        if (_filterDate != null)
-                          TextButton.icon(
-                            onPressed: () => setState(() => _filterDate = null),
-                            icon: const Icon(Icons.clear, size: 16),
-                            label: const Text('Hapus Filter'),
-                            style: TextButton.styleFrom(foregroundColor: Colors.red),
-                          ),
-                        TextButton.icon(
-                          onPressed: () => _selectDate(context),
-                          icon: const Icon(Icons.calendar_month),
-                          label: Text(_filterDate == null 
-                              ? 'Filter Tanggal' 
-                              : DateFormat('dd MMM yyyy').format(_filterDate!)),
-                        ),
-                      ],
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CashHistoryScreen()),
+                        );
+                      },
+                      child: const Text('Lihat Lebih >', style: TextStyle(fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
