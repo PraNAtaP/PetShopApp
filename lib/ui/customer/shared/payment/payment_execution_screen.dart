@@ -92,6 +92,14 @@ class _UniversalPaymentExecutionScreenState
 
   Widget _buildPaymentView() {
     final total = _getTotalAmount();
+    final cart = context.watch<CartProvider>();
+    final grooming = context.watch<GroomingProvider>();
+    bool isDpRequired = false;
+    if (widget.category == 'shop') {
+      isDpRequired = widget.paymentMethod == 'COD' && !cart.isDelivery;
+    } else if (widget.category == 'grooming') {
+      isDpRequired = widget.paymentMethod == 'COD' && !grooming.isHomeService;
+    }
 
     return Column(
       children: [
@@ -123,6 +131,24 @@ class _UniversalPaymentExecutionScreenState
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+                      if (isDpRequired) ...[
+                        const SizedBox(height: 12),
+                        const Divider(color: Colors.white24),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'DP yang Harus Dibayar (50%)',
+                          style: TextStyle(color: Colors.white70, fontSize: 14),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          currencyFormatter.format(total * 0.5),
+                          style: const TextStyle(
+                            color: Colors.amberAccent,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -130,19 +156,19 @@ class _UniversalPaymentExecutionScreenState
 
                 if (widget.paymentMethod == 'QRIS') _buildQrisInfo(),
                 if (widget.paymentMethod == 'Transfer') _buildBankInfo(),
-                if (widget.paymentMethod == 'COD') _buildCodInfo(),
+                if (widget.paymentMethod == 'COD') _buildCodInfo(isDpRequired),
 
                 const SizedBox(height: 24),
 
-                // Proof Upload Section (Only for QRIS and Transfer)
-                if (widget.paymentMethod != 'COD') _buildUploadSection(),
+                // Proof Upload Section (Only for QRIS, Transfer, and COD if DP is required)
+                if (widget.paymentMethod != 'COD' || isDpRequired) _buildUploadSection(),
               ],
             ),
           ),
         ),
 
         // Bottom Action Button
-        _buildBottomButton(),
+        _buildBottomButton(isDpRequired),
       ],
     );
   }
@@ -215,7 +241,7 @@ class _UniversalPaymentExecutionScreenState
     );
   }
 
-  Widget _buildCodInfo() {
+  Widget _buildCodInfo(bool isDpRequired) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -224,20 +250,91 @@ class _UniversalPaymentExecutionScreenState
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.amber.shade200),
       ),
-      child: const Column(
+      child: Column(
         children: [
-          Icon(Icons.info_outline, color: Colors.amber, size: 40),
-          SizedBox(height: 12),
+          const Icon(Icons.info_outline, color: Colors.amber, size: 40),
+          const SizedBox(height: 12),
           Text(
-            'Konfirmasi Bayar di Tempat',
-            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            isDpRequired ? 'Pembayaran DP 50% Diperlukan' : 'Konfirmasi Bayar di Tempat',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
-          SizedBox(height: 8),
+          const SizedBox(height: 8),
           Text(
-            'Anda dapat melakukan pembayaran tunai saat pesanan sampai atau layanan selesai. Admin akan melakukan konfirmasi setelah Anda klik tombol di bawah.',
+            isDpRequired
+                ? 'Anda memilih Bayar di Tempat (Ambil/Layanan di Toko). Anda diharuskan membayar DP sebesar 50% terlebih dahulu via Transfer Bank atau QRIS. Harap lakukan pembayaran DP dan unggah bukti pembayarannya di bawah.'
+                : 'Anda dapat melakukan pembayaran tunai saat pesanan sampai atau layanan selesai. Admin akan melakukan konfirmasi setelah Anda klik tombol di bawah.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey, fontSize: 13),
+            style: const TextStyle(color: Colors.grey, fontSize: 13),
           ),
+          if (isDpRequired) ...[
+            const SizedBox(height: 20),
+            const Divider(),
+            const SizedBox(height: 12),
+            const Text(
+              'PILIHAN TRANSFER DP',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textLight,
+              ),
+            ),
+            const SizedBox(height: 12),
+            // Bank Info Mini Card
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Bank', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      Text('BCA', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('No. Rekening', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      Text('12345678', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    ],
+                  ),
+                  SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Atas Nama', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                      Text('Pet Point App', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Center(
+              child: Text(
+                'ATAU Scan QRIS',
+                style: TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'lib/assets/img/qris_placeholder.png',
+                  width: 120,
+                  height: 120,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          ]
         ],
       ),
     );
@@ -310,10 +407,10 @@ class _UniversalPaymentExecutionScreenState
     );
   }
 
-  Widget _buildBottomButton() {
-    bool canProceed = widget.paymentMethod == 'COD' || _selectedImage != null;
+  Widget _buildBottomButton(bool isDpRequired) {
+    bool canProceed = (widget.paymentMethod == 'COD' && !isDpRequired) || _selectedImage != null;
     String label = widget.paymentMethod == 'COD'
-        ? 'Konfirmasi Pesanan'
+        ? (isDpRequired ? 'Upload & Konfirmasi DP' : 'Konfirmasi Pesanan')
         : 'Upload & Kirim';
 
     return Container(
