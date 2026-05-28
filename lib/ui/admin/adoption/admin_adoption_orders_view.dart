@@ -5,35 +5,44 @@ import 'package:petshopapp/models/user_model.dart';
 import 'package:petshopapp/services/adoption_service.dart';
 import 'package:petshopapp/services/firestore_service.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:petshopapp/services/fcm_service.dart';
 
 class AdminAdoptionOrdersView extends StatefulWidget {
   const AdminAdoptionOrdersView({super.key});
 
   @override
-  State<AdminAdoptionOrdersView> createState() => _AdminAdoptionOrdersViewState();
+  State<AdminAdoptionOrdersView> createState() =>
+      _AdminAdoptionOrdersViewState();
 }
 
 class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
   final AdoptionService _adoptionService = AdoptionService();
   final FirestoreService _firestoreService = FirestoreService.instance;
 
-  Future<void> _handleAction(BuildContext context, AnimalModel animal, bool isAccept) async {
+  Future<void> _handleAction(
+    BuildContext context,
+    AnimalModel animal,
+    bool isAccept,
+  ) async {
     final isCancelRequest = animal.status == 'cancel_requested';
-    
+
     String actionName;
     String confirmTitle;
     String confirmContent;
-    
+
     if (isCancelRequest) {
       actionName = isAccept ? 'menyetujui pembatalan' : 'menolak pembatalan';
       confirmTitle = isAccept ? 'Setujui Pembatalan' : 'Tolak Pembatalan';
-      confirmContent = isAccept 
+      confirmContent = isAccept
           ? 'Apakah Anda yakin ingin menyetujui pengajuan pembatalan adopsi untuk ${animal.name}? Hewan akan tersedia kembali untuk diadopsi.'
           : 'Apakah Anda yakin ingin menolak pengajuan pembatalan adopsi untuk ${animal.name}? Status hewan tetap booked.';
     } else {
       actionName = isAccept ? 'terima' : 'tolak';
-      confirmTitle = isAccept ? 'Konfirmasi Penerimaan' : 'Konfirmasi Penolakan';
-      confirmContent = isAccept 
+      confirmTitle = isAccept
+          ? 'Konfirmasi Penerimaan'
+          : 'Konfirmasi Penolakan';
+      confirmContent = isAccept
           ? 'Apakah Anda yakin ingin menerima pesanan adopsi untuk ${animal.name}?'
           : 'Apakah Anda yakin ingin menolak pesanan adopsi untuk ${animal.name}?';
     }
@@ -63,8 +72,39 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
     if (confirm == true) {
       try {
         if (isCancelRequest) {
+          final customerId = animal.bookedBy;
           if (isAccept) {
             await _adoptionService.cancelAdoption(animal.id);
+            if (customerId != null) {
+              try {
+                final customer = await _firestoreService.getUserProfile(
+                  customerId,
+                );
+                final fcmToken = customer?.fcmToken;
+                if (fcmToken != null && fcmToken.isNotEmpty) {
+                  await FCMService.instance.sendNotification(
+                    targetFCMToken: fcmToken,
+                    title: 'Pembatalan Adopsi Disetujui 🐾',
+                    body:
+                        'Pengajuan pembatalan adopsi untuk ${animal.name} telah disetujui oleh Admin.',
+                  );
+                }
+
+                await FirebaseFirestore.instance.collection('notifications').add({
+                  'userId': customerId,
+                  'title': 'Pembatalan Adopsi Disetujui 🐾',
+                  'body':
+                      'Pengajuan pembatalan adopsi untuk ${animal.name} telah disetujui oleh Admin.',
+                  'type': 'adoption_cancellation',
+                  'createdAt': FieldValue.serverTimestamp(),
+                  'read': false,
+                });
+              } catch (notifErr) {
+                debugPrint(
+                  'Failed to send cancellation notification: $notifErr',
+                );
+              }
+            }
           } else {
             await _adoptionService.denyCancelAdoption(animal.id);
           }
@@ -82,9 +122,9 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Terjadi kesalahan: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
         }
       }
     }
@@ -93,10 +133,15 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<List<AnimalModel>>(
-      stream: _adoptionService.getAnimalsByStatuses(const ['booked', 'cancel_requested']),
+      stream: _adoptionService.getAnimalsByStatuses(const [
+        'booked',
+        'cancel_requested',
+      ]),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+          return const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          );
         }
 
         if (snapshot.hasError) {
@@ -136,18 +181,53 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
                       child: DataTable(
                         dataRowMinHeight: 75,
                         dataRowMaxHeight: 100,
-                        headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
+                        headingRowColor: WidgetStateProperty.all(
+                          Colors.grey.shade50,
+                        ),
                         dividerThickness: 1,
                         horizontalMargin: 24,
                         columnSpacing: 24,
                         columns: const [
-                          DataColumn(label: Text('Hewan', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark))),
-                          DataColumn(label: Text('Pelanggan', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark))),
-                          DataColumn(label: Text('Jadwal Jemput', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark))),
-                          DataColumn(label: Text('Aksi', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark))),
+                          DataColumn(
+                            label: Text(
+                              'Hewan',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Pelanggan',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Jadwal Jemput',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                          ),
+                          DataColumn(
+                            label: Text(
+                              'Aksi',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textDark,
+                              ),
+                            ),
+                          ),
                         ],
                         rows: animals.map((animal) {
-                          final isCancelRequest = animal.status == 'cancel_requested';
+                          final isCancelRequest =
+                              animal.status == 'cancel_requested';
                           return DataRow(
                             cells: [
                               DataCell(
@@ -161,38 +241,60 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
                                         width: 48,
                                         height: 48,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) =>
-                                            Container(
-                                              width: 48, 
-                                              height: 48, 
-                                              color: Colors.grey.shade100, 
-                                              child: const Icon(Icons.pets, size: 24, color: Colors.grey),
-                                            ),
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Container(
+                                                  width: 48,
+                                                  height: 48,
+                                                  color: Colors.grey.shade100,
+                                                  child: const Icon(
+                                                    Icons.pets,
+                                                    size: 24,
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
                                       ),
                                     ),
                                     const SizedBox(width: 12),
                                     Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Row(
                                           children: [
                                             Text(
-                                              animal.name, 
-                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textDark),
+                                              animal.name,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 14,
+                                                color: AppColors.textDark,
+                                              ),
                                             ),
                                             if (isCancelRequest) ...[
                                               const SizedBox(width: 8),
                                               Container(
-                                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2,
+                                                    ),
                                                 decoration: BoxDecoration(
                                                   color: Colors.red.shade50,
-                                                  borderRadius: BorderRadius.circular(6),
-                                                  border: Border.all(color: Colors.red.shade200),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                  border: Border.all(
+                                                    color: Colors.red.shade200,
+                                                  ),
                                                 ),
                                                 child: const Text(
                                                   'Minta Batal',
-                                                  style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold),
+                                                  style: TextStyle(
+                                                    color: Colors.red,
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
                                                 ),
                                               ),
                                             ],
@@ -200,15 +302,25 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
                                         ),
                                         const SizedBox(height: 2),
                                         Text(
-                                          '${animal.type} • ${animal.breed}', 
-                                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                          '${animal.type} • ${animal.breed}',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade600,
+                                          ),
                                         ),
-                                        if (isCancelRequest && animal.cancelReason != null)
+                                        if (isCancelRequest &&
+                                            animal.cancelReason != null)
                                           Padding(
-                                            padding: const EdgeInsets.only(top: 4),
+                                            padding: const EdgeInsets.only(
+                                              top: 4,
+                                            ),
                                             child: Text(
                                               'Alasan: ${animal.cancelReason}',
-                                              style: const TextStyle(fontSize: 11, color: Colors.redAccent, fontStyle: FontStyle.italic),
+                                              style: const TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.redAccent,
+                                                fontStyle: FontStyle.italic,
+                                              ),
                                             ),
                                           ),
                                       ],
@@ -219,19 +331,36 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
                               DataCell(
                                 animal.bookedBy != null
                                     ? FutureBuilder<UserModel?>(
-                                        future: _firestoreService.getUserProfile(animal.bookedBy!),
+                                        future: _firestoreService
+                                            .getUserProfile(animal.bookedBy!),
                                         builder: (context, userSnapshot) {
-                                          if (userSnapshot.connectionState == ConnectionState.waiting) {
-                                            return const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2));
+                                          if (userSnapshot.connectionState ==
+                                              ConnectionState.waiting) {
+                                            return const SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            );
                                           }
-                                          final userName = userSnapshot.data?.nama ?? 'Unknown Customer';
+                                          final userName =
+                                              userSnapshot.data?.nama ??
+                                              'Unknown Customer';
                                           return Text(
                                             userName,
-                                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.textDark),
+                                            style: const TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.textDark,
+                                            ),
                                           );
                                         },
                                       )
-                                    : const Text('-', style: TextStyle(color: Colors.grey)),
+                                    : const Text(
+                                        '-',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
                               ),
                               DataCell(
                                 Column(
@@ -240,16 +369,29 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
                                   children: [
                                     if (animal.pickupDate != null)
                                       Text(
-                                        DateFormat('dd MMM yyyy').format(animal.pickupDate!), 
-                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppColors.textDark),
+                                        DateFormat(
+                                          'dd MMM yyyy',
+                                        ).format(animal.pickupDate!),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          fontSize: 13,
+                                          color: AppColors.textDark,
+                                        ),
                                       ),
                                     if (animal.pickupTime != null)
                                       Text(
-                                        animal.pickupTime!, 
-                                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                                        animal.pickupTime!,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.grey.shade600,
+                                        ),
                                       ),
-                                    if (animal.pickupDate == null && animal.pickupTime == null)
-                                      const Text('-', style: TextStyle(color: Colors.grey)),
+                                    if (animal.pickupDate == null &&
+                                        animal.pickupTime == null)
+                                      const Text(
+                                        '-',
+                                        style: TextStyle(color: Colors.grey),
+                                      ),
                                   ],
                                 ),
                               ),
@@ -258,15 +400,29 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.check_circle_outline, color: Colors.green, size: 22),
-                                      tooltip: isCancelRequest ? 'Setujui Pembatalan' : 'Terima & Tandai Diadopsi',
-                                      onPressed: () => _handleAction(context, animal, true),
+                                      icon: const Icon(
+                                        Icons.check_circle_outline,
+                                        color: Colors.green,
+                                        size: 22,
+                                      ),
+                                      tooltip: isCancelRequest
+                                          ? 'Setujui Pembatalan'
+                                          : 'Terima & Tandai Diadopsi',
+                                      onPressed: () =>
+                                          _handleAction(context, animal, true),
                                     ),
                                     const SizedBox(width: 4),
                                     IconButton(
-                                      icon: const Icon(Icons.cancel_outlined, color: AppColors.error, size: 22),
-                                      tooltip: isCancelRequest ? 'Tolak Pembatalan' : 'Tolak Pesanan',
-                                      onPressed: () => _handleAction(context, animal, false),
+                                      icon: const Icon(
+                                        Icons.cancel_outlined,
+                                        color: AppColors.error,
+                                        size: 22,
+                                      ),
+                                      tooltip: isCancelRequest
+                                          ? 'Tolak Pembatalan'
+                                          : 'Tolak Pesanan',
+                                      onPressed: () =>
+                                          _handleAction(context, animal, false),
                                     ),
                                   ],
                                 ),
