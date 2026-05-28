@@ -6,6 +6,7 @@ import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/ui/customer/order/order_history_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_history_screen.dart';
 import 'package:petshopapp/ui/customer/profile/address_list_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -272,15 +273,29 @@ class ProfileScreen extends StatelessWidget {
                               _buildActionTile(
                                 icon: Icons.notifications_none_outlined,
                                 title: 'Notifikasi',
-                                trailing: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.error,
-                                    shape: BoxShape.circle,
-                                  ),
+                                trailing: StreamBuilder<QuerySnapshot>(
+                                  stream: FirebaseFirestore.instance
+                                      .collection('notifications')
+                                      .where('userId', isEqualTo: user?.uid)
+                                      .where('read', isEqualTo: false)
+                                      .snapshots(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                                      return Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.error,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      );
+                                    }
+                                    return const SizedBox.shrink();
+                                  },
                                 ),
-                                onTap: () {},
+                                onTap: () {
+                                  context.push('/notifications');
+                                },
                               ),
                             ],
                           ),

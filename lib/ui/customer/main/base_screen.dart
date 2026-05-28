@@ -9,6 +9,7 @@ import '../profile/profile_screen.dart';
 import '../shop/shop_screen.dart';
 
 import 'package:petshopapp/services/in_app_chat_notifier.dart';
+import 'package:petshopapp/services/in_app_notification_notifier.dart';
 
 class BaseScreen extends StatefulWidget {
   const BaseScreen({super.key});
@@ -31,15 +32,17 @@ class BaseScreenState extends State<BaseScreen> {
   @override
   void initState() {
     super.initState();
-    // Start listening for in-app chat notifications
+    // Start listening for in-app chat & general notifications
     WidgetsBinding.instance.addPostFrameCallback((_) {
       InAppChatNotifier.instance.startListening(context);
+      InAppNotificationNotifier.instance.startListening(context);
     });
   }
 
   @override
   void dispose() {
     InAppChatNotifier.instance.stopListening();
+    InAppNotificationNotifier.instance.stopListening();
     super.dispose();
   }
 

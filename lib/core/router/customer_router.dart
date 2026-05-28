@@ -30,6 +30,7 @@ import 'package:petshopapp/ui/customer/grooming/grooming_summary_screen.dart';
 import 'package:petshopapp/ui/customer/chat/chat_screen.dart';
 import 'package:petshopapp/ui/customer/home/funfact_detail_screen.dart';
 import 'package:petshopapp/models/funfact_banner_model.dart';
+import 'package:petshopapp/ui/customer/profile/notification_list_screen.dart';
 
 /// Customer application route configuration using GoRouter.
 class CustomerRouter {
@@ -94,6 +95,11 @@ class CustomerRouter {
           path: '/edit-profile',
           name: 'edit-profile',
           builder: (context, state) => const EditProfileScreen(),
+        ),
+        GoRoute(
+          path: '/notifications',
+          name: 'notifications',
+          builder: (context, state) => const NotificationListScreen(),
         ),
         GoRoute(
           path: '/points',

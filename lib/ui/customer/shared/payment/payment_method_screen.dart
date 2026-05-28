@@ -265,7 +265,36 @@ class _UniversalPaymentMethodScreenState extends State<UniversalPaymentMethodScr
     final isSelected = _selectedMethod == method;
 
     return GestureDetector(
-      onTap: () => setState(() => _selectedMethod = method),
+      onTap: () {
+        setState(() => _selectedMethod = method);
+        if (method == 'COD') {
+          if (widget.category == 'shop') {
+            final cart = context.read<CartProvider>();
+            if (!cart.isDelivery) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Untuk pengambilan di tempat dengan Bayar di Tempat, Anda diharuskan membayar DP 50% terlebih dahulu.',
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            }
+          } else if (widget.category == 'grooming') {
+            final grooming = context.read<GroomingProvider>();
+            if (!grooming.isHomeService) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Untuk layanan di salon dengan Bayar di Tempat, Anda diharuskan membayar DP 50% terlebih dahulu.',
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            }
+          }
+        }
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.all(20),
