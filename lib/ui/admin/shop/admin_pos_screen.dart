@@ -93,7 +93,7 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
     return total;
   }
 
-  Future<void> _processCheckout() async {
+  Future<void> _executeCheckout() async {
     final total = _calculateTotal();
     
     if (_cart.isEmpty && _groomingCart.isEmpty) {
@@ -188,6 +188,63 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
+  }
+
+  void _showConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.info_outline, color: AppColors.accent, size: 28),
+            SizedBox(width: 8),
+            Text('Konfirmasi Pesanan'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Pastikan semua item dan layanan grooming sudah benar sebelum diproses.', style: TextStyle(fontSize: 14)),
+            const SizedBox(height: 16),
+            const Divider(),
+            if (_cart.isNotEmpty)
+              Text('• ${_cart.length} jenis produk fisik', style: const TextStyle(fontWeight: FontWeight.bold)),
+            if (_groomingCart.isNotEmpty)
+              Text('• ${_groomingCart.length} layanan grooming', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Total Pembelian:'),
+                Text(currencyFormatter.format(_calculateTotal()), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('Uang Diterima:'),
+                Text(currencyFormatter.format(_uangDiterima), style: const TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _executeCheckout();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+            child: const Text('Proses Pembayaran'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showSuccessDialog(double kembalian) {
@@ -451,7 +508,7 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton.icon(
-                            onPressed: (_cart.isEmpty && _groomingCart.isEmpty) || _uangDiterima < _calculateTotal() ? null : _processCheckout,
+                            onPressed: (_cart.isEmpty && _groomingCart.isEmpty) || _uangDiterima < _calculateTotal() ? null : _showConfirmationDialog,
                             icon: const Icon(Icons.check_circle),
                             label: const Text('Bayar & Selesai', style: TextStyle(fontSize: 16)),
                             style: ElevatedButton.styleFrom(
