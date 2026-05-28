@@ -12,6 +12,7 @@ import '../adoption/admin_adoption_management_screen.dart';
 import '../chat/admin_chat_list_screen.dart';
 import 'package:petshopapp/ui/admin/funfact/admin_funfact_screen.dart';
 import '../shop/order_management_screen.dart';
+import '../shop/admin_pos_screen.dart';
 
 import 'package:petshopapp/services/in_app_chat_notifier.dart';
 import 'package:petshopapp/services/web_notification/web_notification_service.dart';
@@ -56,6 +57,7 @@ class _AdminLayoutState extends State<AdminLayout> {
 
     final List<Widget> _adminScreens = [
       const Center(child: Text("Dashboard Overview", style: TextStyle(fontSize: 24))),
+      const AdminPosScreen(),
       const ManagementScreen(),       
       const OrderManagementScreen(),  
       const BookingManagementScreen(), 
@@ -144,6 +146,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       label: Text('Dashboard'),
                     ),
                     NavigationRailDestination(
+                      icon: Icon(Icons.point_of_sale_outlined),
+                      selectedIcon: Icon(Icons.point_of_sale),
+                      label: Text('Kasir'),
+                    ),
+                    NavigationRailDestination(
                       icon: Icon(Icons.inventory_2_outlined),
                       selectedIcon: Icon(Icons.inventory_2),
                       label: Text('Inventory'),
@@ -195,6 +202,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       icon: Icon(Icons.dashboard_outlined),
                       selectedIcon: Icon(Icons.dashboard),
                       label: Text('Dashboard'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.point_of_sale_outlined),
+                      selectedIcon: Icon(Icons.point_of_sale),
+                      label: Text('Kasir'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.inventory_2_outlined),
