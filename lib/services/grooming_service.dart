@@ -29,10 +29,17 @@ class GroomingService {
       final snapshot = await _bookingsRef
           .where('bookingDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
           .where('bookingDate', isLessThan: Timestamp.fromDate(endOfDay))
-          .where('status', whereIn: ['Pending', 'Confirmed', 'Completed'])
           .get();
 
-      return snapshot.docs.map((doc) => doc.data().timeSlot).toList();
+      // Filter locally to avoid Firestore composite index requirement
+      final validStatuses = ['Pending', 'Confirmed', 'Completed'];
+      final bookedSlots = snapshot.docs
+          .map((doc) => doc.data())
+          .where((booking) => validStatuses.contains(booking.status))
+          .map((booking) => booking.timeSlot)
+          .toList();
+
+      return bookedSlots;
     } catch (e) {
       debugPrint('Error fetching booked slots: $e');
       return [];
