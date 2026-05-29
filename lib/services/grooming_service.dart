@@ -29,10 +29,17 @@ class GroomingService {
       final snapshot = await _bookingsRef
           .where('bookingDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
           .where('bookingDate', isLessThan: Timestamp.fromDate(endOfDay))
-          .where('status', whereIn: ['Pending', 'Confirmed', 'Completed'])
           .get();
 
-      return snapshot.docs.map((doc) => doc.data().timeSlot).toList();
+      // Filter locally to avoid Firestore composite index requirement
+      final validStatuses = ['Pending', 'Confirmed', 'Completed'];
+      final bookedSlots = snapshot.docs
+          .map((doc) => doc.data())
+          .where((booking) => validStatuses.contains(booking.status))
+          .map((booking) => booking.timeSlot)
+          .toList();
+
+      return bookedSlots;
     } catch (e) {
       debugPrint('Error fetching booked slots: $e');
       return [];
@@ -99,10 +106,13 @@ class GroomingService {
 
   /// Returns a real-time stream of all grooming bookings for the Admin Dashboard.
   Stream<List<GroomingBookingModel>> getAdminBookingsStream() {
-    // Temporarily remove orderBy to avoid index requirement issues during debug
     return _bookingsRef
         .snapshots()
-        .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+        .map((snapshot) {
+          final list = snapshot.docs.map((doc) => doc.data()).toList();
+          list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+          return list;
+        });
   }
 
   /// Returns a real-time stream of grooming bookings for a specific customer.
