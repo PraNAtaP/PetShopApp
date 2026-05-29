@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:petshopapp/services/grooming_service.dart';
 import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:petshopapp/ui/admin/grooming/admin_add_grooming_dialog.dart';
+import 'package:petshopapp/services/grooming_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -27,6 +28,19 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
         elevation: 0,
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => const AdminAddGroomingDialog(),
+          );
+        },
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('Booking Manual'),
       ),
       body: StreamBuilder<List<GroomingBookingModel>>(
         stream: GroomingService.instance.getAdminBookingsStream(),
@@ -154,6 +168,15 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                 onPressed: () => _showUpdateStatusDialog(booking),
                 tooltip: 'Update Status',
               ),
+              if (booking.status.toLowerCase() != 'selesai' && 
+                  booking.status.toLowerCase() != 'completed' && 
+                  booking.status.toLowerCase() != 'dibatalkan' &&
+                  booking.status.toLowerCase() != 'cancelled')
+                IconButton(
+                  icon: const Icon(Icons.check_circle, size: 20, color: Colors.green),
+                  onPressed: () => _showCompletePaymentDialog(booking),
+                  tooltip: 'Selesaikan & Bayar',
+                ),
             ],
           ),
         ),
@@ -608,6 +631,53 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showCompletePaymentDialog(GroomingBookingModel booking) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Selesaikan Transaksi?'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Tandai grooming ini sebagai Selesai/Completed?'),
+            const SizedBox(height: 16),
+            Text('Total Tagihan: ${currencyFormat.format(booking.totalPrice)}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              try {
+                await GroomingService.instance.updateBookingStatus(booking.bookingId, 'Completed');
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaksi Selesai & Masuk Kas!'), backgroundColor: Colors.green));
+                }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal: $e'), backgroundColor: Colors.red));
+                }
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green, foregroundColor: Colors.white),
+            child: const Text('Ya, Selesai'),
+          ),
+        ],
       ),
     );
   }
