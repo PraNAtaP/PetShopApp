@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:petshopapp/models/chat_message_model.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessageModel message;
@@ -54,19 +55,17 @@ class ChatBubble extends StatelessWidget {
                       },
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          message.imageUrl!,
+                        child: CachedNetworkImage(
+                          imageUrl: message.imageUrl!,
                           width: 200,
                           fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              width: 200,
-                              height: 150,
-                              color: Colors.grey[200],
-                              child: const Center(child: CircularProgressIndicator()),
-                            );
-                          },
+                          placeholder: (context, url) => Container(
+                            width: 200,
+                            height: 150,
+                            color: Colors.grey[200],
+                            child: const Center(child: CircularProgressIndicator()),
+                          ),
+                          errorWidget: (context, url, error) => const Icon(Icons.error),
                         ),
                       ),
                     ),

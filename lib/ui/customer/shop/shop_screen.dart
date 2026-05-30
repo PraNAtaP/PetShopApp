@@ -6,6 +6,7 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
 import 'package:petshopapp/providers/cart_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -283,12 +284,12 @@ class _ShopScreenState extends State<ShopScreen> {
                   child: Hero(
                     tag: 'product_${product.productId}',
                     child: product.fotoUrl.isNotEmpty
-                        ? Image.network(
-                            product.fotoUrl,
+                        ? CachedNetworkImage(
+                            imageUrl: product.fotoUrl,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(color: Colors.grey.shade200, child: const Icon(Icons.broken_image)),
+                            placeholder: (context, url) => Container(color: Colors.grey.shade100, child: const Center(child: CircularProgressIndicator())),
+                            errorWidget: (context, url, error) => Container(color: Colors.grey.shade200, child: const Icon(Icons.broken_image)),
                           )
                         : Container(
                             color: Colors.grey.shade100,
@@ -467,7 +468,7 @@ class CartBottomSheet extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                   image: item.fotoUrl.isNotEmpty
                                       ? DecorationImage(
-                                          image: NetworkImage(item.fotoUrl),
+                                          image: CachedNetworkImageProvider(item.fotoUrl),
                                           fit: BoxFit.cover,
                                         )
                                       : null,

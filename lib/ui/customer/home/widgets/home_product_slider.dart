@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class HomeProductSlider extends StatelessWidget {
   const HomeProductSlider({super.key});
@@ -70,13 +71,13 @@ class HomeProductSlider extends StatelessWidget {
                               child: Hero(
                                 tag: 'home_product_${product.productId}',
                                 child: product.fotoUrl.isNotEmpty
-                                    ? Image.network(
-                                        product.fotoUrl,
+                                    ? CachedNetworkImage(
+                                        imageUrl: product.fotoUrl,
                                         width: double.infinity,
                                         height: double.infinity,
                                         fit: BoxFit.cover,
-                                        errorBuilder: (context, error, stackTrace) =>
-                                            Container(color: Colors.grey.shade200, child: const Icon(Icons.broken_image)),
+                                        placeholder: (context, url) => Container(color: Colors.grey.shade100, child: const Center(child: CircularProgressIndicator())),
+                                        errorWidget: (context, url, error) => Container(color: Colors.grey.shade200, child: const Icon(Icons.broken_image)),
                                       )
                                     : Container(
                                         color: Colors.grey.shade100,

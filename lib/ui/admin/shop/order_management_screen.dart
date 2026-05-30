@@ -5,6 +5,8 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/order_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:petshopapp/ui/customer/order/order_status_helper.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -355,18 +357,16 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                       const SizedBox(height: 12),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          order.buktiBayarUrl!,
+                        child: CachedNetworkImage(
+                          imageUrl: order.buktiBayarUrl!,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              height: 200,
-                              color: Colors.grey[100],
-                              child: const Center(child: CircularProgressIndicator()),
-                            );
-                          },
+                          placeholder: (context, url) => Container(
+                            height: 200,
+                            color: Colors.grey[100],
+                            child: const Center(child: CircularProgressIndicator()),
+                          ),
+                          errorWidget: (context, url, error) => const Icon(Icons.error),
                         ),
                       ),
                       const SizedBox(height: 8),

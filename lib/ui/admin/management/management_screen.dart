@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:petshopapp/services/firestore_service.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'add_product_dialog.dart';
 
 class ManagementScreen extends StatelessWidget {
@@ -77,7 +78,14 @@ class ManagementScreen extends StatelessWidget {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(8),
                             child: product.fotoUrl.isNotEmpty
-                                ? Image.network(product.fotoUrl, width: 50, height: 50, fit: BoxFit.cover)
+                                ? CachedNetworkImage(
+                                    imageUrl: product.fotoUrl,
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
+                                    placeholder: (context, url) => Container(width: 50, height: 50, color: Colors.grey[200], child: const Center(child: CircularProgressIndicator())),
+                                    errorWidget: (context, url, error) => Container(width: 50, height: 50, color: Colors.grey, child: const Icon(Icons.image, color: Colors.white)),
+                                  )
                                 : Container(width: 50, height: 50, color: Colors.grey, child: const Icon(Icons.image, color: Colors.white)),
                           ),
                         ),
