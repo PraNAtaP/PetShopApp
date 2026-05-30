@@ -7,6 +7,7 @@ import 'package:petshopapp/services/firestore_service.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/services/fcm_service.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class AdminAdoptionOrdersView extends StatefulWidget {
   const AdminAdoptionOrdersView({super.key});
@@ -236,23 +237,27 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
                                   children: [
                                     ClipRRect(
                                       borderRadius: BorderRadius.circular(8),
-                                      child: Image.network(
-                                        animal.imageUrl,
+                                      child: CachedNetworkImage(
+                                        imageUrl: animal.imageUrl,
                                         width: 48,
                                         height: 48,
                                         fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                Container(
-                                                  width: 48,
-                                                  height: 48,
-                                                  color: Colors.grey.shade100,
-                                                  child: const Icon(
-                                                    Icons.pets,
-                                                    size: 24,
-                                                    color: Colors.grey,
-                                                  ),
-                                                ),
+                                        placeholder: (context, url) => Container(
+                                          width: 48,
+                                          height: 48,
+                                          color: Colors.grey.shade100,
+                                          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                        ),
+                                        errorWidget: (context, url, error) => Container(
+                                          width: 48,
+                                          height: 48,
+                                          color: Colors.grey.shade100,
+                                          child: const Icon(
+                                            Icons.pets,
+                                            size: 24,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                     const SizedBox(width: 12),

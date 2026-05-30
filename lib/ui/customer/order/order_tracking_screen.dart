@@ -5,6 +5,7 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/order_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
 import 'package:petshopapp/ui/customer/order/order_status_helper.dart';
+import 'package:petshopapp/services/pdf_invoice_service.dart';
 
 /// Displays real-time order tracking with a visual stepper and cancel functionality.
 class OrderTrackingScreen extends StatelessWidget {
@@ -196,6 +197,24 @@ class OrderTrackingScreen extends StatelessWidget {
                             ),
                           ),
                         ],
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            final user = await FirestoreService.instance.getUserProfile(order.customerId);
+                            await PdfInvoiceService.generateOrderInvoice(order, user?.nama ?? 'Pelanggan');
+                          },
+                          icon: const Icon(Icons.receipt_long, size: 18),
+                          label: const Text('Download Nota (PDF)'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
                       ),
                     ],
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:petshopapp/models/funfact_banner_model.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class FunFactDetailScreen extends StatelessWidget {
   final FunFactBannerModel funFact;
@@ -36,12 +37,18 @@ class FunFactDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (funFact.imageUrl.isNotEmpty)
-              Image.network(
-                funFact.imageUrl,
+              CachedNetworkImage(
+                imageUrl: funFact.imageUrl,
                 width: double.infinity,
                 height: 250,
                 fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
+                placeholder: (context, url) => Container(
+                  height: 250,
+                  width: double.infinity,
+                  color: Colors.grey[200],
+                  child: const Center(child: CircularProgressIndicator()),
+                ),
+                errorWidget: (context, url, error) {
                   return Container(
                     height: 250,
                     width: double.infinity,

@@ -10,6 +10,7 @@ import 'package:petshopapp/services/firestore_service.dart';
 import 'package:petshopapp/models/user_pet_model.dart';
 import 'package:petshopapp/models/user_address_model.dart';
 import 'package:petshopapp/ui/customer/profile/address_list_screen.dart';
+import 'package:petshopapp/models/grooming_package_model.dart';
 
 class GroomingServiceScreen extends StatefulWidget {
   const GroomingServiceScreen({super.key});
@@ -24,14 +25,7 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
   final List<UserPetModel> _selectedPets = [];
   Stream<List<UserPetModel>>? _petsStream;
   String? _currentUserId;
-  final List<Map<String, dynamic>> _services = [
-    {'name': 'Mandi Dasar', 'price': 50000.0, 'icon': Icons.shower},
-    {'name': 'Mandi Kutu/Jamur', 'price': 80000.0, 'icon': Icons.bug_report},
-    {'name': 'Potong Kuku', 'price': 20000.0, 'icon': Icons.cut},
-    {'name': 'Potong Bulu', 'price': 60000.0, 'icon': Icons.content_cut},
-    {'name': 'Bersih Telinga', 'price': 25000.0, 'icon': Icons.hearing},
-    {'name': 'Paket Lengkap', 'price': 150000.0, 'icon': Icons.stars},
-  ];
+  // Services data is now fetched from GroomingPackageModel
 
   final _currencyFormat = NumberFormat.currency(
     locale: 'id_ID',
@@ -413,79 +407,100 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                 color: AppColors.primary,
               ),
             ),
+            const SizedBox(height: 4),
+            Text(
+              '* Harga akhir dihitung per-hewan berdasarkan berat badan (Small, Medium, Large)',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade600,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
             const SizedBox(height: 16),
-            GridView.builder(
+            ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.1,
-              ),
-              itemCount: _services.length,
+              itemCount: GroomingPackageModel.availablePackages.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
-                final service = _services[index];
-                final isSelected = provider.selectedServices.contains(
-                  service['name'],
-                );
+                final service = GroomingPackageModel.availablePackages[index];
+                final isSelected = provider.selectedServices.contains(service.name);
 
                 return GestureDetector(
                   onTap: () {
-                    provider.toggleService(service['name'], service['price']);
+                    provider.toggleService(service.name);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 16,
-                    ),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : Colors.white,
+                      color: isSelected ? AppColors.primary.withValues(alpha: 0.05) : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : Colors.grey.shade300,
+                        color: isSelected ? AppColors.primary : Colors.grey.shade300,
                         width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.03),
+                          color: Colors.black.withValues(alpha: 0.03),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          service['icon'],
-                          color: isSelected
-                              ? Colors.white
-                              : Colors.grey.shade600,
-                          size: 32,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          service['name'],
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: isSelected ? Colors.white : Colors.black87,
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppColors.primary : Colors.grey.shade100,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            service.icon,
+                            color: isSelected ? Colors.white : Colors.grey.shade600,
+                            size: 24,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _currencyFormat.format(service['price']),
-                          style: TextStyle(
-                            color: isSelected
-                                ? Colors.white
-                                : Colors.grey.shade600,
-                            fontSize: 12,
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                service.name,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 15,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '${_currencyFormat.format(service.priceSmall)} - ${_currencyFormat.format(service.priceLarge)}',
+                                style: const TextStyle(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                service.description,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey.shade600,
+                                  height: 1.4,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                        if (isSelected)
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8, top: 4),
+                            child: Icon(Icons.check_circle, color: AppColors.primary),
+                          ),
                       ],
                     ),
                   ),

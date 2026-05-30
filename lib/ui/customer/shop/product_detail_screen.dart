@@ -5,6 +5,7 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/providers/cart_provider.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final ProductModel product;
@@ -74,10 +75,11 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     width: double.infinity,
                     color: Colors.grey.shade100,
                     child: widget.product.fotoUrl.isNotEmpty
-                        ? Image.network(
-                            widget.product.fotoUrl,
+                        ? CachedNetworkImage(
+                            imageUrl: widget.product.fotoUrl,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(Icons.broken_image, size: 80, color: Colors.grey),
+                            placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                            errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 80, color: Colors.grey),
                           )
                         : const Icon(Icons.pets, size: 80, color: AppColors.primary),
                   ),

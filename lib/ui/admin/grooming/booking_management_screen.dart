@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:petshopapp/ui/admin/grooming/admin_add_grooming_dialog.dart';
 import 'package:petshopapp/services/grooming_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -385,18 +386,16 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                       const SizedBox(height: 12),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          booking.buktiBayarUrl!,
+                        child: CachedNetworkImage(
+                          imageUrl: booking.buktiBayarUrl!,
                           width: double.infinity,
                           fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              height: 200,
-                              color: Colors.grey[100],
-                              child: const Center(child: CircularProgressIndicator()),
-                            );
-                          },
+                          placeholder: (context, url) => Container(
+                            height: 200,
+                            color: Colors.grey[100],
+                            child: const Center(child: CircularProgressIndicator()),
+                          ),
+                          errorWidget: (context, url, error) => const Icon(Icons.error),
                         ),
                       ),
                     ],
