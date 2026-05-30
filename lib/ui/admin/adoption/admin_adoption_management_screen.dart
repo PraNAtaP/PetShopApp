@@ -7,6 +7,7 @@ import 'package:petshopapp/ui/admin/adoption/admin_add_animal_screen.dart';
 import 'package:petshopapp/ui/admin/adoption/admin_edit_animal_screen.dart';
 
 import 'package:petshopapp/ui/admin/adoption/admin_adoption_orders_view.dart';
+import 'package:petshopapp/ui/admin/adoption/admin_adoption_history_view.dart';
 
 class AdminAdoptionManagementScreen extends StatefulWidget {
   const AdminAdoptionManagementScreen({super.key});
@@ -57,7 +58,7 @@ class _AdminAdoptionManagementScreenState extends State<AdminAdoptionManagementS
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         backgroundColor: Colors.grey.shade50,
         appBar: AppBar(
@@ -71,6 +72,7 @@ class _AdminAdoptionManagementScreenState extends State<AdminAdoptionManagementS
             tabs: [
               Tab(text: 'Katalog Hewan'),
               Tab(text: 'Pesanan Adopsi'),
+              Tab(text: 'Riwayat Adopsi'),
             ],
           ),
         ),
@@ -124,6 +126,9 @@ class _AdminAdoptionManagementScreenState extends State<AdminAdoptionManagementS
             
             // Tab 2: Pesanan Adopsi
             const AdminAdoptionOrdersView(),
+
+            // Tab 3: Riwayat Adopsi
+            const AdminAdoptionHistoryView(),
           ],
         ),
       ),
