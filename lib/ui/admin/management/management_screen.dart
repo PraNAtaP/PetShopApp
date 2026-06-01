@@ -6,12 +6,29 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'add_product_dialog.dart';
 
-class ManagementScreen extends StatelessWidget {
+class ManagementScreen extends StatefulWidget {
   const ManagementScreen({super.key});
 
   @override
+  State<ManagementScreen> createState() => _ManagementScreenState();
+}
+
+class _ManagementScreenState extends State<ManagementScreen> {
+  final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+  String _searchQuery = '';
+  String _selectedCategory = 'Semua';
+  late Stream<List<ProductModel>> _productsStream;
+
+  final List<String> _categories = ['Semua', 'Makanan', 'Aksesoris', 'Obat', 'Lainnya'];
+
+  @override
+  void initState() {
+    super.initState();
+    _productsStream = FirestoreService.instance.getProductsStream();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
     return Scaffold(
       appBar: AppBar(
@@ -31,27 +48,91 @@ class ManagementScreen extends StatelessWidget {
         icon: const Icon(Icons.add),
         label: const Text('Tambah Produk'),
       ),
-      body: StreamBuilder<List<ProductModel>>(
-        stream: FirestoreService.instance.getProductsStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-          }
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Cari nama produk...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    onChanged: (val) {
+                      setState(() {
+                        _searchQuery = val.toLowerCase();
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: _selectedCategory,
+                        items: _categories.map((category) {
+                          return DropdownMenuItem(
+                            value: category,
+                            child: Text(category),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              _selectedCategory = val;
+                            });
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<List<ProductModel>>(
+              stream: _productsStream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Error: ${snapshot.error}',
-                style: const TextStyle(color: AppColors.error),
-              ),
-            );
-          }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Error: ${snapshot.error}',
+                      style: const TextStyle(color: AppColors.error),
+                    ),
+                  );
+                }
 
-          final products = snapshot.data ?? [];
+                var products = snapshot.data ?? [];
 
-          if (products.isEmpty) {
-            return const Center(child: Text('Belum ada produk di inventory.'));
-          }
+                if (_searchQuery.isNotEmpty) {
+                  products = products.where((p) => p.namaProduk.toLowerCase().contains(_searchQuery)).toList();
+                }
+
+                if (_selectedCategory != 'Semua') {
+                  products = products.where((p) => p.kategori.toLowerCase() == _selectedCategory.toLowerCase()).toList();
+                }
+
+                if (products.isEmpty) {
+                  return const Center(child: Text('Tidak ada produk yang sesuai.'));
+                }
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -159,6 +240,9 @@ class ManagementScreen extends StatelessWidget {
             ),
           );
         },
+      ),
+      ),
+        ],
       ),
     );
   }

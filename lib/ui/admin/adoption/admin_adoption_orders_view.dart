@@ -20,6 +20,17 @@ class AdminAdoptionOrdersView extends StatefulWidget {
 class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
   final AdoptionService _adoptionService = AdoptionService();
   final FirestoreService _firestoreService = FirestoreService.instance;
+  String _searchQuery = '';
+  late Stream<List<AnimalModel>> _animalsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _animalsStream = _adoptionService.getAnimalsByStatuses(const [
+      'booked',
+      'cancel_requested',
+    ]);
+  }
 
   Future<void> _handleAction(
     BuildContext context,
@@ -133,12 +144,28 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<List<AnimalModel>>(
-      stream: _adoptionService.getAnimalsByStatuses(const [
-        'booked',
-        'cancel_requested',
-      ]),
-      builder: (context, snapshot) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(24.0).copyWith(bottom: 0),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Cari nama, jenis, atau ras hewan...',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+            ),
+            onChanged: (val) {
+              setState(() {
+                _searchQuery = val.toLowerCase();
+              });
+            },
+          ),
+        ),
+        Expanded(
+          child: StreamBuilder<List<AnimalModel>>(
+            stream: _animalsStream,
+            builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: CircularProgressIndicator(color: AppColors.primary),
@@ -149,9 +176,17 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
           return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
         }
 
-        final animals = snapshot.data ?? [];
+        var animals = snapshot.data ?? [];
 
-        if (animals.isEmpty) {
+        if (_searchQuery.isNotEmpty) {
+          animals = animals.where((a) {
+            return a.name.toLowerCase().contains(_searchQuery) ||
+                a.type.toLowerCase().contains(_searchQuery) ||
+                a.breed.toLowerCase().contains(_searchQuery);
+          }).toList();
+        }
+
+        if (animals.isEmpty && _searchQuery.isEmpty) {
           return const Center(
             child: Text(
               'Belum ada pesanan adopsi.',
@@ -162,7 +197,21 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
 
         return Padding(
           padding: const EdgeInsets.all(24),
-          child: Card(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (animals.isEmpty)
+                const Expanded(
+                  child: Center(
+                    child: Text(
+                      'Tidak ada pesanan adopsi yang sesuai.',
+                      style: TextStyle(color: Colors.grey, fontSize: 16),
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: Card(
             elevation: 0,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
@@ -442,8 +491,14 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
               },
             ),
           ),
+          ),
+            ],
+          ),
         );
       },
+          ),
+        ),
+      ],
     );
   }
 }

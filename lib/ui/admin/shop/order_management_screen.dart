@@ -20,6 +20,14 @@ class OrderManagementScreen extends StatefulWidget {
 class _OrderManagementScreenState extends State<OrderManagementScreen> {
   final FirestoreService _firestoreService = FirestoreService.instance;
   final Map<String, String> _userNames = {};
+  String _searchQuery = '';
+  late Stream<List<OrderModel>> _ordersStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _ordersStream = _firestoreService.getAllOrdersStream();
+  }
 
   Future<String> _getUserName(String uid) async {
     if (_userNames.containsKey(uid)) return _userNames[uid]!;
@@ -43,9 +51,28 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
         foregroundColor: AppColors.primary,
         elevation: 0,
       ),
-      body: StreamBuilder<List<OrderModel>>(
-        stream: _firestoreService.getAllOrdersStream(),
-        builder: (context, snapshot) {
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Cari ID pesanan, status bayar/kirim...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              onChanged: (val) {
+                setState(() {
+                  _searchQuery = val.toLowerCase();
+                });
+              },
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<List<OrderModel>>(
+              stream: _ordersStream,
+              builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: AppColors.primary));
           }
@@ -54,7 +81,15 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
             return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
           }
 
-          final orders = snapshot.data ?? [];
+          var orders = snapshot.data ?? [];
+
+          if (_searchQuery.isNotEmpty) {
+            orders = orders.where((order) {
+              return order.orderId.toLowerCase().contains(_searchQuery) ||
+                  order.statusBayar.toLowerCase().contains(_searchQuery) ||
+                  order.statusPengiriman.toLowerCase().contains(_searchQuery);
+            }).toList();
+          }
 
           if (orders.isEmpty) {
             return Center(
@@ -71,7 +106,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
 
           return SingleChildScrollView(
             scrollDirection: Axis.vertical,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Container(
@@ -98,6 +133,9 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
             ),
           );
         },
+      ),
+      ),
+        ],
       ),
     );
   }

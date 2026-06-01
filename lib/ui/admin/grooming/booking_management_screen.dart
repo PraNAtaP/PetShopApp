@@ -19,6 +19,14 @@ class BookingManagementScreen extends StatefulWidget {
 
 class _BookingManagementScreenState extends State<BookingManagementScreen> {
   final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+  String _searchQuery = '';
+  late Stream<List<GroomingBookingModel>> _bookingsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _bookingsStream = GroomingService.instance.getAdminBookingsStream();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,9 +51,28 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
         icon: const Icon(Icons.add),
         label: const Text('Booking Manual'),
       ),
-      body: StreamBuilder<List<GroomingBookingModel>>(
-        stream: GroomingService.instance.getAdminBookingsStream(),
-        builder: (context, snapshot) {
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Cari ID, pelanggan, nama hewan, status...',
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              ),
+              onChanged: (val) {
+                setState(() {
+                  _searchQuery = val.toLowerCase();
+                });
+              },
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<List<GroomingBookingModel>>(
+              stream: _bookingsStream,
+              builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator(color: AppColors.primary));
           }
@@ -54,7 +81,16 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
             return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
           }
 
-          final bookings = snapshot.data ?? [];
+          var bookings = snapshot.data ?? [];
+
+          if (_searchQuery.isNotEmpty) {
+            bookings = bookings.where((booking) {
+              return booking.bookingId.toLowerCase().contains(_searchQuery) ||
+                  booking.customerName.toLowerCase().contains(_searchQuery) ||
+                  booking.petName.toLowerCase().contains(_searchQuery) ||
+                  booking.status.toLowerCase().contains(_searchQuery);
+            }).toList();
+          }
 
           if (bookings.isEmpty) {
             return Center(
@@ -71,7 +107,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
 
           return SingleChildScrollView(
             scrollDirection: Axis.vertical,
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Container(
@@ -98,6 +134,9 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
             ),
           );
         },
+      ),
+      ),
+        ],
       ),
     );
   }
