@@ -23,7 +23,7 @@ class AdminRouter {
         final isAuthRoute = location == '/login' || location == '/' || location == '/splash';
 
         if (!isLoggedIn && !isAuthRoute) {
-          return '/';
+          return '/login';
         }
 
         if (isLoggedIn) {

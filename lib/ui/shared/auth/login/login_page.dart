@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:flutter/services.dart';
 import 'package:petshopapp/services/auth_service.dart';
 
 /// Login screen with email and password fields.
@@ -50,6 +51,9 @@ class _LoginPageState extends State<LoginPage> {
       context.go('/verify-email');
     } else if (result != null) {
       setState(() => _errorMessage = result);
+    } else {
+      // On success, tell the OS to save the credentials
+      TextInput.finishAutofillContext();
     }
     // On success (result == null), GoRouter's refreshListenable → /home
   }
@@ -183,6 +187,7 @@ class _LoginPageState extends State<LoginPage> {
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
                     enabled: !_isLoading,
                     decoration: const InputDecoration(
                       hintText: 'Email',
@@ -204,6 +209,7 @@ class _LoginPageState extends State<LoginPage> {
                   TextFormField(
                     controller: _passwordController,
                     obscureText: _obscurePassword,
+                    autofillHints: const [AutofillHints.password],
                     enabled: !_isLoading,
                     decoration: InputDecoration(
                       hintText: 'Password',
