@@ -427,7 +427,9 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
 
         final order = OrderModel(
           orderId: '', 
-          customerId: 'OFFLINE_CUSTOMER', 
+          customerId: (customerName != null && customerName.isNotEmpty) 
+              ? 'OFFLINE_CUSTOMER_$customerName' 
+              : 'OFFLINE_CUSTOMER', 
           items: orderItems,
           totalHarga: orderItems.fold(0, (sum, item) => sum + (item.hargaSatuan * item.jumlah)),
           statusBayar: 'Lunas',

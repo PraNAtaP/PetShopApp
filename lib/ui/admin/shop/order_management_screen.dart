@@ -21,15 +21,43 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
   final FirestoreService _firestoreService = FirestoreService.instance;
   final Map<String, String> _userNames = {};
   String _searchQuery = '';
+  String _selectedDeliveryType = 'Semua';
+  DateTimeRange? _selectedDateRange;
   late Stream<List<OrderModel>> _ordersStream;
 
   @override
   void initState() {
     super.initState();
     _ordersStream = _firestoreService.getAllOrdersStream();
+    _fetchAllUserNames();
+  }
+
+  Future<void> _fetchAllUserNames() async {
+    try {
+      final snapshot = await FirebaseFirestore.instance.collection('users').get();
+      for (var doc in snapshot.docs) {
+        _userNames[doc.id] = doc.data()['nama'] ?? 'Pelanggan (${doc.id})';
+      }
+      if (mounted) setState(() {});
+    } catch (_) {}
+  }
+
+  String _getSyncUserName(String uid) {
+    if (uid.startsWith('OFFLINE_CUSTOMER_')) {
+      return '${uid.substring('OFFLINE_CUSTOMER_'.length)} (Offline)';
+    } else if (uid == 'OFFLINE_CUSTOMER') {
+      return 'Pelanggan (Offline)';
+    }
+    return _userNames[uid] ?? 'Pelanggan ($uid)';
   }
 
   Future<String> _getUserName(String uid) async {
+    if (uid.startsWith('OFFLINE_CUSTOMER_')) {
+      return '${uid.substring('OFFLINE_CUSTOMER_'.length)} (Offline)';
+    } else if (uid == 'OFFLINE_CUSTOMER') {
+      return 'Pelanggan (Offline)';
+    }
+
     if (_userNames.containsKey(uid)) return _userNames[uid]!;
     try {
       final user = await _firestoreService.getUserProfile(uid);
@@ -55,18 +83,92 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Cari ID pesanan, status bayar/kirim...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-              onChanged: (val) {
-                setState(() {
-                  _searchQuery = val.toLowerCase();
-                });
-              },
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Cari nama pelanggan...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    onChanged: (val) {
+                      setState(() {
+                        _searchQuery = val.toLowerCase();
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: _selectedDeliveryType,
+                        items: ['Semua', 'Diantar', 'Ambil di Toko', 'Ekspedisi'].map((type) {
+                          return DropdownMenuItem(value: type, child: Text(type, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis));
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedDeliveryType = val);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: InkWell(
+                    onTap: () async {
+                      final picked = await showDateRangePicker(
+                        context: context,
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                        initialDateRange: _selectedDateRange,
+                      );
+                      if (picked != null) {
+                        setState(() => _selectedDateRange = picked);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_month, size: 18, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _selectedDateRange == null 
+                                  ? 'Filter Tanggal' 
+                                  : '${DateFormat('dd/MM/yy').format(_selectedDateRange!.start)} - ${DateFormat('dd/MM/yy').format(_selectedDateRange!.end)}',
+                              style: const TextStyle(fontSize: 12),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (_selectedDateRange != null)
+                            GestureDetector(
+                              onTap: () => setState(() => _selectedDateRange = null),
+                              child: const Icon(Icons.close, size: 16),
+                            )
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -85,9 +187,27 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
 
           if (_searchQuery.isNotEmpty) {
             orders = orders.where((order) {
-              return order.orderId.toLowerCase().contains(_searchQuery) ||
-                  order.statusBayar.toLowerCase().contains(_searchQuery) ||
-                  order.statusPengiriman.toLowerCase().contains(_searchQuery);
+              final customerName = _getSyncUserName(order.customerId).toLowerCase();
+              return customerName.contains(_searchQuery);
+            }).toList();
+          }
+
+          if (_selectedDeliveryType != 'Semua') {
+            orders = orders.where((order) {
+              if (_selectedDeliveryType == 'Diantar') return order.metodePengambilan.toLowerCase().contains('diantar');
+              if (_selectedDeliveryType == 'Ambil di Toko') return order.metodePengambilan.toLowerCase().contains('ambil di toko');
+              if (_selectedDeliveryType == 'Ekspedisi') return order.metodePengambilan.toLowerCase().contains('ekspedisi');
+              return true;
+            }).toList();
+          }
+
+          if (_selectedDateRange != null) {
+            orders = orders.where((order) {
+              if (order.createdAt == null) return false;
+              final orderDate = DateTime(order.createdAt!.year, order.createdAt!.month, order.createdAt!.day);
+              final start = DateTime(_selectedDateRange!.start.year, _selectedDateRange!.start.month, _selectedDateRange!.start.day);
+              final end = DateTime(_selectedDateRange!.end.year, _selectedDateRange!.end.month, _selectedDateRange!.end.day);
+              return orderDate.isAtSameMomentAs(start) || orderDate.isAtSameMomentAs(end) || (orderDate.isAfter(start) && orderDate.isBefore(end));
             }).toList();
           }
 
