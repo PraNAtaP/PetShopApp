@@ -5,6 +5,7 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/providers/grooming_provider.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:intl/intl.dart';
+import 'package:petshopapp/models/grooming_package_model.dart';
 
 class GroomingSummaryScreen extends StatelessWidget {
   const GroomingSummaryScreen({super.key});
@@ -20,7 +21,7 @@ class GroomingSummaryScreen extends StatelessWidget {
       decimalDigits: 0,
     );
     final dateFormat = DateFormat('EEEE, dd MMMM yyyy', 'id_ID');
-    final totalPrice = provider.selectedPrice * provider.selectedPets.length;
+    final totalPrice = provider.selectedPrice + (provider.isHomeService ? provider.shippingFee : 0);
 
     return Scaffold(
       backgroundColor: AppColors.cardBackground,
@@ -91,28 +92,40 @@ class GroomingSummaryScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  _buildInfoRow(
-                    'Jenis Layanan',
-                    provider.selectedServices.isNotEmpty
-                        ? provider.selectedServices.join(', ')
-                        : '-',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildInfoRow(
-                    'Harga per Pet',
-                    currencyFormat.format(provider.selectedPrice),
-                  ),
-                  const SizedBox(height: 12),
-                  _buildInfoRow(
-                    'Jumlah Hewan',
-                    '${provider.selectedPets.length} Hewan',
-                  ),
-                  const SizedBox(height: 12),
-                  _buildChipList(
-                    'Daftar Hewan',
-                    provider.selectedPets.map((p) => p.name).toList(),
-                  ),
-                  const SizedBox(height: 14),
+                  const Text('Detail Hewan & Layanan', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey, fontSize: 13)),
+                  const SizedBox(height: 8),
+                  ...provider.selectedPets.map((pet) {
+                    final packageName = provider.petPackages[pet.id];
+                    final package = GroomingPackageModel.availablePackages.firstWhere(
+                      (p) => p.name == packageName,
+                      orElse: () => GroomingPackageModel.availablePackages.first,
+                    );
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(top: 2),
+                            child: Icon(Icons.pets, size: 16, color: AppColors.primary),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('${pet.name} (${pet.weight} kg)', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                                const SizedBox(height: 2),
+                                Text(packageName ?? '-', style: TextStyle(color: Colors.grey.shade700, fontSize: 13)),
+                              ]
+                            )
+                          ),
+                          Text(currencyFormat.format(package.calculatePrice(pet.weight)), style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary))
+                        ]
+                      )
+                    );
+                  }).toList(),
+                  const SizedBox(height: 6),
                   const Divider(height: 1, thickness: 1),
                   const SizedBox(height: 14),
                   _buildInfoRow(
