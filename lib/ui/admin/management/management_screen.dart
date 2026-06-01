@@ -45,6 +45,7 @@ class _ManagementScreenState extends State<ManagementScreen> {
           );
         },
         backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('Tambah Produk'),
       ),

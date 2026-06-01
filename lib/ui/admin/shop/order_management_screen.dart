@@ -5,7 +5,7 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/order_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:petshopapp/ui/customer/order/order_status_helper.dart';
+import 'package:petshopapp/services/pdf_invoice_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -114,7 +114,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                       child: DropdownButton<String>(
                         isExpanded: true,
                         value: _selectedDeliveryType,
-                        items: ['Semua', 'Diantar', 'Ambil di Toko', 'Ekspedisi'].map((type) {
+                        items: ['Semua', 'Diantar', 'Ambil di Toko'].map((type) {
                           return DropdownMenuItem(value: type, child: Text(type, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis));
                         }).toList(),
                         onChanged: (val) {
@@ -129,12 +129,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                   flex: 1,
                   child: InkWell(
                     onTap: () async {
-                      final picked = await showDateRangePicker(
-                        context: context,
-                        firstDate: DateTime(2020),
-                        lastDate: DateTime.now().add(const Duration(days: 365)),
-                        initialDateRange: _selectedDateRange,
-                      );
+                      final picked = await _showDateRangePopup(context, _selectedDateRange);
                       if (picked != null) {
                         setState(() => _selectedDateRange = picked);
                       }
@@ -196,7 +191,6 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
             orders = orders.where((order) {
               if (_selectedDeliveryType == 'Diantar') return order.metodePengambilan.toLowerCase().contains('diantar');
               if (_selectedDeliveryType == 'Ambil di Toko') return order.metodePengambilan.toLowerCase().contains('ambil di toko');
-              if (_selectedDeliveryType == 'Ekspedisi') return order.metodePengambilan.toLowerCase().contains('ekspedisi');
               return true;
             }).toList();
           }
@@ -645,34 +639,70 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                     ],
                     
                     const SizedBox(height: 40),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => _showUpdateStatusDialog(order),
-                            style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: const Text('Update Status'),
-                          ),
-                        ),
-                        if (order.statusBayar == 'Menunggu Verifikasi') ...[
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () => _verifyPayment(order.orderId),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                              child: const Text('Verifikasi Lunas'),
-                            ),
-                          ),
-                        ],
-                      ],
+                    Builder(
+                      builder: (context) {
+                        bool isGeneratingPdf = false;
+                        return StatefulBuilder(
+                          builder: (context, setBtnState) {
+                            return Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        icon: isGeneratingPdf 
+                                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) 
+                                          : const Icon(Icons.receipt_long, size: 18),
+                                        onPressed: isGeneratingPdf ? null : () async {
+                                          setBtnState(() => isGeneratingPdf = true);
+                                          try {
+                                            final customerName = _getSyncUserName(order.customerId);
+                                            await PdfInvoiceService.generateOrderInvoice(order, customerName);
+                                          } finally {
+                                            if (context.mounted) setBtnState(() => isGeneratingPdf = false);
+                                          }
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                        label: Text(isGeneratingPdf ? 'Memuat...' : 'Lihat Nota'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        onPressed: () => _showUpdateStatusDialog(order),
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                        child: const Text('Update Status'),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (order.statusBayar == 'Menunggu Verifikasi') ...[
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: () => _verifyPayment(order.orderId),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      child: const Text('Verifikasi Lunas'),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            );
+                          }
+                        );
+                      }
                     ),
                   ],
                 ),
@@ -869,5 +899,78 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
         );
       }
     }
+  }
+  Future<DateTimeRange?> _showDateRangePopup(BuildContext context, DateTimeRange? initialDateRange) async {
+    DateTime? start = initialDateRange?.start;
+    DateTime? end = initialDateRange?.end;
+    
+    return await showDialog<DateTimeRange>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Pilih Rentang Tanggal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Tanggal Mulai', style: TextStyle(fontSize: 14)),
+                    subtitle: Text(start != null ? DateFormat('dd MMM yyyy').format(start!) : 'Pilih Tanggal', style: TextStyle(color: start != null ? AppColors.primary : Colors.grey, fontWeight: FontWeight.bold)),
+                    trailing: const Icon(Icons.calendar_today, size: 20),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: start ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          start = picked;
+                          if (end != null && start!.isAfter(end!)) end = null;
+                        });
+                      }
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Tanggal Akhir', style: TextStyle(fontSize: 14)),
+                    subtitle: Text(end != null ? DateFormat('dd MMM yyyy').format(end!) : 'Pilih Tanggal', style: TextStyle(color: end != null ? AppColors.primary : Colors.grey, fontWeight: FontWeight.bold)),
+                    trailing: const Icon(Icons.calendar_today, size: 20),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: end ?? start ?? DateTime.now(),
+                        firstDate: start ?? DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) {
+                        setState(() => end = picked);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: start != null && end != null
+                      ? () => Navigator.pop(context, DateTimeRange(start: start!, end: end!))
+                      : null,
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                  child: const Text('Terapkan'),
+                ),
+              ],
+            );
+          }
+        );
+      },
+    );
   }
 }

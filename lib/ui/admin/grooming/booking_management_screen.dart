@@ -9,6 +9,7 @@ import 'package:petshopapp/services/grooming_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:petshopapp/services/pdf_invoice_service.dart';
 
 class BookingManagementScreen extends StatefulWidget {
   const BookingManagementScreen({super.key});
@@ -20,6 +21,8 @@ class BookingManagementScreen extends StatefulWidget {
 class _BookingManagementScreenState extends State<BookingManagementScreen> {
   final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
   String _searchQuery = '';
+  String _selectedLocation = 'Semua';
+  DateTimeRange? _selectedDateRange;
   late Stream<List<GroomingBookingModel>> _bookingsStream;
 
   @override
@@ -55,18 +58,87 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Cari ID, pelanggan, nama hewan, status...',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              ),
-              onChanged: (val) {
-                setState(() {
-                  _searchQuery = val.toLowerCase();
-                });
-              },
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Cari nama pelanggan...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    ),
+                    onChanged: (val) {
+                      setState(() {
+                        _searchQuery = val.toLowerCase();
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade400),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        isExpanded: true,
+                        value: _selectedLocation,
+                        items: ['Semua', 'Di Toko', 'Home Service'].map((type) {
+                          return DropdownMenuItem(value: type, child: Text(type, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis));
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) setState(() => _selectedLocation = val);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  flex: 1,
+                  child: InkWell(
+                    onTap: () async {
+                      final picked = await _showDateRangePopup(context, _selectedDateRange);
+                      if (picked != null) {
+                        setState(() => _selectedDateRange = picked);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.calendar_month, size: 18, color: Colors.grey),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _selectedDateRange == null 
+                                  ? 'Filter Tanggal' 
+                                  : '${DateFormat('dd/MM/yy').format(_selectedDateRange!.start)} - ${DateFormat('dd/MM/yy').format(_selectedDateRange!.end)}',
+                              style: const TextStyle(fontSize: 12),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (_selectedDateRange != null)
+                            GestureDetector(
+                              onTap: () => setState(() => _selectedDateRange = null),
+                              child: const Icon(Icons.close, size: 16),
+                            )
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -85,10 +157,24 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
 
           if (_searchQuery.isNotEmpty) {
             bookings = bookings.where((booking) {
-              return booking.bookingId.toLowerCase().contains(_searchQuery) ||
-                  booking.customerName.toLowerCase().contains(_searchQuery) ||
-                  booking.petName.toLowerCase().contains(_searchQuery) ||
-                  booking.status.toLowerCase().contains(_searchQuery);
+              return booking.customerName.toLowerCase().contains(_searchQuery);
+            }).toList();
+          }
+
+          if (_selectedLocation != 'Semua') {
+            bookings = bookings.where((booking) {
+              if (_selectedLocation == 'Home Service') return booking.isHomeService;
+              if (_selectedLocation == 'Di Toko') return !booking.isHomeService;
+              return true;
+            }).toList();
+          }
+
+          if (_selectedDateRange != null) {
+            bookings = bookings.where((booking) {
+              final bookingDate = DateTime(booking.bookingDate.year, booking.bookingDate.month, booking.bookingDate.day);
+              final start = DateTime(_selectedDateRange!.start.year, _selectedDateRange!.start.month, _selectedDateRange!.start.day);
+              final end = DateTime(_selectedDateRange!.end.year, _selectedDateRange!.end.month, _selectedDateRange!.end.day);
+              return bookingDate.isAtSameMomentAs(start) || bookingDate.isAtSameMomentAs(end) || (bookingDate.isAfter(start) && bookingDate.isBefore(end));
             }).toList();
           }
 
@@ -524,6 +610,76 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                     ],
                     
                     const SizedBox(height: 40),
+                    Builder(
+                      builder: (context) {
+                        bool isGeneratingPdf = false;
+                        return StatefulBuilder(
+                          builder: (context, setBtnState) {
+                            return Column(
+                              children: [
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        icon: isGeneratingPdf 
+                                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) 
+                                          : const Icon(Icons.receipt_long, size: 18),
+                                        onPressed: isGeneratingPdf ? null : () async {
+                                          setBtnState(() => isGeneratingPdf = true);
+                                          try {
+                                            await PdfInvoiceService.generateGroomingInvoice(booking);
+                                          } finally {
+                                            if (context.mounted) setBtnState(() => isGeneratingPdf = false);
+                                          }
+                                        },
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                        label: Text(isGeneratingPdf ? 'Memuat...' : 'Lihat Nota'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        onPressed: () => _showUpdateStatusDialog(booking),
+                                        style: OutlinedButton.styleFrom(
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        ),
+                                        child: const Text('Update Status'),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                if (booking.status.toLowerCase() != 'selesai' && 
+                                    booking.status.toLowerCase() != 'completed' && 
+                                    booking.status.toLowerCase() != 'dibatalkan' &&
+                                    booking.status.toLowerCase() != 'cancelled') ...[
+                                  const SizedBox(height: 12),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context); // Close details modal first
+                                        _showCompletePaymentDialog(booking);
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                        foregroundColor: Colors.white,
+                                        padding: const EdgeInsets.symmetric(vertical: 16),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      child: const Text('Selesaikan & Bayar'),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            );
+                          }
+                        );
+                      }
+                    ),
                   ],
                 ),
               ),
@@ -717,6 +873,79 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
           ),
         ],
       ),
+    );
+  }
+  Future<DateTimeRange?> _showDateRangePopup(BuildContext context, DateTimeRange? initialDateRange) async {
+    DateTime? start = initialDateRange?.start;
+    DateTime? end = initialDateRange?.end;
+    
+    return await showDialog<DateTimeRange>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Pilih Rentang Tanggal', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Tanggal Mulai', style: TextStyle(fontSize: 14)),
+                    subtitle: Text(start != null ? DateFormat('dd MMM yyyy').format(start!) : 'Pilih Tanggal', style: TextStyle(color: start != null ? AppColors.primary : Colors.grey, fontWeight: FontWeight.bold)),
+                    trailing: const Icon(Icons.calendar_today, size: 20),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: start ?? DateTime.now(),
+                        firstDate: DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) {
+                        setState(() {
+                          start = picked;
+                          if (end != null && start!.isAfter(end!)) end = null;
+                        });
+                      }
+                    },
+                  ),
+                  const Divider(),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Tanggal Akhir', style: TextStyle(fontSize: 14)),
+                    subtitle: Text(end != null ? DateFormat('dd MMM yyyy').format(end!) : 'Pilih Tanggal', style: TextStyle(color: end != null ? AppColors.primary : Colors.grey, fontWeight: FontWeight.bold)),
+                    trailing: const Icon(Icons.calendar_today, size: 20),
+                    onTap: () async {
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: end ?? start ?? DateTime.now(),
+                        firstDate: start ?? DateTime(2020),
+                        lastDate: DateTime.now().add(const Duration(days: 365)),
+                      );
+                      if (picked != null) {
+                        setState(() => end = picked);
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Batal', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: start != null && end != null
+                      ? () => Navigator.pop(context, DateTimeRange(start: start!, end: end!))
+                      : null,
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                  child: const Text('Terapkan'),
+                ),
+              ],
+            );
+          }
+        );
+      },
     );
   }
 }

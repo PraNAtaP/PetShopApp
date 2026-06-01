@@ -382,9 +382,12 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
       final blob = html.Blob([bytes], 'application/pdf');
       final url = html.Url.createObjectUrlFromBlob(blob);
       final anchor = html.AnchorElement(href: url)
-        ..setAttribute('download', 'Nota_PetPoint_${customerName}.pdf')
+        ..target = '_blank'
         ..click();
-      html.Url.revokeObjectUrl(url);
+      // Need a slight delay before revoking to ensure the browser has time to open it
+      Future.delayed(const Duration(seconds: 1), () {
+        html.Url.revokeObjectUrl(url);
+      });
     } catch(e) {
       debugPrint("Error saving PDF: $e");
     }
