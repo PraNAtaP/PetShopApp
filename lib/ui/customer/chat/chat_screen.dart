@@ -97,7 +97,10 @@ void dispose() {
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
-                  Navigator.pop(context);
+                  
+                  // Mengatasi blank page karena persistent tab bar, arahkan balik ke Main/Home View Anda
+                  // Ganti atau sesuaikan '/main' atau '0' sesuai dengan pengaturan state menu home Anda.
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 },
               ),
               title: Row(
@@ -194,63 +197,37 @@ void dispose() {
                         ),
                 ),
 
-                // 2. QUICK REPLIES (Only show for customer/new chat)
-                if (widget.receiverId == null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Column(
-                      children: [
-                        const Text("✨ Pilih topik cepat atau ketik sendiri ya!", 
-                          style: TextStyle(color: Colors.blue, fontSize: 12)),
-                        const SizedBox(height: 8),
-                        ...quickReplies.map(
-                          (reply) => _buildQuickReply(reply, chat)),                                            
-                      ],
-                    ),
-                  ),
-
-                // 3. INPUT AREA
+                // 2. INPUT AREA & HORIZONTAL QUICK REPLIES
                 if (chat.isUploading)
                   const LinearProgressIndicator(minHeight: 2),
 
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  color: Colors.white,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        ActionChip(
-                          label: const Text("Template Konsultasi"),
-                          onPressed: () {
-                            _controller.text =
-                                "Halo Admin,\n\nSaya ingin berkonsultasi mengenai hewan peliharaan saya.\n\nKeluhan : ";
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        ActionChip(
-                          label: const Text("Booking Grooming"),
-                          onPressed: () {
-                            _controller.text =
-                                "Halo Admin, saya ingin booking grooming untuk hewan peliharaan saya.";
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        ActionChip(
-                          label: const Text("Adopsi Hewan"),
-                          onPressed: () {
-                            _controller.text =
-                                "Halo Admin, saya tertarik untuk mengadopsi hewan.";
-                          },
-                        ),
-                      ],
+                // Menampilkan topik cepat bergeser ke samping (Horizontal) menggantikan posisi lama
+                if (widget.receiverId == null)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    color: Colors.white,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: quickReplies.map((reply) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: ActionChip(
+                              avatar: Icon(reply['icon'], size: 16, color: Colors.black54),
+                              label: Text(reply['text']),
+                              onPressed: () {
+                                _controller.text = reply['text'];
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ),
-                ),
                 _buildInputArea(chat),
               ],
             ),
@@ -259,30 +236,6 @@ void dispose() {
       ),
     );  
   }
-  
-
-  Widget _buildQuickReply(Map<String, dynamic> reply, ChatController chat) {
-    return GestureDetector(
-      onTap: () => chat.sendMessage(reply['text']),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.green.shade300),
-          borderRadius: BorderRadius.circular(25),
-          color: Colors.white,
-        ),
-        child: Row(
-          children: [
-            Icon(reply['icon'], size: 20, color: Colors.grey),
-            const SizedBox(width: 10),
-            Expanded(child: Text(reply['text'], style: const TextStyle(fontSize: 13))),
-          ],
-        ),
-      ),
-    );
-  }
-  
 
   Widget _buildInputArea(ChatController chat) {
     return Container(

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../main/base_screen.dart';
 import 'widgets/home_funfact_slider.dart';
 import 'widgets/home_product_slider.dart';
+import '../chat/chat_screen.dart';
 
 /// Dashboard utama Pet Point.
 /// Menampilkan greeting, quick-actions, promo banner, dan tips hewan.
@@ -29,10 +30,10 @@ class HomeScreen extends StatelessWidget {
       backgroundColor: Colors.grey.shade50,
       body: CustomScrollView(
         slivers: [
-          // ── Custom Header (Lonceng diganti Keranjang & Navigasi ke /cart) ──
+          // ── Custom Header ──
           SliverToBoxAdapter(child: _buildHeader(context, firstName, user.poin.toInt())),
 
-          // ── Tips & Fun Facts Slider ──────────────────────────────────────
+          // ── Tips & Fun Facts Slider ──
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.only(top: 24),
@@ -40,7 +41,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          // ── Quick Actions ─────────────────────────────────────────
+          // ── Quick Actions ──
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
@@ -79,25 +80,32 @@ class HomeScreen extends StatelessWidget {
                         icon: Icons.shopping_bag_outlined,
                         label: 'Shop',
                         gradient: const [AppColors.accent, AppColors.accent],
-                        // Pindah ke tab Shop di BaseScreen (Index 1)
                         onTap: () {
                           BaseScreen.of(context)?.setTab(1);
                         },
                       ),
                       const SizedBox(width: 12),
+                      // 2. BAGIAN TOMBOL KONSULTASI YANG SUDAH DIPERBAIKI TOTAL
                       _buildServiceCard(
                         context,
                         icon: Icons.local_hospital_outlined,
                         label: 'Konsultasi',
                         gradient: const [AppColors.error, AppColors.error],
-                        // Mengirimkan template text sebagai extra data ke halaman chat
                         onTap: () {
                           const templateMessage = 
-                              'hai sahabat pet point! anabul kamu kenapa? Silahkan isi form nya ya agar kami dapat menganalisa kondisi terkini anabul kamu:\n'
+                              '🚨KONSULTASI🚨\n'
                               'Nama anabul:\n'
                               'Jenis anabul:\n'
                               'Kondisi anabul:';
-                          context.push('/chat', extra: {'autoSendText': templateMessage});
+                              
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ChatScreen(
+                                defaultTopic: templateMessage,
+                              ),
+                            ),
+                          );
                         },
                       ),
                     ],
@@ -107,7 +115,7 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
 
-          // ── Produk Terbaru ─────────────────────────────────────────
+          // ── Produk Terbaru ──
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.only(top: 24, bottom: 16),
@@ -149,7 +157,6 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
-
           const SliverToBoxAdapter(child: SizedBox(height: 140)),
         ],
       ),
@@ -159,7 +166,6 @@ class HomeScreen extends StatelessWidget {
   // ═══════════════════════════════════════════════════════════════════
   // Header Section
   // ═══════════════════════════════════════════════════════════════════
-
   Widget _buildHeader(BuildContext context, String firstName, int poin) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
@@ -179,7 +185,6 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top row: Logo + Cart (Ubah dari Lonceng ke Keranjang)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -206,12 +211,9 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-
               ],
             ),
             const SizedBox(height: 24),
-
-            // Greeting
             Text(
               'Halo, $firstName! 👋',
               style: const TextStyle(
@@ -230,8 +232,6 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-
-            // Points card
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
@@ -296,7 +296,6 @@ class HomeScreen extends StatelessWidget {
   // ═══════════════════════════════════════════════════════════════════
   // Service Card
   // ═══════════════════════════════════════════════════════════════════
-
   Widget _buildServiceCard(
     BuildContext context, {
     required IconData icon,
@@ -343,6 +342,4 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-
-
 }
