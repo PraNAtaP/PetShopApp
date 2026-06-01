@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:petshopapp/services/grooming_service.dart';
+import 'package:petshopapp/models/grooming_package_model.dart';
 
 class AdminAddGroomingDialog extends StatefulWidget {
   const AdminAddGroomingDialog({super.key});
@@ -16,32 +17,84 @@ class _AdminAddGroomingDialogState extends State<AdminAddGroomingDialog> {
   final _customerNameCtrl = TextEditingController(text: 'Customer Kasir');
   final _petNameCtrl = TextEditingController();
   final _petTypeCtrl = TextEditingController(text: 'Offline');
+  // Weight estimation for manual booking
+  final _petWeightCtrl = TextEditingController();
   
-  final List<Map<String, dynamic>> _groomingServices = [
-    {'id': 'g1', 'name': 'Mandi Dasar', 'price': 50000.0},
-    {'id': 'g2', 'name': 'Mandi Kutu/Jamur', 'price': 80000.0},
-    {'id': 'g3', 'name': 'Potong Kuku', 'price': 20000.0},
-    {'id': 'g4', 'name': 'Potong Bulu', 'price': 60000.0},
-    {'id': 'g5', 'name': 'Bersih Telinga', 'price': 25000.0},
-    {'id': 'g6', 'name': 'Paket Lengkap', 'price': 150000.0},
-  ];
-  
-  Map<String, dynamic>? _selectedService;
+  GroomingPackageModel? _selectedService;
   DateTime _selectedDate = DateTime.now();
   String? _selectedTimeSlot;
-  
-  List<String> _bookedSlots = [];
+  List<Map<String, dynamic>> _bookedSlots = [];
   bool _isLoadingSlots = false;
   bool _isSaving = false;
 
-  final List<String> _allTimeSlots = [
-    '08:00',
-    '10:00',
-    '12:00',
-    '14:00',
-    '16:00',
-    '18:00',
-  ];
+  /// Parses "HH:mm" into minutes from midnight
+  int _timeToMinutes(String time) {
+    final parts = time.split(':');
+    if (parts.length != 2) return 0;
+    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
+  }
+
+  /// Formats minutes from midnight into "HH:mm"
+  String _minutesToTime(int minutes) {
+    final h = (minutes ~/ 60).toString().padLeft(2, '0');
+    final m = (minutes % 60).toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  List<Map<String, dynamic>> _generateSlots() {
+    final int openTime = 8 * 60;
+    final int closeTime = 20 * 60;
+    final int maxOrderTime = 19 * 60;
+    final int interval = 30;
+
+    double? weight = double.tryParse(_petWeightCtrl.text);
+    final estimatedDuration = _selectedService?.calculateDuration(weight) ?? 60;
+    
+    List<Map<String, int>> bookedRanges = [];
+    for (var b in _bookedSlots) {
+      final start = _timeToMinutes(b['timeSlot'] as String);
+      final duration = (b['durationMinutes'] as int?) ?? 60;
+      bookedRanges.add({'start': start, 'end': start + duration});
+    }
+
+    List<Map<String, dynamic>> slots = [];
+    for (int t = openTime; t <= maxOrderTime; t += interval) {
+      final slotEndTime = t + estimatedDuration;
+      bool isBooked = false;
+
+      if (slotEndTime > closeTime) {
+        isBooked = true;
+      }
+
+      if (!isBooked) {
+        for (var b in bookedRanges) {
+          bool overlap = !(slotEndTime <= b['start']! || t >= b['end']!);
+          if (overlap) {
+            isBooked = true;
+            break;
+          }
+        }
+      }
+
+      if (!isBooked) {
+        if (_selectedDate.year == DateTime.now().year && 
+            _selectedDate.month == DateTime.now().month && 
+            _selectedDate.day == DateTime.now().day) {
+          final now = DateTime.now();
+          final currentMinutes = now.hour * 60 + now.minute;
+          if (t < currentMinutes + 60) {
+            isBooked = true;
+          }
+        }
+      }
+
+      slots.add({
+        'time': _minutesToTime(t),
+        'isBooked': isBooked,
+      });
+    }
+    return slots;
+  }
 
   @override
   void initState() {
@@ -54,6 +107,7 @@ class _AdminAddGroomingDialogState extends State<AdminAddGroomingDialog> {
     _customerNameCtrl.dispose();
     _petNameCtrl.dispose();
     _petTypeCtrl.dispose();
+    _petWeightCtrl.dispose();
     super.dispose();
   }
 
@@ -104,16 +158,21 @@ class _AdminAddGroomingDialogState extends State<AdminAddGroomingDialog> {
     setState(() => _isSaving = true);
 
     try {
+      double? weight = double.tryParse(_petWeightCtrl.text);
+      final duration = _selectedService!.calculateDuration(weight);
+      final price = _selectedService!.calculatePrice(weight);
+
       final booking = GroomingBookingModel(
         bookingId: '',
         userId: 'OFFLINE_CUSTOMER',
         customerName: _customerNameCtrl.text.trim(),
         petName: _petNameCtrl.text.trim(),
         petType: _petTypeCtrl.text.trim(),
-        serviceType: _selectedService!['name'],
+        serviceType: _selectedService!.name,
         bookingDate: _selectedDate,
         timeSlot: _selectedTimeSlot!,
-        totalPrice: _selectedService!['price'] as double,
+        durationMinutes: duration,
+        totalPrice: price,
         isHomeService: false,
         status: 'Confirmed', // Automatically confirmed for offline bookings
         metodePembayaran: 'Tunai Kasir',
@@ -173,15 +232,38 @@ class _AdminAddGroomingDialogState extends State<AdminAddGroomingDialog> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                DropdownButtonFormField<Map<String, dynamic>>(
+                TextFormField(
+                  controller: _petWeightCtrl,
+                  decoration: const InputDecoration(labelText: 'Estimasi Berat (Kg)', border: OutlineInputBorder()),
+                  keyboardType: TextInputType.number,
+                  onChanged: (val) {
+                    // Trigger rebuild to recalculate available slots
+                    setState(() {});
+                  },
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<GroomingPackageModel>(
                   decoration: const InputDecoration(labelText: 'Pilih Layanan', border: OutlineInputBorder()),
                   value: _selectedService,
-                  items: _groomingServices.map((s) => DropdownMenuItem(
+                  items: GroomingPackageModel.availablePackages.map((s) => DropdownMenuItem(
                     value: s,
-                    child: Text('${s['name']} (Rp ${NumberFormat('#,###').format(s['price'])})'),
+                    child: Text(s.name),
                   )).toList(),
-                  onChanged: (val) => setState(() => _selectedService = val),
+                  onChanged: (val) {
+                    setState(() {
+                      _selectedService = val;
+                      _selectedTimeSlot = null;
+                    });
+                  },
                 ),
+                if (_selectedService != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      'Estimasi Harga: Rp ${NumberFormat('#,###').format(_selectedService!.calculatePrice(double.tryParse(_petWeightCtrl.text)))}\nEstimasi Durasi: ${_selectedService!.calculateDuration(double.tryParse(_petWeightCtrl.text))} Menit',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                    ),
+                  ),
                 const SizedBox(height: 24),
                 const Text('Jadwal Layanan', style: TextStyle(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
@@ -213,27 +295,33 @@ class _AdminAddGroomingDialogState extends State<AdminAddGroomingDialog> {
                 const SizedBox(height: 8),
                 _isLoadingSlots 
                   ? const Center(child: CircularProgressIndicator())
-                  : Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: _allTimeSlots.map((slot) {
-                        final isBooked = _bookedSlots.contains(slot);
-                        final isSelected = _selectedTimeSlot == slot;
-                        return ChoiceChip(
-                          label: Text(slot),
-                          selected: isSelected,
-                          onSelected: isBooked ? null : (selected) {
-                            if (selected) setState(() => _selectedTimeSlot = slot);
-                          },
-                          backgroundColor: isBooked ? Colors.grey.shade300 : Colors.white,
-                          selectedColor: AppColors.primary.withOpacity(0.2),
-                          side: BorderSide(color: isSelected ? AppColors.primary : Colors.grey.shade400),
-                          labelStyle: TextStyle(
-                            color: isBooked ? Colors.grey : (isSelected ? AppColors.primary : Colors.black87),
-                            decoration: isBooked ? TextDecoration.lineThrough : null,
-                          ),
+                  : Builder(
+                      builder: (context) {
+                        final dynamicSlots = _generateSlots();
+                        return Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: dynamicSlots.map((slotData) {
+                            final slot = slotData['time'] as String;
+                            final isBooked = slotData['isBooked'] as bool;
+                            final isSelected = _selectedTimeSlot == slot;
+                            return ChoiceChip(
+                              label: Text(slot),
+                              selected: isSelected,
+                              onSelected: isBooked ? null : (selected) {
+                                if (selected) setState(() => _selectedTimeSlot = slot);
+                              },
+                              backgroundColor: isBooked ? Colors.grey.shade300 : Colors.white,
+                              selectedColor: AppColors.primary.withOpacity(0.2),
+                              side: BorderSide(color: isSelected ? AppColors.primary : Colors.grey.shade400),
+                              labelStyle: TextStyle(
+                                color: isBooked ? Colors.grey : (isSelected ? AppColors.primary : Colors.black87),
+                                decoration: isBooked ? TextDecoration.lineThrough : null,
+                              ),
+                            );
+                          }).toList(),
                         );
-                      }).toList(),
+                      }
                     ),
               ],
             ),

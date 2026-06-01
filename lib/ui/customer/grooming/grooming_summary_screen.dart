@@ -202,31 +202,36 @@ class GroomingSummaryScreen extends StatelessWidget {
                 ],
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'Total Pembayaran',
-                        style: TextStyle(color: Colors.grey, fontSize: 13),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Bayar setelah konfirmasi',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: AppColors.textDark,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Total Pembayaran',
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
                         ),
-                      ),
-                    ],
+                        SizedBox(height: 4),
+                        Text(
+                          'Bayar setelah konfirmasi',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: AppColors.textDark,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 12),
                   Text(
                     currencyFormat.format(totalPrice),
                     style: const TextStyle(
                       color: AppColors.primary,
-                      fontSize: 22,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

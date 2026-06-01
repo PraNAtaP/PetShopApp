@@ -26,7 +26,7 @@ class GroomingProvider with ChangeNotifier {
   String? _selectedTimeSlot;
 
   // Available slots logic
-  List<String> _bookedSlots = [];
+  List<Map<String, dynamic>> _bookedSlots = [];
   bool _isLoadingSlots = false;
 
   // Getters
@@ -47,6 +47,21 @@ class GroomingProvider with ChangeNotifier {
     return total;
   }
 
+  int get estimatedDuration {
+    int totalMinutes = 0;
+    for (var serviceName in _selectedServices) {
+      final package = GroomingPackageModel.availablePackages.firstWhere(
+        (p) => p.name == serviceName,
+        orElse: () => GroomingPackageModel.availablePackages.first,
+      );
+      
+      for (var pet in _selectedPets) {
+        totalMinutes += package.calculateDuration(pet.weight);
+      }
+    }
+    return totalMinutes;
+  }
+
   List<UserPetModel> get selectedPets => _selectedPets;
   bool get isHomeService => _isHomeService;
   String get alamatLengkap => _alamatLengkap;
@@ -54,7 +69,7 @@ class GroomingProvider with ChangeNotifier {
   double? get longitude => _longitude;
   DateTime? get selectedDate => _selectedDate;
   String? get selectedTimeSlot => _selectedTimeSlot;
-  List<String> get bookedSlots => _bookedSlots;
+  List<Map<String, dynamic>> get bookedSlots => _bookedSlots;
   bool get isLoadingSlots => _isLoadingSlots;
 
   double get shippingFee {
@@ -140,12 +155,14 @@ class GroomingProvider with ChangeNotifier {
     // Create a separate booking for each pet
     for (var pet in _selectedPets) {
       double petServicesPrice = 0.0;
+      int petDuration = 0;
       for (var serviceName in _selectedServices) {
         final package = GroomingPackageModel.availablePackages.firstWhere(
           (p) => p.name == serviceName,
           orElse: () => GroomingPackageModel.availablePackages.first,
         );
         petServicesPrice += package.calculatePrice(pet.weight);
+        petDuration += package.calculateDuration(pet.weight);
       }
 
       final booking = GroomingBookingModel(
@@ -157,6 +174,7 @@ class GroomingProvider with ChangeNotifier {
         serviceType: _selectedServices.join(', '),
         bookingDate: _selectedDate!,
         timeSlot: _selectedTimeSlot!,
+        durationMinutes: petDuration,
         totalPrice: petServicesPrice + feePerPet, // Price for THIS pet + distributed shipping fee
         isHomeService: _isHomeService,
         alamatLengkap: _isHomeService ? _alamatLengkap : null,

@@ -6,6 +6,9 @@ class GroomingPackageModel {
   final double priceSmall; // <= 5 kg
   final double priceMedium; // 5.1 - 10 kg
   final double priceLarge; // > 10 kg
+  final int durationSmall; // in minutes
+  final int durationMedium; 
+  final int durationLarge; 
   final IconData icon;
 
   const GroomingPackageModel({
@@ -14,6 +17,9 @@ class GroomingPackageModel {
     required this.priceSmall,
     required this.priceMedium,
     required this.priceLarge,
+    required this.durationSmall,
+    required this.durationMedium,
+    required this.durationLarge,
     required this.icon,
   });
 
@@ -33,6 +39,22 @@ class GroomingPackageModel {
     }
   }
 
+  /// Calculates the estimated duration based on the pet's weight.
+  /// Defaults to [durationSmall] if weight is unknown (null).
+  int calculateDuration(double? weight) {
+    if (weight == null) {
+      return durationSmall; 
+    }
+    
+    if (weight <= 5.0) {
+      return durationSmall;
+    } else if (weight <= 10.0) {
+      return durationMedium;
+    } else {
+      return durationLarge;
+    }
+  }
+
   static const List<GroomingPackageModel> availablePackages = [
     GroomingPackageModel(
       name: 'Paket Kenalan Mandi',
@@ -40,6 +62,9 @@ class GroomingPackageModel {
       priceSmall: 40000.0,
       priceMedium: 50000.0,
       priceLarge: 60000.0,
+      durationSmall: 45,
+      durationMedium: 60,
+      durationLarge: 75,
       icon: Icons.baby_changing_station,
     ),
     GroomingPackageModel(
@@ -48,6 +73,9 @@ class GroomingPackageModel {
       priceSmall: 40000.0,
       priceMedium: 55000.0,
       priceLarge: 70000.0,
+      durationSmall: 30,
+      durationMedium: 45,
+      durationLarge: 60,
       icon: Icons.timer,
     ),
     GroomingPackageModel(
@@ -56,6 +84,9 @@ class GroomingPackageModel {
       priceSmall: 50000.0,
       priceMedium: 65000.0,
       priceLarge: 80000.0,
+      durationSmall: 60,
+      durationMedium: 75,
+      durationLarge: 90,
       icon: Icons.shower,
     ),
     GroomingPackageModel(
@@ -64,6 +95,9 @@ class GroomingPackageModel {
       priceSmall: 80000.0,
       priceMedium: 115000.0,
       priceLarge: 150000.0,
+      durationSmall: 90,
+      durationMedium: 105,
+      durationLarge: 120,
       icon: Icons.bug_report,
     ),
     GroomingPackageModel(
@@ -72,6 +106,9 @@ class GroomingPackageModel {
       priceSmall: 150000.0,
       priceMedium: 225000.0,
       priceLarge: 300000.0,
+      durationSmall: 120,
+      durationMedium: 150,
+      durationLarge: 180,
       icon: Icons.content_cut,
     ),
     GroomingPackageModel(
@@ -80,6 +117,9 @@ class GroomingPackageModel {
       priceSmall: 150000.0,
       priceMedium: 250000.0,
       priceLarge: 350000.0,
+      durationSmall: 120,
+      durationMedium: 150,
+      durationLarge: 180,
       icon: Icons.spa,
     ),
   ];

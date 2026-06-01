@@ -13,6 +13,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:petshopapp/services/pdf_invoice_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:universal_html/html.dart' as html;
+import 'package:petshopapp/models/grooming_package_model.dart';
 
 class AdminPosScreen extends StatefulWidget {
   const AdminPosScreen({super.key});
@@ -40,9 +41,8 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
   // Grooming Schedule State
   DateTime _selectedGroomingDate = DateTime.now();
   String? _selectedGroomingTimeSlot;
-  List<String> _bookedSlots = [];
+  List<Map<String, dynamic>> _bookedSlots = [];
   bool _isLoadingSlots = false;
-  final List<String> _allTimeSlots = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'];
 
   final List<Map<String, dynamic>> _groomingServices = [
     {'id': 'g1', 'name': 'Mandi Dasar', 'price': 50000.0, 'icon': Icons.shower},
@@ -52,6 +52,86 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
     {'id': 'g5', 'name': 'Bersih Telinga', 'price': 25000.0, 'icon': Icons.hearing},
     {'id': 'g6', 'name': 'Paket Lengkap', 'price': 150000.0, 'icon': Icons.stars},
   ];
+
+  /// Parses "HH:mm" into minutes from midnight
+  int _timeToMinutes(String time) {
+    final parts = time.split(':');
+    if (parts.length != 2) return 0;
+    return int.parse(parts[0]) * 60 + int.parse(parts[1]);
+  }
+
+  /// Formats minutes from midnight into "HH:mm"
+  String _minutesToTime(int minutes) {
+    final h = (minutes ~/ 60).toString().padLeft(2, '0');
+    final m = (minutes % 60).toString().padLeft(2, '0');
+    return '$h:$m';
+  }
+
+  List<Map<String, dynamic>> _generateSlots() {
+    final int openTime = 8 * 60;
+    final int closeTime = 20 * 60;
+    final int maxOrderTime = 19 * 60;
+    final int interval = 30;
+
+    int estimatedDuration = 60; // Default estimate for POS if no specific package selected yet
+    if (_groomingCart.isNotEmpty) {
+      estimatedDuration = 0;
+      for (var entry in _groomingCart.entries) {
+         // Assuming small size for POS by default, or maybe admin should input weight.
+         // For now, use the default durationSmall
+         final service = GroomingPackageModel.availablePackages.firstWhere(
+           (s) => s.name == entry.key,
+           orElse: () => GroomingPackageModel.availablePackages.first,
+         );
+         estimatedDuration += service.calculateDuration(null); // default to small
+      }
+    }
+    
+    List<Map<String, int>> bookedRanges = [];
+    for (var b in _bookedSlots) {
+      final start = _timeToMinutes(b['timeSlot'] as String);
+      final duration = (b['durationMinutes'] as int?) ?? 60;
+      bookedRanges.add({'start': start, 'end': start + duration});
+    }
+
+    List<Map<String, dynamic>> slots = [];
+    for (int t = openTime; t <= maxOrderTime; t += interval) {
+      final slotEndTime = t + estimatedDuration;
+      bool isBooked = false;
+
+      if (slotEndTime > closeTime) {
+        isBooked = true;
+      }
+
+      if (!isBooked) {
+        for (var b in bookedRanges) {
+          bool overlap = !(slotEndTime <= b['start']! || t >= b['end']!);
+          if (overlap) {
+            isBooked = true;
+            break;
+          }
+        }
+      }
+
+      if (!isBooked) {
+        if (_selectedGroomingDate.year == DateTime.now().year && 
+            _selectedGroomingDate.month == DateTime.now().month && 
+            _selectedGroomingDate.day == DateTime.now().day) {
+          final now = DateTime.now();
+          final currentMinutes = now.hour * 60 + now.minute;
+          if (t < currentMinutes + 60) {
+            isBooked = true;
+          }
+        }
+      }
+
+      slots.add({
+        'time': _minutesToTime(t),
+        'isBooked': isBooked,
+      });
+    }
+    return slots;
+  }
 
   @override
   void initState() {
@@ -331,11 +411,17 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
       if (_groomingCart.isNotEmpty) {
         List<String> serviceNames = [];
         double totalGroomingPrice = 0;
+        int totalDuration = 0;
 
         for (var entry in _groomingCart.entries) {
-          final service = _groomingServices.firstWhere((s) => s['id'] == entry.key);
-          serviceNames.add(service['name']);
-          totalGroomingPrice += service['price'] as double;
+          final serviceModel = GroomingPackageModel.availablePackages.firstWhere(
+            (s) => s.name == entry.key,
+            orElse: () => GroomingPackageModel.availablePackages.first,
+          );
+          serviceNames.add(serviceModel.name);
+          // Default POS uses small pet pricing/duration as placeholder since POS might bypass detailed input
+          totalGroomingPrice += serviceModel.calculatePrice(null); 
+          totalDuration += serviceModel.calculateDuration(null);
         }
 
         final booking = GroomingBookingModel(
@@ -347,6 +433,7 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
           serviceType: serviceNames.join(', '),
           bookingDate: _selectedGroomingDate,
           timeSlot: _selectedGroomingTimeSlot ?? 'Sekarang',
+          durationMinutes: totalDuration,
           totalPrice: totalGroomingPrice,
           isHomeService: false,
           status: 'Completed',
@@ -980,27 +1067,33 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
           const SizedBox(height: 12),
           _isLoadingSlots 
             ? const Center(child: CircularProgressIndicator())
-            : Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _allTimeSlots.map((slot) {
-                  final isBooked = _bookedSlots.contains(slot);
-                  final isSelected = _selectedGroomingTimeSlot == slot;
-                  return ChoiceChip(
-                    label: Text(slot),
-                    selected: isSelected,
-                    onSelected: isBooked ? null : (selected) {
-                      if (selected) setState(() => _selectedGroomingTimeSlot = slot);
-                    },
-                    backgroundColor: isBooked ? Colors.grey.shade300 : Colors.white,
-                    selectedColor: Colors.purple.withOpacity(0.2),
-                    side: BorderSide(color: isSelected ? Colors.purple : Colors.grey.shade400),
-                    labelStyle: TextStyle(
-                      color: isBooked ? Colors.grey : (isSelected ? Colors.purple : Colors.black87),
-                      decoration: isBooked ? TextDecoration.lineThrough : null,
-                    ),
+            : Builder(
+                builder: (context) {
+                  final dynamicSlots = _generateSlots();
+                  return Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: dynamicSlots.map((slotData) {
+                      final slot = slotData['time'] as String;
+                      final isBooked = slotData['isBooked'] as bool;
+                      final isSelected = _selectedGroomingTimeSlot == slot;
+                      return ChoiceChip(
+                        label: Text(slot),
+                        selected: isSelected,
+                        onSelected: isBooked ? null : (selected) {
+                          if (selected) setState(() => _selectedGroomingTimeSlot = slot);
+                        },
+                        backgroundColor: isBooked ? Colors.grey.shade300 : Colors.white,
+                        selectedColor: Colors.purple.withOpacity(0.2),
+                        side: BorderSide(color: isSelected ? Colors.purple : Colors.grey.shade400),
+                        labelStyle: TextStyle(
+                          color: isBooked ? Colors.grey : (isSelected ? Colors.purple : Colors.black87),
+                          decoration: isBooked ? TextDecoration.lineThrough : null,
+                        ),
+                      );
+                    }).toList(),
                   );
-                }).toList(),
+                }
               ),
         ],
       ),

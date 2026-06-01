@@ -18,8 +18,8 @@ class GroomingService {
           );
 
   /// Fetches booked time slots for a specific date.
-  /// Used to disable taken slots in the UI.
-  Future<List<String>> getBookedSlots(DateTime date) async {
+  /// Returns a list of maps containing 'timeSlot' (String) and 'durationMinutes' (int).
+  Future<List<Map<String, dynamic>>> getBookedSlots(DateTime date) async {
     try {
       // Start of day
       final startOfDay = DateTime(date.year, date.month, date.day);
@@ -36,7 +36,10 @@ class GroomingService {
       final bookedSlots = snapshot.docs
           .map((doc) => doc.data())
           .where((booking) => validStatuses.contains(booking.status))
-          .map((booking) => booking.timeSlot)
+          .map((booking) => {
+                'timeSlot': booking.timeSlot,
+                'durationMinutes': booking.durationMinutes,
+              })
           .toList();
 
       return bookedSlots;
