@@ -16,21 +16,36 @@ class CashHistoryScreen extends StatefulWidget {
 class _CashHistoryScreenState extends State<CashHistoryScreen> {
   final currencyFormatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
 
-  String _selectedDateFilter = 'Hari Ini'; // Semua Waktu, Hari Ini, Minggu Ini, Bulan Ini, Pilih Tanggal
-  DateTime? _customDate;
+  String _selectedDateFilter = 'Hari Ini'; // Semua Waktu, Hari Ini, Minggu Ini, Bulan Ini, Rentang Tanggal
+  DateTimeRange? _customDateRange;
   String _selectedTypeFilter = 'Semua'; // Semua, Grooming, Pesanan
 
-  Future<void> _pickDate() async {
-    final DateTime? picked = await showDatePicker(
+  Future<void> _pickDateRange() async {
+    final DateTimeRange? picked = await showDateRangePicker(
       context: context,
-      initialDate: _customDate ?? DateTime.now(),
+      initialDateRange: _customDateRange ?? DateTimeRange(start: DateTime.now(), end: DateTime.now()),
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+      builder: (context, child) {
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              maxWidth: 450.0,
+              maxHeight: 600.0,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: child,
+            ),
+          ),
+        );
+      },
     );
     if (picked != null) {
       setState(() {
-        _customDate = picked;
-        _selectedDateFilter = 'Pilih Tanggal';
+        _customDateRange = picked;
+        _selectedDateFilter = 'Rentang Tanggal';
       });
     }
   }
@@ -47,8 +62,10 @@ class _CashHistoryScreenState extends State<CashHistoryScreen> {
     } else if (_selectedDateFilter == 'Bulan Ini') {
       final monthStart = DateTime(now.year, now.month, 1);
       return date.isAfter(monthStart) || date.isAtSameMomentAs(monthStart);
-    } else if (_selectedDateFilter == 'Pilih Tanggal' && _customDate != null) {
-      return date.year == _customDate!.year && date.month == _customDate!.month && date.day == _customDate!.day;
+    } else if (_selectedDateFilter == 'Rentang Tanggal' && _customDateRange != null) {
+      final start = DateTime(_customDateRange!.start.year, _customDateRange!.start.month, _customDateRange!.start.day);
+      final end = DateTime(_customDateRange!.end.year, _customDateRange!.end.month, _customDateRange!.end.day, 23, 59, 59);
+      return (date.isAfter(start) || date.isAtSameMomentAs(start)) && date.isBefore(end);
     }
     return true; // Semua Waktu
   }
@@ -143,28 +160,28 @@ class _CashHistoryScreenState extends State<CashHistoryScreen> {
                             children: [
                               _buildDropdown(
                                 label: 'Waktu',
-                                value: _selectedDateFilter == 'Pilih Tanggal' ? 'Pilih Tanggal' : _selectedDateFilter,
-                                items: ['Semua Waktu', 'Hari Ini', 'Minggu Ini', 'Bulan Ini', 'Pilih Tanggal'],
+                                value: _selectedDateFilter == 'Rentang Tanggal' && _customDateRange == null ? 'Semua Waktu' : _selectedDateFilter,
+                                items: ['Semua Waktu', 'Hari Ini', 'Minggu Ini', 'Bulan Ini', 'Rentang Tanggal'],
                                 onChanged: (val) {
-                                  if (val == 'Pilih Tanggal') {
-                                    _pickDate();
+                                  if (val == 'Rentang Tanggal') {
+                                    _pickDateRange();
                                   } else {
                                     setState(() {
                                       _selectedDateFilter = val!;
-                                      _customDate = null;
+                                      _customDateRange = null;
                                     });
                                   }
                                 },
                               ),
-                              if (_selectedDateFilter == 'Pilih Tanggal' && _customDate != null)
+                              if (_selectedDateFilter == 'Rentang Tanggal' && _customDateRange != null)
                                 Padding(
                                   padding: const EdgeInsets.only(left: 8.0),
                                   child: Chip(
-                                    label: Text(DateFormat('dd MMM yyyy').format(_customDate!)),
+                                    label: Text('${DateFormat('dd MMM').format(_customDateRange!.start)} - ${DateFormat('dd MMM yyyy').format(_customDateRange!.end)}'),
                                     onDeleted: () {
                                       setState(() {
                                         _selectedDateFilter = 'Semua Waktu';
-                                        _customDate = null;
+                                        _customDateRange = null;
                                       });
                                     },
                                     backgroundColor: AppColors.primary.withOpacity(0.1),

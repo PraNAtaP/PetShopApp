@@ -219,109 +219,12 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                             },
                           ),
                         ),
-                        const SizedBox(height: 16),
-                        // Selected Pet Info Card (Premium replacement for dropdown)
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 300),
-                          child: _selectedPets.isEmpty
-                              ? Container(
-                                  key: const ValueKey('no-selection'),
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 16,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade50,
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.grey.shade200,
-                                      style: BorderStyle.solid,
-                                    ),
-                                  ),
-                                  child: const Center(
-                                    child: Text(
-                                      'Silakan pilih satu atau lebih hewan di atas',
-                                      style: TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                              : Container(
-                                  key: ValueKey(_selectedPets.length),
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withOpacity(0.08),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: AppColors.primary.withOpacity(0.3),
-                                      width: 1.5,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 50,
-                                        height: 50,
-                                        padding: const EdgeInsets.all(10),
-                                        decoration: const BoxDecoration(
-                                          color: AppColors.primary,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Center(
-                                          child: Icon(
-                                            Icons.pets,
-                                            color: Colors.white,
-                                            size: 24,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              _selectedPets.length == 1
-                                                  ? _selectedPets.first.name
-                                                  : '${_selectedPets.length} Hewan Terpilih',
-                                              style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                color: AppColors.primary,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              _selectedPets.length == 1
-                                                  ? '${_selectedPets.first.type} • ${_selectedPets.first.breed}'
-                                                  : _selectedPets
-                                                        .map((p) => p.name)
-                                                        .join(', '),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.grey.shade700,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                        ),
                       ],
                     );
                   },
                 );
               },
             ),
-            const Divider(height: 30, thickness: 1),
             const Text(
               'Lokasi Layanan',
               style: TextStyle(
@@ -407,106 +310,107 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                 color: AppColors.primary,
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              '* Harga akhir dihitung per-hewan berdasarkan berat badan (Small, Medium, Large)',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey.shade600,
-                fontStyle: FontStyle.italic,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: GroomingPackageModel.availablePackages.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 12),
-              itemBuilder: (context, index) {
-                final service = GroomingPackageModel.availablePackages[index];
-                final isSelected = provider.selectedServices.contains(service.name);
-
-                return GestureDetector(
-                  onTap: () {
-                    provider.toggleService(service.name);
-                  },
-                  child: Container(
+            const SizedBox(height: 12),
+            if (_selectedPets.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4.0),
+                child: Text('Silakan pilih minimal 1 hewan di atas terlebih dahulu.', style: TextStyle(color: Colors.grey)),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _selectedPets.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final pet = _selectedPets[index];
+                  final selectedPackageName = provider.petPackages[pet.id];
+                  
+                  return Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary.withValues(alpha: 0.05) : Colors.white,
+                      color: selectedPackageName != null ? AppColors.primary.withValues(alpha: 0.05) : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isSelected ? AppColors.primary : Colors.grey.shade300,
-                        width: 2,
+                        color: selectedPackageName != null ? AppColors.primary : Colors.grey.shade300,
+                        width: selectedPackageName != null ? 2 : 1,
                       ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.03),
-                          blurRadius: 6,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
                     ),
-                    child: Row(
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: isSelected ? AppColors.primary : Colors.grey.shade100,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            service.icon,
-                            color: isSelected ? Colors.white : Colors.grey.shade600,
-                            size: 24,
-                          ),
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Colors.grey.shade200,
+                              backgroundImage: pet.imageUrl != null ? NetworkImage(pet.imageUrl!) : null,
+                              child: pet.imageUrl == null
+                                  ? FaIcon(pet.type == 'Anjing' ? FontAwesomeIcons.dog : FontAwesomeIcons.cat, color: Colors.grey, size: 14)
+                                  : null,
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                pet.name,
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                              ),
+                            ),
+                            Text('${pet.weight} kg', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                          ],
                         ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                service.name,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: AppColors.textDark,
+                        const SizedBox(height: 12),
+                        if (selectedPackageName != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(selectedPackageName, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _currencyFormat.format(
+                                          GroomingPackageModel.availablePackages.firstWhere((p) => p.name == selectedPackageName).calculatePrice(pet.weight)
+                                        ),
+                                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                '${_currencyFormat.format(service.priceSmall)} - ${_currencyFormat.format(service.priceLarge)}',
-                                style: const TextStyle(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 13,
+                                TextButton(
+                                  onPressed: () => _showPackageSelector(context, provider, pet),
+                                  child: const Text('Ganti', style: TextStyle(fontWeight: FontWeight.bold)),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                service.description,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade600,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                        if (isSelected)
-                          const Padding(
-                            padding: EdgeInsets.only(left: 8, top: 4),
-                            child: Icon(Icons.check_circle, color: AppColors.primary),
+                        ] else ...[
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton(
+                              onPressed: () => _showPackageSelector(context, provider, pet),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: AppColors.primary,
+                                side: const BorderSide(color: AppColors.primary),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              child: const Text('Pilih Paket'),
+                            ),
                           ),
+                        ]
                       ],
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
@@ -523,11 +427,19 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
                     );
                     return;
                   }
-                  if (provider.selectedServices.isEmpty) {
+                  bool allPetsHavePackage = true;
+                  for (var pet in _selectedPets) {
+                    if (!provider.petPackages.containsKey(pet.id)) {
+                      allPetsHavePackage = false;
+                      break;
+                    }
+                  }
+
+                  if (!allPetsHavePackage) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text(
-                          'Pilih minimal satu layanan grooming terlebih dahulu',
+                          'Pilih paket grooming untuk setiap hewan yang dipilih',
                         ),
                       ),
                     );
@@ -617,6 +529,124 @@ class _GroomingServiceScreenState extends State<GroomingServiceScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  void _showPackageSelector(BuildContext context, GroomingProvider provider, UserPetModel pet) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          builder: (context, scrollController) {
+            return Container(
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 8),
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                    child: Column(
+                      children: [
+                        Text('Pilih Paket untuk ${pet.name}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                        const SizedBox(height: 4),
+                        Text('Berat: ${pet.weight} kg', style: const TextStyle(color: Colors.grey, fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                  const Divider(),
+                  Expanded(
+                    child: ListView.separated(
+                      controller: scrollController,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: GroomingPackageModel.availablePackages.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final service = GroomingPackageModel.availablePackages[index];
+                        final price = service.calculatePrice(pet.weight);
+                        final duration = service.calculateDuration(pet.weight);
+                        final isSelected = provider.petPackages[pet.id] == service.name;
+                        
+                        return GestureDetector(
+                          onTap: () {
+                            provider.setPetPackage(pet.id!, service.name);
+                            Navigator.pop(context);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isSelected ? AppColors.primary.withValues(alpha: 0.05) : Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: isSelected ? AppColors.primary : Colors.grey.shade300, width: isSelected ? 2 : 1),
+                            ),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? AppColors.primary : Colors.grey.shade100,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(service.icon, color: isSelected ? Colors.white : Colors.grey.shade600, size: 24),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(service.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            _currencyFormat.format(price),
+                                            style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Icon(Icons.schedule, size: 12, color: Colors.grey.shade600),
+                                          const SizedBox(width: 4),
+                                          Text('$duration mnt', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(service.description, style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.4)),
+                                    ],
+                                  ),
+                                ),
+                                if (isSelected)
+                                  const Padding(
+                                    padding: EdgeInsets.only(left: 8),
+                                    child: Icon(Icons.check_circle, color: AppColors.primary),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

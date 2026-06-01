@@ -224,9 +224,11 @@ class PdfInvoiceService {
         final blob = html.Blob([bytes], 'application/pdf');
         final url = html.Url.createObjectUrlFromBlob(blob);
         final anchor = html.AnchorElement(href: url)
-          ..setAttribute('download', filename)
+          ..target = '_blank'
           ..click();
-        html.Url.revokeObjectUrl(url);
+        Future.delayed(const Duration(seconds: 1), () {
+          html.Url.revokeObjectUrl(url);
+        });
       } else {
         await Printing.sharePdf(bytes: bytes, filename: filename);
       }

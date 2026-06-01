@@ -380,8 +380,8 @@ class _UniversalPaymentExecutionScreenState
               child: _selectedImage != null
                   ? ClipRRect(
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        _selectedImage!.path,
+                      child: Image.file(
+                        File(_selectedImage!.path),
                         fit: BoxFit.cover,
                       ),
                     )
