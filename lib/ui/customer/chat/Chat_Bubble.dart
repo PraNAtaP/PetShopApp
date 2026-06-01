@@ -27,7 +27,11 @@ class ChatBubble extends StatelessWidget {
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: Container(
+          child: ConstrainedBox(
+          constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.72,
+           ),
+           child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: isMe ? AppColors.primary : Colors.white,
@@ -106,6 +110,7 @@ class ChatBubble extends StatelessWidget {
               ),
             ),
           ),
+        ),
           if (isMe) ...[
             const SizedBox(width: 8),
             const CircleAvatar(

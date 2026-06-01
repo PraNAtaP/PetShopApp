@@ -5,6 +5,7 @@ import 'package:petshopapp/models/chat_message_model.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'chat_controller.dart';
 import 'chat_bubble.dart';
+import 'package:flutter/services.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? receiverId;
@@ -24,6 +25,8 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
  late TextEditingController _controller;
+ final ScrollController _scrollController = ScrollController();
+ final FocusNode _keyboardFocusNode = FocusNode();
 
   final List<Map<String, dynamic>> quickReplies = [
     {"text": "Hai saya ingin booking grooming", "icon": Icons.bathtub_outlined},
@@ -38,12 +41,25 @@ class _ChatScreenState extends State<ChatScreen> {
       text: widget.defaultTopic ?? '',
     );
   }
+  void _scrollToBottom() {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+    }
+  });
+}
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+void dispose() {
+  _controller.dispose();
+  _scrollController.dispose();
+  _keyboardFocusNode.dispose();
+  super.dispose();
+}
 
   /// Fungsi bantuan untuk mengubah DateTime menjadi teks "Hari ini", "Kemarin", atau Tanggal
   String _getDateLabel(DateTime date) {
@@ -72,7 +88,9 @@ class _ChatScreenState extends State<ChatScreen> {
         builder: (context, chat, child) {
           // Messages are newest-first from Firestore, reverse for display
           final displayMessages = chat.messages.reversed.toList();
-
+          if (displayMessages.isNotEmpty) {
+            Future.microtask(_scrollToBottom);
+          }
           return Scaffold(
             backgroundColor: AppColors.background,
             appBar: AppBar(
@@ -90,9 +108,14 @@ class _ChatScreenState extends State<ChatScreen> {
                     child: Icon(Icons.pets, color: Colors.black54, size: 20),
                   ),
                   const SizedBox(width: 10),
-                  Text(chat.receiverName, 
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ],
+                  Text(
+                    chat.receiverName ?? 'Admin',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+               ],
               ),
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
@@ -119,6 +142,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                         )
                       : ListView.builder(
+                          controller: _scrollController,
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           itemCount: displayMessages.length,
                           itemBuilder: (context, index) {
@@ -171,7 +195,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
 
                 // 2. QUICK REPLIES (Only show for customer/new chat)
-                if (displayMessages.length < 3 && widget.receiverId == null)
+                if (widget.receiverId == null)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10),
                     child: Column(
@@ -179,7 +203,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         const Text("✨ Pilih topik cepat atau ketik sendiri ya!", 
                           style: TextStyle(color: Colors.blue, fontSize: 12)),
                         const SizedBox(height: 8),
-                        ...quickReplies.map((reply) => _buildQuickReply(reply, chat)),
+                        ...quickReplies.map(
+                          (reply) => _buildQuickReply(reply, chat)),                                            
                       ],
                     ),
                   ),
@@ -187,14 +212,54 @@ class _ChatScreenState extends State<ChatScreen> {
                 // 3. INPUT AREA
                 if (chat.isUploading)
                   const LinearProgressIndicator(minHeight: 2),
+
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  color: Colors.white,
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ActionChip(
+                          label: const Text("Template Konsultasi"),
+                          onPressed: () {
+                            _controller.text =
+                                "Halo Admin,\n\nSaya ingin berkonsultasi mengenai hewan peliharaan saya.\n\nKeluhan : ";
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        ActionChip(
+                          label: const Text("Booking Grooming"),
+                          onPressed: () {
+                            _controller.text =
+                                "Halo Admin, saya ingin booking grooming untuk hewan peliharaan saya.";
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        ActionChip(
+                          label: const Text("Adopsi Hewan"),
+                          onPressed: () {
+                            _controller.text =
+                                "Halo Admin, saya tertarik untuk mengadopsi hewan.";
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 _buildInputArea(chat),
               ],
             ),
           );
         },
       ),
-    );
+    );  
   }
+  
 
   Widget _buildQuickReply(Map<String, dynamic> reply, ChatController chat) {
     return GestureDetector(
@@ -217,6 +282,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
   }
+  
 
   Widget _buildInputArea(ChatController chat) {
     return Container(
@@ -239,17 +305,46 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: TextField(
-                controller: _controller,
-                decoration: InputDecoration(
-                  hintText: "Ketik pesan di sini...",
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide.none,
+              child: KeyboardListener(
+                focusNode: _keyboardFocusNode,
+                onKeyEvent: (event) {
+                  final shiftPressed =
+                      HardwareKeyboard.instance.logicalKeysPressed.contains(
+                        LogicalKeyboardKey.shiftLeft,
+                      ) ||
+                      HardwareKeyboard.instance.logicalKeysPressed.contains(
+                        LogicalKeyboardKey.shiftRight,
+                      );
+
+                  if (event is KeyDownEvent &&
+                      event.logicalKey == LogicalKeyboardKey.enter &&
+                      !shiftPressed) {
+                    if (_controller.text.trim().isNotEmpty) {
+                      chat.sendMessage(_controller.text);
+                      _controller.clear();
+                      _scrollToBottom();
+                    }
+                  }
+                },
+                child: TextField(
+                  controller: _controller,
+                  keyboardType: TextInputType.multiline,
+                  minLines: 1,
+                  maxLines: 5,
+                  textInputAction: TextInputAction.newline,
+                  decoration: InputDecoration(
+                    hintText: "Ketik pesan di sini...",
+                    filled: true,
+                    fillColor: Colors.grey[200],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20),
                 ),
               ),
             ),
