@@ -27,7 +27,7 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
   
   // Local cart for POS
   final Map<String, int> _cart = {}; // productId -> quantity
-  final Map<String, int> _groomingCart = {}; // serviceId -> 1
+  final List<Map<String, dynamic>> _groomingCart = []; // [{package: GroomingPackageModel, petName: String, weight: double, price: double, duration: int}]
   List<ProductModel> _allProducts = [];
   
   String _searchQuery = '';
@@ -37,21 +37,13 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
   double _uangDiterima = 0;
   final TextEditingController _paymentController = TextEditingController();
   final TextEditingController _waNumberController = TextEditingController();
+  final TextEditingController _customerNameController = TextEditingController(); // Added for checkout
 
   // Grooming Schedule State
   DateTime _selectedGroomingDate = DateTime.now();
   String? _selectedGroomingTimeSlot;
   List<Map<String, dynamic>> _bookedSlots = [];
   bool _isLoadingSlots = false;
-
-  final List<Map<String, dynamic>> _groomingServices = [
-    {'id': 'g1', 'name': 'Mandi Dasar', 'price': 50000.0, 'icon': Icons.shower},
-    {'id': 'g2', 'name': 'Mandi Kutu/Jamur', 'price': 80000.0, 'icon': Icons.bug_report},
-    {'id': 'g3', 'name': 'Potong Kuku', 'price': 20000.0, 'icon': Icons.cut},
-    {'id': 'g4', 'name': 'Potong Bulu', 'price': 60000.0, 'icon': Icons.content_cut},
-    {'id': 'g5', 'name': 'Bersih Telinga', 'price': 25000.0, 'icon': Icons.hearing},
-    {'id': 'g6', 'name': 'Paket Lengkap', 'price': 150000.0, 'icon': Icons.stars},
-  ];
 
   /// Parses "HH:mm" into minutes from midnight
   int _timeToMinutes(String time) {
@@ -76,14 +68,8 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
     int estimatedDuration = 60; // Default estimate for POS if no specific package selected yet
     if (_groomingCart.isNotEmpty) {
       estimatedDuration = 0;
-      for (var entry in _groomingCart.entries) {
-         // Assuming small size for POS by default, or maybe admin should input weight.
-         // For now, use the default durationSmall
-         final service = GroomingPackageModel.availablePackages.firstWhere(
-           (s) => s.name == entry.key,
-           orElse: () => GroomingPackageModel.availablePackages.first,
-         );
-         estimatedDuration += service.calculateDuration(null); // default to small
+      for (var item in _groomingCart) {
+         estimatedDuration += item['duration'] as int;
       }
     }
     
@@ -192,14 +178,70 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
     });
   }
 
-  void _toggleGroomingInCart(String serviceId) {
-    setState(() {
-      if (_groomingCart.containsKey(serviceId)) {
-        _groomingCart.remove(serviceId);
-      } else {
-        _groomingCart[serviceId] = 1;
+  void _showAddPetToGroomingDialog(GroomingPackageModel package) {
+    final petNameController = TextEditingController();
+    final weightController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Detail Hewan - ${package.name}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: petNameController,
+                decoration: const InputDecoration(labelText: 'Nama Hewan (Contoh: Miko)'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: weightController,
+                decoration: const InputDecoration(labelText: 'Berat Badan (kg)'),
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final petName = petNameController.text.trim();
+                final weightText = weightController.text.trim();
+                if (petName.isEmpty || weightText.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nama dan berat badan harus diisi!')));
+                  return;
+                }
+                final weight = double.tryParse(weightText.replaceAll(',', '.')) ?? 0.0;
+                if (weight <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berat badan tidak valid!')));
+                  return;
+                }
+
+                final price = package.calculatePrice(weight);
+                final duration = package.calculateDuration(weight);
+
+                setState(() {
+                  _groomingCart.add({
+                    'package': package,
+                    'petName': petName,
+                    'weight': weight,
+                    'price': price,
+                    'duration': duration,
+                  });
+                });
+
+                Navigator.pop(context);
+              },
+              child: const Text('Simpan'),
+            ),
+          ],
+        );
       }
-    });
+    );
   }
 
   double _calculateTotal() {
@@ -208,16 +250,14 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
       final product = _allProducts.firstWhere((p) => p.productId == entry.key);
       total += product.harga * entry.value;
     }
-    for (var entry in _groomingCart.entries) {
-      final service = _groomingServices.firstWhere((s) => s['id'] == entry.key);
-      total += service['price'] as double;
+    for (var item in _groomingCart) {
+      total += item['price'] as double;
     }
     return total;
   }
 
   Future<void> _generatePdfReceipt({
     required String? customerName,
-    required String? petName,
     required double total,
     required double kembalian,
   }) async {
@@ -273,14 +313,7 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
                   pw.Text(customerName ?? 'Offline', style: const pw.TextStyle(fontSize: 9)),
                 ]
               ),
-              if (petName != null && petName.isNotEmpty) 
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text('Hewan:', style: const pw.TextStyle(fontSize: 9)),
-                    pw.Text(petName, style: const pw.TextStyle(fontSize: 9)),
-                  ]
-                ),
+
               pw.Divider(borderStyle: pw.BorderStyle.dashed),
               if (_cart.isNotEmpty) ...[
                 pw.Text('Produk Fisik', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
@@ -301,13 +334,13 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
                 pw.Text('Layanan Grooming', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 10)),
                 pw.Text('Jadwal: ${DateFormat('dd MMM').format(_selectedGroomingDate)} - $_selectedGroomingTimeSlot', style: const pw.TextStyle(fontSize: 8, color: PdfColors.grey700)),
                 pw.SizedBox(height: 4),
-                ..._groomingCart.entries.map((entry) {
-                  final service = _groomingServices.firstWhere((s) => s['id'] == entry.key);
+                ..._groomingCart.map((item) {
+                  final service = item['package'] as GroomingPackageModel;
                   return pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
-                      pw.Expanded(child: pw.Text(service['name'], style: const pw.TextStyle(fontSize: 9))),
-                      pw.Text(currencyFormatter.format(service['price']), style: const pw.TextStyle(fontSize: 9)),
+                      pw.Expanded(child: pw.Text('${service.name} (${item['petName']})', style: const pw.TextStyle(fontSize: 9))),
+                      pw.Text(currencyFormatter.format(item['price']), style: const pw.TextStyle(fontSize: 9)),
                     ],
                   );
                 }).toList(),
@@ -359,7 +392,6 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
 
   Future<void> _executeCheckout({
     String? customerName,
-    String? petName,
   }) async {
     final total = _calculateTotal();
     
@@ -407,40 +439,32 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
         await FirestoreService.instance.createOrder(order);
       }
 
-      // Process Grooming Services (Combined into one booking)
+      // Process Grooming Services
       if (_groomingCart.isNotEmpty) {
-        List<String> serviceNames = [];
-        double totalGroomingPrice = 0;
-        int totalDuration = 0;
+        for (var item in _groomingCart) {
+          final serviceModel = item['package'] as GroomingPackageModel;
+          final petName = item['petName'] as String;
+          final price = item['price'] as double;
+          final duration = item['duration'] as int;
 
-        for (var entry in _groomingCart.entries) {
-          final serviceModel = GroomingPackageModel.availablePackages.firstWhere(
-            (s) => s.name == entry.key,
-            orElse: () => GroomingPackageModel.availablePackages.first,
+          final booking = GroomingBookingModel(
+            bookingId: '',
+            userId: 'OFFLINE_CUSTOMER',
+            customerName: customerName ?? 'Customer Kasir',
+            petName: petName,
+            petType: 'Offline',
+            serviceType: serviceModel.name,
+            bookingDate: _selectedGroomingDate,
+            timeSlot: _selectedGroomingTimeSlot ?? 'Sekarang',
+            durationMinutes: duration,
+            totalPrice: price,
+            isHomeService: false,
+            status: 'Completed',
+            metodePembayaran: 'Tunai Kasir',
+            createdAt: DateTime.now(),
           );
-          serviceNames.add(serviceModel.name);
-          // Default POS uses small pet pricing/duration as placeholder since POS might bypass detailed input
-          totalGroomingPrice += serviceModel.calculatePrice(null); 
-          totalDuration += serviceModel.calculateDuration(null);
+          await GroomingService.instance.createBooking(booking);
         }
-
-        final booking = GroomingBookingModel(
-          bookingId: '',
-          userId: 'OFFLINE_CUSTOMER',
-          customerName: customerName ?? 'Customer Kasir',
-          petName: petName ?? 'Hewan',
-          petType: 'Offline', 
-          serviceType: serviceNames.join(', '),
-          bookingDate: _selectedGroomingDate,
-          timeSlot: _selectedGroomingTimeSlot ?? 'Sekarang',
-          durationMinutes: totalDuration,
-          totalPrice: totalGroomingPrice,
-          isHomeService: false,
-          status: 'Completed',
-          metodePembayaran: 'Tunai Kasir',
-          createdAt: DateTime.now(),
-        );
-        await GroomingService.instance.createBooking(booking);
       }
       
       if (mounted) {
@@ -451,7 +475,6 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
         // 1. Generate & Share/Download PDF
         await _generatePdfReceipt(
           customerName: customerName,
-          petName: petName,
           total: total,
           kembalian: kembalian,
         );
@@ -495,129 +518,120 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
     }
   }
 
-  void _showCheckoutGroomingDetailsDialog() {
-    final formKey = GlobalKey<FormState>();
-    final customerNameCtrl = TextEditingController(text: 'Customer Kasir');
-    final petNameCtrl = TextEditingController();
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Detail Pelanggan Grooming'),
-        content: SizedBox(
-          width: 500,
-          child: Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('Ada paket grooming di keranjang. Lengkapi data pelanggan:', style: TextStyle(color: Colors.grey)),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: customerNameCtrl,
-                    decoration: const InputDecoration(labelText: 'Nama Pelanggan', border: OutlineInputBorder()),
-                    validator: (v) => v!.isEmpty ? 'Wajib' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: petNameCtrl,
-                    decoration: const InputDecoration(labelText: 'Nama Hewan', border: OutlineInputBorder()),
-                    validator: (v) => v!.isEmpty ? 'Wajib' : null,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
-          ElevatedButton(
-            onPressed: () {
-              if (!formKey.currentState!.validate()) return;
-              
-              Navigator.pop(context);
-              _executeCheckout(
-                customerName: customerNameCtrl.text,
-                petName: petNameCtrl.text,
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-            child: const Text('Lanjutkan Proses & Bayar'),
-          )
-        ],
-      ),
-    );
-  }
-
-  void _showConfirmationDialog() {
+  void _showCheckoutDialog() {
     if (_groomingCart.isNotEmpty && _selectedGroomingTimeSlot == null) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pilih jadwal jam grooming terlebih dahulu!')));
       return;
     }
 
+    final formKey = GlobalKey<FormState>();
+    final customerNameCtrl = TextEditingController(text: 'Customer Kasir');
+    _waNumberController.clear();
+    _paymentController.clear();
+    
+    double uangTunai = 0;
+    final total = _calculateTotal();
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Row(
-          children: [
-            Icon(Icons.info_outline, color: AppColors.accent, size: 28),
-            SizedBox(width: 8),
-            Text('Konfirmasi Pesanan'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Pastikan semua item dan layanan grooming sudah benar sebelum diproses.', style: TextStyle(fontSize: 14)),
-            const SizedBox(height: 16),
-            const Divider(),
-            if (_cart.isNotEmpty)
-              Text('• ${_cart.length} jenis produk fisik', style: const TextStyle(fontWeight: FontWeight.bold)),
-            if (_groomingCart.isNotEmpty)
-              Text('• ${_groomingCart.length} layanan grooming', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Total Pembelian:'),
-                Text(currencyFormatter.format(_calculateTotal()), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text('Checkout & Pembayaran'),
+              content: SizedBox(
+                width: 500,
+                child: Form(
+                  key: formKey,
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Total Pembelian:', style: TextStyle(fontSize: 16)),
+                            Text(currencyFormatter.format(total), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: customerNameCtrl,
+                          decoration: const InputDecoration(labelText: 'Nama Pelanggan', border: OutlineInputBorder()),
+                          validator: (v) => v!.isEmpty ? 'Wajib diisi' : null,
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _waNumberController,
+                          keyboardType: TextInputType.phone,
+                          decoration: const InputDecoration(
+                            labelText: 'No. WhatsApp (Opsional, kirim nota)',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.phone_android),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: _paymentController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Uang Diterima (Rp)',
+                            border: OutlineInputBorder(),
+                            prefixIcon: Icon(Icons.money),
+                          ),
+                          onChanged: (val) {
+                            setStateDialog(() {
+                              uangTunai = double.tryParse(val) ?? 0;
+                            });
+                          },
+                          validator: (v) {
+                            if (uangTunai < total) return 'Uang kurang dari total belanja';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Kembali:', style: TextStyle(fontSize: 16)),
+                            Text(
+                              currencyFormatter.format((uangTunai - total).clamp(0, double.infinity)), 
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+                ElevatedButton(
+                  onPressed: () {
+                    if (!formKey.currentState!.validate()) return;
+                    
+                    Navigator.pop(context);
+                    // Pass uangTunai to state before calling executeCheckout
+                    setState(() {
+                      _uangDiterima = uangTunai;
+                      _customerNameController.text = customerNameCtrl.text;
+                    });
+                    
+                    _executeCheckout(customerName: customerNameCtrl.text);
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                  child: const Text('Bayar & Selesai'),
+                )
               ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Uang Diterima:'),
-                Text(currencyFormatter.format(_uangDiterima), style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal', style: TextStyle(color: Colors.grey)),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              
-              if (_groomingCart.isNotEmpty) {
-                // If there's grooming, ask for customer details first
-                _showCheckoutGroomingDetailsDialog();
-              } else {
-                // Physical products only, just checkout
-                _executeCheckout();
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
-            child: const Text('Proses Pembayaran'),
-          ),
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -819,18 +833,24 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
                                     padding: EdgeInsets.all(8.0),
                                     child: Text('Grooming', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.purple)),
                                   ),
-                                  ..._groomingCart.entries.map((entry) {
-                                    final service = _groomingServices.firstWhere((s) => s['id'] == entry.key);
+                                  ..._groomingCart.asMap().entries.map((entry) {
+                                    final index = entry.key;
+                                    final item = entry.value;
+                                    final service = item['package'] as GroomingPackageModel;
                                     return ListTile(
-                                      leading: Icon(service['icon'], color: Colors.purple),
-                                      title: Text(service['name'], maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                      subtitle: Text(currencyFormatter.format(service['price']), style: const TextStyle(color: Colors.purple)),
+                                      leading: const Icon(Icons.pets, color: Colors.purple),
+                                      title: Text('${service.name} (${item['petName']})', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                      subtitle: Text('${item['weight']} kg - ${currencyFormatter.format(item['price'])}', style: const TextStyle(color: Colors.purple)),
                                       trailing: IconButton(
                                         icon: const Icon(Icons.delete_outline, color: Colors.red),
-                                        onPressed: () => _toggleGroomingInCart(entry.key),
+                                        onPressed: () {
+                                          setState(() {
+                                            _groomingCart.removeAt(index);
+                                          });
+                                        },
                                       ),
                                     );
-                                  }),
+                                  }).toList(),
                                 ],
                               ],
                             ),
@@ -855,46 +875,10 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
                             ],
                           ),
                           const SizedBox(height: 16),
-                          TextField(
-                            controller: _waNumberController,
-                            keyboardType: TextInputType.phone,
-                            decoration: const InputDecoration(
-                              labelText: 'No. WhatsApp (Opsional, kirim nota)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.phone_android),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _paymentController,
-                            keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Uang Diterima (Rp)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.money),
-                            ),
-                            onChanged: (val) {
-                              setState(() {
-                                _uangDiterima = double.tryParse(val) ?? 0;
-                              });
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text('Kembali:', style: TextStyle(fontSize: 16)),
-                              Text(
-                                currencyFormatter.format((_uangDiterima - _calculateTotal()).clamp(0, double.infinity)), 
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
                           ElevatedButton.icon(
-                            onPressed: (_cart.isEmpty && _groomingCart.isEmpty) || _uangDiterima < _calculateTotal() ? null : _showConfirmationDialog,
-                            icon: const Icon(Icons.check_circle),
-                            label: const Text('Bayar & Selesai', style: TextStyle(fontSize: 16)),
+                            onPressed: (_cart.isEmpty && _groomingCart.isEmpty) ? null : _showCheckoutDialog,
+                            icon: const Icon(Icons.shopping_cart_checkout),
+                            label: const Text('Checkout', style: TextStyle(fontSize: 16)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.accent,
                               foregroundColor: AppColors.textDark,
@@ -1101,39 +1085,59 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
   }
 
   Widget _buildGroomingGrid() {
-    return GridView.builder(
+    return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        childAspectRatio: 1.1,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: _groomingServices.length,
+      itemCount: GroomingPackageModel.availablePackages.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
-        final service = _groomingServices[index];
-        final isSelected = _groomingCart.containsKey(service['id']);
+        final package = GroomingPackageModel.availablePackages[index];
+        // Check if there's any item in the cart that uses this package
+        final isSelected = _groomingCart.any((item) => (item['package'] as GroomingPackageModel).name == package.name);
         
         return InkWell(
-          onTap: () => _toggleGroomingInCart(service['id']),
+          onTap: () => _showAddPetToGroomingDialog(package),
+          borderRadius: BorderRadius.circular(12),
           child: Container(
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              border: Border.all(color: isSelected ? Colors.purple : Colors.purple.shade200, width: isSelected ? 3 : 2),
+              border: Border.all(color: isSelected ? AppColors.primary : Colors.grey.shade300, width: isSelected ? 2 : 1),
               borderRadius: BorderRadius.circular(12),
-              color: isSelected ? Colors.purple.shade100 : Colors.purple.shade50,
+              color: isSelected ? AppColors.primary.withOpacity(0.05) : Colors.white,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(service['icon'], size: 40, color: Colors.purple),
-                const SizedBox(height: 8),
-                Text(service['name'], textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(currencyFormatter.format(service['price']), style: const TextStyle(color: Colors.purple)),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(package.icon, color: Colors.grey.shade600, size: 28),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(package.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '${currencyFormatter.format(package.priceSmall)} - ${currencyFormatter.format(package.priceLarge)}', 
+                        style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        package.description, 
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade600, height: 1.4),
+                      ),
+                    ],
+                  ),
+                ),
                 if (isSelected)
                   const Padding(
-                    padding: EdgeInsets.only(top: 8.0),
-                    child: Icon(Icons.check_circle, color: Colors.purple),
+                    padding: EdgeInsets.only(left: 12),
+                    child: Icon(Icons.check_circle, color: AppColors.primary, size: 28),
                   ),
               ],
             ),
