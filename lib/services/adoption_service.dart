@@ -28,6 +28,19 @@ class AdoptionService {
     });
   }
 
+  /// Stream of animals filtered by multiple statuses.
+  Stream<List<AnimalModel>> getAnimalsByStatuses(List<String> statuses) {
+    return _firestore
+        .collection(_collectionPath)
+        .where('status', whereIn: statuses)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => AnimalModel.fromMap(doc.data(), doc.id))
+          .toList();
+    });
+  }
+
   /// Adds a new animal to the catalog.
   Future<void> addAnimal(AnimalModel animal) async {
     try {
@@ -110,9 +123,35 @@ class AdoptionService {
       await _firestore.collection(_collectionPath).doc(animalId).update({
         'status': 'available',
         'bookedBy': FieldValue.delete(),
+        'cancelReason': FieldValue.delete(),
       });
     } catch (e) {
       throw Exception('Failed to cancel adoption: $e');
     }
+  }
+
+  /// Admin denies the cancellation request and resets status to booked.
+  Future<void> denyCancelAdoption(String animalId) async {
+    try {
+      await _firestore.collection(_collectionPath).doc(animalId).update({
+        'status': 'booked',
+        'cancelReason': FieldValue.delete(),
+      });
+    } catch (e) {
+      throw Exception('Failed to deny cancellation: $e');
+    }
+  }
+
+  /// Stream of animals adopted/booked by a specific user.
+  Stream<List<AnimalModel>> getAdoptionsByUser(String userId) {
+    return _firestore
+        .collection(_collectionPath)
+        .where('bookedBy', isEqualTo: userId)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => AnimalModel.fromMap(doc.data(), doc.id))
+          .toList();
+    });
   }
 }

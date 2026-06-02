@@ -6,6 +6,7 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
 import 'package:petshopapp/providers/cart_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
@@ -30,7 +31,7 @@ class _ShopScreenState extends State<ShopScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background.withValues(alpha: 0.3),
       body: CustomScrollView(
         slivers: [
           _buildAppBar(),
@@ -48,14 +49,14 @@ class _ShopScreenState extends State<ShopScreen> {
       pinned: true,
       floating: true,
       expandedHeight: 140,
-      backgroundColor: AppColors.primary,
+      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
       ),
       title: const Text(
         'Shop',
         style: TextStyle(
-          color: AppColors.white,
+          color: AppColors.primary,
           fontWeight: FontWeight.bold,
           fontSize: 24,
         ),
@@ -67,7 +68,7 @@ class _ShopScreenState extends State<ShopScreen> {
               alignment: Alignment.center,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.white, size: 28),
+                  icon: const Icon(Icons.shopping_cart_outlined, color: AppColors.primary, size: 28),
                   onPressed: () => _showCartBottomSheet(context),
                 ),
                 if (cart.totalItems > 0)
@@ -233,7 +234,7 @@ class _ShopScreenState extends State<ShopScreen> {
         }
 
         return SliverPadding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 140),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
@@ -254,18 +255,22 @@ class _ShopScreenState extends State<ShopScreen> {
   Widget _buildProductCard(ProductModel product) {
     final isOutOfStock = product.stok <= 0;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
+    return GestureDetector(
+      onTap: () {
+        context.push('/product-detail', extra: product);
+      },
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -279,12 +284,12 @@ class _ShopScreenState extends State<ShopScreen> {
                   child: Hero(
                     tag: 'product_${product.productId}',
                     child: product.fotoUrl.isNotEmpty
-                        ? Image.network(
-                            product.fotoUrl,
+                        ? CachedNetworkImage(
+                            imageUrl: product.fotoUrl,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(color: Colors.grey.shade200, child: const Icon(Icons.broken_image)),
+                            placeholder: (context, url) => Container(color: Colors.grey.shade100, child: const Center(child: CircularProgressIndicator())),
+                            errorWidget: (context, url, error) => Container(color: Colors.grey.shade200, child: const Icon(Icons.broken_image)),
                           )
                         : Container(
                             color: Colors.grey.shade100,
@@ -374,8 +379,9 @@ class _ShopScreenState extends State<ShopScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   void _showCartBottomSheet(BuildContext context) {
     context.read<CartProvider>().refresh();
@@ -462,7 +468,7 @@ class CartBottomSheet extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                   image: item.fotoUrl.isNotEmpty
                                       ? DecorationImage(
-                                          image: NetworkImage(item.fotoUrl),
+                                          image: CachedNetworkImageProvider(item.fotoUrl),
                                           fit: BoxFit.cover,
                                         )
                                       : null,

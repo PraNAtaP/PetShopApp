@@ -1,11 +1,15 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:petshopapp/models/user_model.dart';
+import 'package:petshopapp/models/user_address_model.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/models/user_pet_model.dart';
 
 import 'package:petshopapp/models/cart_model.dart';
 import 'package:petshopapp/models/order_model.dart';
+import 'package:petshopapp/models/funfact_banner_model.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:petshopapp/services/fcm_service.dart';
+
 
 /// Service to handle Cloud Firestore CRUD operations for Pet Point.
 /// Utilizes the Repository pattern and `.withConverter` for type safety.
@@ -53,6 +57,12 @@ class FirestoreService {
         toFirestore: (model, _) => model.toMap(),
       );
 
+  CollectionReference<FunFactBannerModel> get _funFactBannersRef =>
+      _db.collection('funfact').withConverter<FunFactBannerModel>(
+        fromFirestore: (snapshot, _) => FunFactBannerModel.fromFirestore(snapshot),
+        toFirestore: (model, _) => model.toMap(),
+      );
+
   // ==========================================
   // User Profile
   // ==========================================
@@ -75,6 +85,71 @@ class FirestoreService {
       });
     } catch (e) {
       throw Exception('Gagal memperbarui FCM token: $e');
+    }
+  }
+
+  // ==========================================
+  // Address Book Management
+  // ==========================================
+
+  CollectionReference<UserAddressModel> _userAddressesRef(String uid) =>
+      _db.collection('users').doc(uid).collection('addresses').withConverter<UserAddressModel>(
+        fromFirestore: (snapshot, _) => UserAddressModel.fromFirestore(snapshot),
+        toFirestore: (model, _) => model.toMap(),
+      );
+
+  Stream<List<UserAddressModel>> getUserAddressesStream(String uid) {
+    try {
+      return _userAddressesRef(uid)
+          .orderBy('is_primary', descending: true)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    } catch (e) {
+      throw Exception('Gagal stream data alamat: $e');
+    }
+  }
+
+  Future<void> addUserAddress(String uid, UserAddressModel address) async {
+    try {
+      if (address.isPrimary) {
+        // If this new address is primary, we should unset others
+        final query = await _userAddressesRef(uid).where('is_primary', isEqualTo: true).get();
+        final batch = _db.batch();
+        for (var doc in query.docs) {
+          batch.update(doc.reference, {'is_primary': false});
+        }
+        await batch.commit();
+      }
+      
+      if (address.id.isEmpty) {
+        await _userAddressesRef(uid).add(address);
+      } else {
+        await _userAddressesRef(uid).doc(address.id).set(address);
+      }
+    } catch (e) {
+      throw Exception('Gagal menyimpan alamat: $e');
+    }
+  }
+
+  Future<void> deleteUserAddress(String uid, String addressId) async {
+    try {
+      await _userAddressesRef(uid).doc(addressId).delete();
+    } catch (e) {
+      throw Exception('Gagal menghapus alamat: $e');
+    }
+  }
+
+  Future<void> setPrimaryAddress(String uid, String addressId) async {
+    try {
+      final batch = _db.batch();
+      // Unset all primary
+      final query = await _userAddressesRef(uid).get();
+      for (var doc in query.docs) {
+        batch.update(doc.reference, {'is_primary': doc.id == addressId});
+      }
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Gagal mengubah alamat utama: $e');
     }
   }
 
@@ -227,7 +302,22 @@ class FirestoreService {
   /// Creates a new order in Firestore. Returns the generated document ID.
   Future<String> createOrder(OrderModel order) async {
     try {
-      final docRef = await _ordersRef.add(order);
+      final batch = _db.batch();
+      
+      // 1. Buat dokumen order baru
+      final docRef = _ordersRef.doc();
+      batch.set(docRef, order);
+      
+      // 2. Kurangi stok produk dan tambah jumlah terjual
+      for (final item in order.items) {
+        final productRef = _productsRef.doc(item.productId);
+        batch.update(productRef, {
+          'stok': FieldValue.increment(-item.jumlah),
+          'terjual': FieldValue.increment(item.jumlah),
+        });
+      }
+      
+      await batch.commit();
       return docRef.id;
     } catch (e) {
       throw Exception('Gagal membuat pesanan: $e');
@@ -245,6 +335,59 @@ class FirestoreService {
     }
   }
 
+  /// Updates both payment and shipping status of an order (Admin).
+  Future<void> updateOrderFullStatus({
+    required String orderId, 
+    String? statusBayar, 
+    String? statusPengiriman
+  }) async {
+    try {
+      final updates = <String, dynamic>{};
+      if (statusBayar != null) updates['status_bayar'] = statusBayar;
+      if (statusPengiriman != null) updates['status_pengiriman'] = statusPengiriman;
+      
+      if (updates.isNotEmpty) {
+        await _db.collection('orders').doc(orderId).update(updates);
+
+        // -- Trigger FCM Notification ke Customer --
+        if (statusPengiriman != null) {
+          try {
+            final orderDoc = await _db.collection('orders').doc(orderId).get();
+            final uid = orderDoc.data()?['customer_id'] as String?;
+            
+            if (uid != null) {
+              final customerDoc = await _db.collection('users').doc(uid).get();
+              final fcmToken = customerDoc.data()?['fcm_token'] as String?;
+              
+              if (fcmToken != null && fcmToken.isNotEmpty) {
+                String title = 'Status Pesanan Diperbarui';
+                String body = 'Status pengiriman pesananmu (#${orderId.substring(0, 5)}) menjadi: $statusPengiriman';
+
+                if (statusPengiriman == 'Dikirim' || statusPengiriman == 'Sedang Dikirim') {
+                  title = 'Pesanan Sedang Diantar! 📦';
+                  body = 'Siap-siap! Pesanan dari Pet Point sedang dalam perjalanan menuju alamatmu.';
+                } else if (statusPengiriman == 'Selesai' || statusPengiriman == 'Terkirim') {
+                  title = 'Pesanan Telah Sampai 🎉';
+                  body = 'Hore! Pesananmu sudah tiba. Terima kasih telah berbelanja di Pet Point.';
+                }
+
+                await FCMService.instance.sendNotification(
+                  targetFCMToken: fcmToken,
+                  title: title,
+                  body: body,
+                );
+              }
+            }
+          } catch (e) {
+            print('Gagal kirim notif order status: $e');
+          }
+        }
+      }
+    } catch (e) {
+      throw Exception('Gagal memperbarui status pesanan: $e');
+    }
+  }
+
   /// Saves the payment proof URL to an existing order.
   Future<void> updateOrderPaymentProof(String orderId, String url) async {
     try {
@@ -256,15 +399,60 @@ class FirestoreService {
     }
   }
 
+  /// Submits a request to cancel a shop order.
+  Future<void> requestCancelOrder({
+    required String orderId,
+    String? bankName,
+    String? bankAccount,
+    String? accountHolder,
+  }) async {
+    try {
+      final updates = <String, dynamic>{
+        'cancel_request': true,
+        'status_pengiriman': 'Menunggu Persetujuan Pembatalan',
+      };
+      if (bankName != null) updates['cancel_bank_name'] = bankName;
+      if (bankAccount != null) updates['cancel_bank_account'] = bankAccount;
+      if (accountHolder != null) updates['cancel_account_holder'] = accountHolder;
+
+      await _db.collection('orders').doc(orderId).update(updates);
+    } catch (e) {
+      throw Exception('Gagal mengajukan pembatalan pesanan: $e');
+    }
+  }
+
   /// Returns a real-time stream of orders for a specific customer.
   Stream<List<OrderModel>> getOrdersStream(String customerId) {
     try {
       return _ordersRef
           .where('customer_id', isEqualTo: customerId)
           .snapshots()
-          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+          .map((snapshot) {
+            final list = snapshot.docs.map((doc) => doc.data()).toList();
+            list.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+            return list;
+          });
     } catch (e) {
       throw Exception('Gagal stream data pesanan: $e');
+    }
+  }
+
+  /// Returns a real-time stream of ALL orders (for Admin).
+  Stream<List<OrderModel>> getAllOrdersStream() {
+    try {
+      return _ordersRef
+          .orderBy('created_at', descending: true)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    } catch (e) {
+      // If index is missing, fallback to unordered
+      return _ordersRef
+          .snapshots()
+          .map((snapshot) {
+            final list = snapshot.docs.map((doc) => doc.data()).toList();
+            list.sort((a, b) => (b.createdAt ?? DateTime(0)).compareTo(a.createdAt ?? DateTime(0)));
+            return list;
+          });
     }
   }
 
@@ -310,5 +498,93 @@ class FirestoreService {
     } catch (e) {
       throw Exception('Gagal menghapus data hewan: $e');
     }
+  }
+
+  // =========================
+  // GET FUNFACTS
+  // =========================
+
+  Stream<List<FunFactBannerModel>>
+      getFunFact() {
+
+    return _db
+        .collection('funfact')
+        .orderBy(
+          'createdAt',
+          descending: true,
+        )
+        .snapshots()
+        .map((snapshot) {
+
+      return snapshot.docs.map((doc) {
+
+        return FunFactBannerModel
+            .fromFirestore(doc);
+
+      }).toList();
+    });
+  }
+
+  // =========================
+  // ADD
+  // =========================
+
+  Future<void> addFunFact(
+    FunFactBannerModel banner,
+  ) async {
+
+    await _db
+        .collection('funfact')
+        .add(
+          banner.toMap(),
+        );
+  }
+
+  // =========================
+  // UPDATE
+  // =========================
+
+  Future<void> updateFunFact(
+    FunFactBannerModel banner,
+  ) async {
+    await _db
+        .collection('funfact')
+        .doc(banner.id)
+        .update(
+          banner.toMap(),
+        );
+  }
+
+  // =========================
+  // DELETE
+  // =========================
+
+  Future<void> deleteFunFact(
+    String id,
+  ) async {
+
+    await _db
+        .collection('funfact')
+        .doc(id)
+        .delete();
+  }
+
+  // =========================
+  // TOGGLE ACTIVE
+  // =========================
+
+  Future<void> toggleFunFactStatus(
+    String id,
+    bool currentStatus,
+  ) async {
+
+    await _db
+        .collection('funfact')
+        .doc(id)
+        .update({
+
+      'isActive':
+          !currentStatus,
+    });
   }
 }

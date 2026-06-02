@@ -27,7 +27,7 @@ class _PaymentExecutionScreenState extends State<PaymentExecutionScreen>
     with SingleTickerProviderStateMixin {
   bool _isProcessing = false;
   bool _isSuccess = false;
-  File? _selectedImage;
+  XFile? _selectedImage;
   late AnimationController _checkAnimController;
   late Animation<double> _scaleAnimation;
 
@@ -376,8 +376,8 @@ class _PaymentExecutionScreenState extends State<PaymentExecutionScreen>
                           child: _selectedImage != null
                               ? ClipRRect(
                                   borderRadius: BorderRadius.circular(12),
-                                  child: Image.file(
-                                    _selectedImage!,
+                                  child: Image.network(
+                                    _selectedImage!.path,
                                     fit: BoxFit.cover,
                                     width: double.infinity,
                                   ),
@@ -486,7 +486,7 @@ class _PaymentExecutionScreenState extends State<PaymentExecutionScreen>
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked != null) {
-      setState(() => _selectedImage = File(picked.path));
+      setState(() => _selectedImage = picked);
     }
   }
 
@@ -496,7 +496,8 @@ class _PaymentExecutionScreenState extends State<PaymentExecutionScreen>
 
     try {
       // Upload to ImgBB
-      final imageUrl = await ImgbbService.uploadImage(_selectedImage!);
+      final bytes = await _selectedImage!.readAsBytes();
+      final imageUrl = await ImgbbService.uploadImageBytes(bytes, _selectedImage!.name);
 
       // Create order with Pending status
       await _createOrder('Pending', buktiBayarUrl: imageUrl);
@@ -543,8 +544,11 @@ class _PaymentExecutionScreenState extends State<PaymentExecutionScreen>
       buktiBayarUrl: buktiBayarUrl,
       statusBayar: status,
       statusPengiriman: 'Menunggu',
-      metodePengambilan: 'Ambil di Toko',
+      metodePengambilan: cart.isDelivery ? 'Kirim ke Alamat' : 'Ambil di Toko',
       metodePembayaran: widget.paymentMethod,
+      alamatLengkap: cart.isDelivery ? cart.alamatLengkap : null,
+      latitude: cart.isDelivery ? cart.latitude : null,
+      longitude: cart.isDelivery ? cart.longitude : null,
     );
 
     await FirestoreService.instance.createOrder(order);

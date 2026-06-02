@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:petshopapp/models/chat_message_model.dart';
+import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ChatBubble extends StatelessWidget {
   final ChatMessageModel message;
@@ -19,16 +21,20 @@ class ChatBubble extends StatelessWidget {
           if (!isMe) ...[
             const CircleAvatar(
               radius: 16,
-              backgroundColor: Color(0xFFC5E1A5),
+              backgroundColor: AppColors.secondary,
               child: Icon(Icons.pets, size: 16, color: Colors.black54),
             ),
             const SizedBox(width: 8),
           ],
           Flexible(
-            child: Container(
+          child: ConstrainedBox(
+          constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.72,
+           ),
+           child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: isMe ? const Color(0xFF0D47A1) : Colors.white,
+                color: isMe ? AppColors.primary : Colors.white,
                 borderRadius: BorderRadius.only(
                   topLeft: const Radius.circular(20),
                   topRight: const Radius.circular(20),
@@ -53,19 +59,17 @@ class ChatBubble extends StatelessWidget {
                       },
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(12),
-                        child: Image.network(
-                          message.imageUrl!,
+                        child: CachedNetworkImage(
+                          imageUrl: message.imageUrl!,
                           width: 200,
                           fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              width: 200,
-                              height: 150,
-                              color: Colors.grey[200],
-                              child: const Center(child: CircularProgressIndicator()),
-                            );
-                          },
+                          placeholder: (context, url) => Container(
+                            width: 200,
+                            height: 150,
+                            color: Colors.grey[200],
+                            child: const Center(child: CircularProgressIndicator()),
+                          ),
+                          errorWidget: (context, url, error) => const Icon(Icons.error),
                         ),
                       ),
                     ),
@@ -75,7 +79,7 @@ class ChatBubble extends StatelessWidget {
                     Text(
                       message.text,
                       style: TextStyle(
-                        color: isMe ? Colors.white : Colors.blue[900],
+                        color: isMe ? Colors.white : AppColors.textDark,
                         fontSize: 15,
                       ),
                     ),
@@ -106,6 +110,7 @@ class ChatBubble extends StatelessWidget {
               ),
             ),
           ),
+        ),
           if (isMe) ...[
             const SizedBox(width: 8),
             const CircleAvatar(

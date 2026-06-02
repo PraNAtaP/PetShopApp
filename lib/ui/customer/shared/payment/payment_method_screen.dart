@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/constants/point_constants.dart';
 import 'package:petshopapp/providers/cart_provider.dart';
-import 'package:intl/intl.dart';
+import 'package:petshopapp/providers/grooming_provider.dart';
 
 class UniversalPaymentMethodScreen extends StatefulWidget {
   final String category; // 'shop' or 'grooming'
@@ -48,6 +49,25 @@ class _UniversalPaymentMethodScreenState extends State<UniversalPaymentMethodScr
 
   @override
   Widget build(BuildContext context) {
+    final currencyFormatter =
+        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
+    double subtotal = 0;
+    double shippingFee = 0;
+    double totalPrice = 0;
+
+    if (widget.category == 'shop') {
+      final cart = context.watch<CartProvider>();
+      subtotal = cart.subtotal;
+      shippingFee = cart.shippingFee;
+      totalPrice = cart.totalPrice;
+    } else if (widget.category == 'grooming') {
+      final grooming = context.watch<GroomingProvider>();
+      subtotal = (grooming.selectedPrice * grooming.selectedPets.length).toDouble();
+      shippingFee = grooming.shippingFee;
+      totalPrice = subtotal + shippingFee;
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -81,7 +101,111 @@ class _UniversalPaymentMethodScreenState extends State<UniversalPaymentMethodScr
             ),
           ),
 
-          const SizedBox(height: 24),
+          // Rincian Pembayaran Card
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Center(
+                    child: Text(
+                      'Rincian Pembayaran',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textDark,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        widget.category == 'shop' ? 'Subtotal Pesanan' : 'Subtotal Layanan',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textLight,
+                        ),
+                      ),
+                      Text(
+                        currencyFormatter.format(subtotal),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        widget.category == 'shop' ? 'Biaya Pengiriman' : 'Biaya Layanan',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textLight,
+                        ),
+                      ),
+                      Text(
+                        shippingFee == 0.0
+                            ? 'Gratis'
+                            : currencyFormatter.format(shippingFee),
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: shippingFee == 0.0
+                              ? Colors.green
+                              : AppColors.textDark,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 24, thickness: 1),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Total Pembayaran',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textDark,
+                        ),
+                      ),
+                      Text(
+                        currencyFormatter.format(totalPrice),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 16),
 
           // Total Harga Card
           Padding(
@@ -313,7 +437,36 @@ class _UniversalPaymentMethodScreenState extends State<UniversalPaymentMethodScr
     final isSelected = _selectedMethod == method;
 
     return GestureDetector(
-      onTap: () => setState(() => _selectedMethod = method),
+      onTap: () {
+        setState(() => _selectedMethod = method);
+        if (method == 'COD') {
+          if (widget.category == 'shop') {
+            final cart = context.read<CartProvider>();
+            if (!cart.isDelivery) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Untuk pengambilan di tempat dengan Bayar di Tempat, Anda diharuskan membayar DP 50% terlebih dahulu.',
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            }
+          } else if (widget.category == 'grooming') {
+            final grooming = context.read<GroomingProvider>();
+            if (!grooming.isHomeService) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Untuk layanan di salon dengan Bayar di Tempat, Anda diharuskan membayar DP 50% terlebih dahulu.',
+                  ),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            }
+          }
+        }
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         padding: const EdgeInsets.all(20),

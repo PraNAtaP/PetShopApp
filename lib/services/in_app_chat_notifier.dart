@@ -28,6 +28,7 @@ class InAppChatNotifier {
         .collection('chats')
         .where('participants', arrayContains: user.uid)
         .snapshots()
+        .skip(1) // Skip initial load payload to prevent spam on reload
         .listen((snapshot) {
       for (var change in snapshot.docChanges) {
         if (change.type == DocumentChangeType.modified || change.type == DocumentChangeType.added) {
