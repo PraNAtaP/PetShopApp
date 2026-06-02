@@ -6,6 +6,9 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'chat_controller.dart';
 import 'chat_bubble.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import 'package:petshopapp/services/auth_service.dart';
+import 'package:petshopapp/ui/customer/main/base_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? receiverId;
@@ -97,10 +100,22 @@ void dispose() {
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
-                  
-                  // Mengatasi blank page karena persistent tab bar, arahkan balik ke Main/Home View Anda
-                  // Ganti atau sesuaikan '/main' atau '0' sesuai dengan pengaturan state menu home Anda.
-                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  if (context.canPop()) {
+                    context.pop();
+                  } else {
+                    final authService = context.read<AuthService>();
+                    final role = authService.currentUser?.role.value;
+                    if (role == 'admin') {
+                      context.go('/admin/dashboard');
+                    } else {
+                      final baseScreen = BaseScreen.of(context);
+                      if (baseScreen != null) {
+                        baseScreen.setTab(0);
+                      } else {
+                        context.go('/home');
+                      }
+                    }
+                  }
                 },
               ),
               title: Row(

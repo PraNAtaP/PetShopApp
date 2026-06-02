@@ -147,6 +147,9 @@ class _UniversalPaymentExecutionScreenState
                           child: Text(
                             'Hemat ${currencyFormatter.format(widget.discount)} dari poin',
                             style: const TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        ),
+                      ],
                       if (isDpRequired) ...[
                         const SizedBox(height: 12),
                         const Divider(color: Colors.white24),

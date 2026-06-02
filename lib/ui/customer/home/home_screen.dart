@@ -31,7 +31,7 @@ class HomeScreen extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           // ── Custom Header ──
-          SliverToBoxAdapter(child: _buildHeader(context, firstName, user.poin.toInt())),
+          SliverToBoxAdapter(child: _buildHeader(context, firstName, user.poin.toDouble())),
 
           // ── Tips & Fun Facts Slider ──
           SliverToBoxAdapter(
