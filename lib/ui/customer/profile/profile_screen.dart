@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/ui/customer/order/order_history_screen.dart';
+import 'package:petshopapp/ui/customer/grooming/grooming_history_screen.dart';
+import 'package:petshopapp/ui/customer/profile/address_list_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -15,7 +18,7 @@ class ProfileScreen extends StatelessWidget {
         final user = authService.currentUser;
 
         return Scaffold(
-          backgroundColor: AppColors.cardBackground,
+          backgroundColor: AppColors.background.withValues(alpha: 0.2),
           appBar: AppBar(
             title: const Text('Profile'),
             actions: [
@@ -24,6 +27,9 @@ class ProfileScreen extends StatelessWidget {
                 onPressed: () {},
               ),
             ],
+            backgroundColor: AppColors.primary,
+            foregroundColor: Colors.white,
+            elevation: 0,
           ),
           body: SingleChildScrollView(
             child: Column(
@@ -154,11 +160,24 @@ class ProfileScreen extends StatelessWidget {
                                 title: 'No. Telepon',
                                 subtitle: user?.nomorWa ?? 'Belum diatur',
                               ),
-                              const Divider(height: 24),
-                              _buildInfoRow(
-                                icon: Icons.location_on_outlined,
-                                title: 'Alamat',
-                                subtitle: user?.alamat ?? 'Belum diatur',
+                              const SizedBox(height: 16),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => const AddressListScreen()),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.book_outlined, size: 18),
+                                  label: const Text('Buku Alamat'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.primary,
+                                    side: const BorderSide(color: AppColors.primary),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  ),
+                                ),
                               ),
                             ],
                           ),
@@ -204,6 +223,18 @@ class ProfileScreen extends StatelessWidget {
                               ),
                               const Divider(height: 1, indent: 56),
                               _buildActionTile(
+                                icon: Icons.wash_outlined,
+                                title: 'Riwayat Grooming',
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => const GroomingHistoryScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              const Divider(height: 1, indent: 56),
+                              _buildActionTile(
                                 icon: Icons.pets_outlined,
                                 title: 'Kelola Hewan Peliharaan',
                                 onTap: () {
@@ -214,7 +245,9 @@ class ProfileScreen extends StatelessWidget {
                               _buildActionTile(
                                 icon: Icons.history_outlined,
                                 title: 'Riwayat Adopsi',
-                                onTap: () {},
+                                onTap: () {
+                                  context.push('/adoption-history');
+                                },
                               ),
                               const Divider(height: 1, indent: 56),
                               _buildActionTile(
@@ -243,15 +276,29 @@ class ProfileScreen extends StatelessWidget {
                               _buildActionTile(
                                 icon: Icons.notifications_none_outlined,
                                 title: 'Notifikasi',
-                                trailing: Container(
-                                  width: 8,
-                                  height: 8,
-                                  decoration: const BoxDecoration(
-                                    color: AppColors.error,
-                                    shape: BoxShape.circle,
-                                  ),
+                                trailing: StreamBuilder<QuerySnapshot>(
+                                  stream: FirebaseFirestore.instance
+                                      .collection('notifications')
+                                      .where('userId', isEqualTo: user?.uid)
+                                      .where('read', isEqualTo: false)
+                                      .snapshots(),
+                                  builder: (context, snapshot) {
+                                    if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
+                                      return Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.error,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      );
+                                    }
+                                    return const SizedBox.shrink();
+                                  },
                                 ),
-                                onTap: () {},
+                                onTap: () {
+                                  context.push('/notifications');
+                                },
                               ),
                             ],
                           ),
@@ -293,7 +340,7 @@ class ProfileScreen extends StatelessWidget {
                             Text('Syarat & Ketentuan', style: TextStyle(color: Colors.grey.shade500, fontSize: 12)),
                           ],
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 140),
                       ],
                     ),
                   ),

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -64,222 +65,252 @@ class _RegisterPageState extends State<RegisterPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.white,
-      body: SafeArea(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppColors.textDark,
+            size: 22,
+          ),
+          tooltip: 'Kembali ke Login',
+          onPressed: _isLoading ? null : () => context.go('/login'),
+        ),
+      ),
+      body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.background.withValues(alpha: 0.3),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.person_add_outlined,
-                        size: 40,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Buat Akun Baru',
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textDark,
-                          ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Bergabunglah dengan Pet Point',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.textLight,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 36),
-
-                // ── Pesan Error ────────────────────────────────────────
-                if (_errorMessage != null) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: AppColors.error.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    child: Row(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 450),
+            padding: kIsWeb ? const EdgeInsets.all(32) : EdgeInsets.zero,
+            decoration: kIsWeb
+                ? BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 15,
+                        offset: const Offset(0, 5),
+                      )
+                    ],
+                    border: Border.all(color: Colors.grey.shade200),
+                  )
+                : null,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Center(
+                    child: Column(
                       children: [
-                        const Icon(Icons.error_outline,
-                            color: AppColors.error, size: 20),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            _errorMessage!,
-                            style: const TextStyle(
-                              color: AppColors.error,
-                              fontSize: 13,
-                            ),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
                           ),
+                          child: const Icon(
+                            Icons.person_add_alt_1_rounded,
+                            size: 44,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Buat Akun Baru',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textDark,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Bergabunglah dengan Pet Point',
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textLight,
+                              ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-                ],
+                  const SizedBox(height: 36),
 
-                // ── Nama Lengkap ───────────────────────────────────────
-                _buildLabel('NAMA LENGKAP'),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _nameController,
-                  textCapitalization: TextCapitalization.words,
-                  enabled: !_isLoading,
-                  decoration: const InputDecoration(
-                    hintText: 'Masukkan nama lengkap',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Nama tidak boleh kosong';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // ── Email ──────────────────────────────────────────────
-                _buildLabel('EMAIL'),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  enabled: !_isLoading,
-                  decoration: const InputDecoration(
-                    hintText: 'contoh@gmail.com',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Email tidak boleh kosong';
-                    }
-                    if (!value.contains('@')) {
-                      return 'Format email tidak valid';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // ── Password ───────────────────────────────────────────
-                _buildLabel('PASSWORD'),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: _obscurePassword,
-                  enabled: !_isLoading,
-                  decoration: InputDecoration(
-                    hintText: 'Min. 6 karakter',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility_off_outlined
-                            : Icons.visibility_outlined,
+                  // ── Pesan Error ────────────────────────────────────────
+                  if (_errorMessage != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.error.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: AppColors.error.withValues(alpha: 0.3),
+                        ),
                       ),
-                      onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Password tidak boleh kosong';
-                    }
-                    if (value.length < 6) {
-                      return 'Password minimal 6 karakter';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // ── No. Telepon ────────────────────────────────────────
-                _buildLabel('NO. TELEPON'),
-                const SizedBox(height: 8),
-                TextFormField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  enabled: !_isLoading,
-                  decoration: const InputDecoration(
-                    hintText: '08xx xxxx xxxx',
-                    prefixIcon: Icon(Icons.phone_outlined),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Nomor telepon tidak boleh kosong';
-                    }
-                    if (value.trim().length < 10) {
-                      return 'Nomor telepon tidak valid';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 32),
-
-                // ── Tombol Daftar Sekarang ─────────────────────────────
-                ElevatedButton(
-                  onPressed: _isLoading ? null : _handleRegister,
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.5,
-                            color: AppColors.white,
-                          ),
-                        )
-                      : const Text('Daftar Sekarang'),
-                ),
-                const SizedBox(height: 24),
-
-                // ── Link ke Login ──────────────────────────────────────
-                Center(
-                  child: TextButton(
-                    onPressed: _isLoading ? null : () => context.go('/login'),
-                    child: RichText(
-                      text: TextSpan(
-                        text: 'Sudah punya akun? ',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium
-                            ?.copyWith(color: AppColors.textLight),
-                        children: const [
-                          TextSpan(
-                            text: 'Masuk',
-                            style: TextStyle(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.w600,
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline,
+                              color: AppColors.error, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(
+                                color: AppColors.error,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ],
                       ),
                     ),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // ── Nama Lengkap ───────────────────────────────────────
+                  _buildLabel('NAMA LENGKAP'),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _nameController,
+                    textCapitalization: TextCapitalization.words,
+                    enabled: !_isLoading,
+                    decoration: const InputDecoration(
+                      hintText: 'Masukkan nama lengkap',
+                      prefixIcon: Icon(Icons.person_outline),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Nama tidak boleh kosong';
+                      }
+                      return null;
+                    },
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+
+                  // ── Email ──────────────────────────────────────────────
+                  _buildLabel('EMAIL'),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    enabled: !_isLoading,
+                    decoration: const InputDecoration(
+                      hintText: 'contoh@gmail.com',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Email tidak boleh kosong';
+                      }
+                      if (!value.contains('@')) {
+                        return 'Format email tidak valid';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── Password ───────────────────────────────────────────
+                  _buildLabel('PASSWORD'),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    enabled: !_isLoading,
+                    decoration: InputDecoration(
+                      hintText: 'Min. 6 karakter',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
+                        onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Password tidak boleh kosong';
+                      }
+                      if (value.length < 6) {
+                        return 'Password minimal 6 karakter';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // ── No. Telepon ────────────────────────────────────────
+                  _buildLabel('NO. TELEPON'),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    enabled: !_isLoading,
+                    decoration: const InputDecoration(
+                      hintText: '08xx xxxx xxxx',
+                      prefixIcon: Icon(Icons.phone_outlined),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Nomor telepon tidak boleh kosong';
+                      }
+                      if (value.trim().length < 10) {
+                        return 'Nomor telepon tidak valid';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 32),
+
+                  // ── Tombol Daftar Sekarang ─────────────────────────────
+                  ElevatedButton(
+                    onPressed: _isLoading ? null : _handleRegister,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 22,
+                            width: 22,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: AppColors.white,
+                            ),
+                          )
+                        : const Text('Daftar Sekarang'),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // ── Link ke Login ──────────────────────────────────────
+                  Center(
+                    child: TextButton(
+                      onPressed: _isLoading ? null : () => context.go('/login'),
+                      child: RichText(
+                        text: TextSpan(
+                          text: 'Sudah punya akun? ',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: AppColors.textLight),
+                          children: const [
+                            TextSpan(
+                              text: 'Masuk',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

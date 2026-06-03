@@ -3,13 +3,13 @@ import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:petshopapp/services/grooming_service.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/models/user_pet_model.dart';
+import 'package:petshopapp/models/grooming_package_model.dart';
 
 class GroomingProvider with ChangeNotifier {
   final GroomingService _groomingService = GroomingService.instance;
 
-  // Selected Service Details
-  List<String> _selectedServices = [];
-  double _selectedPrice = 0.0;
+  // Selected Service Details per Pet
+  Map<String, String> _petPackages = {}; // petId -> packageName
   
   // Pet Details
   List<UserPetModel> _selectedPets = [];
@@ -26,12 +26,42 @@ class GroomingProvider with ChangeNotifier {
   String? _selectedTimeSlot;
 
   // Available slots logic
-  List<String> _bookedSlots = [];
+  List<Map<String, dynamic>> _bookedSlots = [];
   bool _isLoadingSlots = false;
 
   // Getters
-  List<String> get selectedServices => _selectedServices;
-  double get selectedPrice => _selectedPrice;
+  Map<String, String> get petPackages => _petPackages;
+
+  double get selectedPrice {
+    double total = 0.0;
+    for (var pet in _selectedPets) {
+      final packageName = _petPackages[pet.id];
+      if (packageName != null) {
+        final package = GroomingPackageModel.availablePackages.firstWhere(
+          (p) => p.name == packageName,
+          orElse: () => GroomingPackageModel.availablePackages.first,
+        );
+        total += package.calculatePrice(pet.weight);
+      }
+    }
+    return total;
+  }
+
+  int get estimatedDuration {
+    int totalMinutes = 0;
+    for (var pet in _selectedPets) {
+      final packageName = _petPackages[pet.id];
+      if (packageName != null) {
+        final package = GroomingPackageModel.availablePackages.firstWhere(
+          (p) => p.name == packageName,
+          orElse: () => GroomingPackageModel.availablePackages.first,
+        );
+        totalMinutes += package.calculateDuration(pet.weight);
+      }
+    }
+    return totalMinutes;
+  }
+
   List<UserPetModel> get selectedPets => _selectedPets;
   bool get isHomeService => _isHomeService;
   String get alamatLengkap => _alamatLengkap;
@@ -39,23 +69,56 @@ class GroomingProvider with ChangeNotifier {
   double? get longitude => _longitude;
   DateTime? get selectedDate => _selectedDate;
   String? get selectedTimeSlot => _selectedTimeSlot;
-  List<String> get bookedSlots => _bookedSlots;
+  List<Map<String, dynamic>> get bookedSlots => _bookedSlots;
   bool get isLoadingSlots => _isLoadingSlots;
 
-  // Setters
-  void toggleService(String service, double price) {
-    if (_selectedServices.contains(service)) {
-      _selectedServices.remove(service);
-      _selectedPrice -= price;
-    } else {
-      _selectedServices.add(service);
-      _selectedPrice += price;
+  double get shippingFee {
+    if (!_isHomeService || _alamatLengkap.isEmpty) return 0.0;
+
+    final address = _alamatLengkap.toLowerCase();
+    
+    // Check if within Kabupaten Malang
+    final bool isKabupaten = address.contains('kabupaten malang') || 
+                             address.contains('kab. malang') || 
+                             address.contains('kab malang');
+
+    if (isKabupaten) {
+      if (address.contains('pujon') || address.contains('ngantang') || address.contains('kasembon') || 
+          address.contains('dampit') || address.contains('turen') || address.contains('gondanglegi') || 
+          address.contains('bantur') || address.contains('sumbermanjing') || address.contains('donomulyo') ||
+          address.contains('gedangan') || address.contains('ampelgading') || address.contains('tirtoyudo')) {
+        return 20000.0;
+      } else if (address.contains('lawang') || address.contains('tumpang') || address.contains('bululawang') || 
+                 address.contains('tajinan') || address.contains('kepanjen') || address.contains('jabung') ||
+                 address.contains('poncokusumo') || address.contains('pagak') || address.contains('kalipare')) {
+        return 15000.0;
+      } else if (address.contains('dau') || address.contains('singosari') || address.contains('pakisaji') || 
+                 address.contains('karangploso') || address.contains('wagir') || address.contains('pakis')) {
+        return 12000.0;
+      } else {
+        final int hashVal = address.codeUnits.fold(0, (sum, char) => sum + char);
+        return 10000.0 + (hashVal % 11) * 1000.0;
+      }
     }
+    
+    return 0.0;
+  }
+
+  // Setters
+  void setPetPackage(String petId, String packageName) {
+    _petPackages[petId] = packageName;
+    notifyListeners();
+  }
+
+  void removePetPackage(String petId) {
+    _petPackages.remove(petId);
     notifyListeners();
   }
 
   void updatePetsInfo(List<UserPetModel> pets) {
     _selectedPets = pets;
+    // Clean up packages for pets that are no longer selected
+    _petPackages.removeWhere((petId, _) => !pets.any((p) => p.id == petId));
     notifyListeners();
   }
 
@@ -86,22 +149,36 @@ class GroomingProvider with ChangeNotifier {
 
   /// Finalize booking and save to Firestore
   Future<void> confirmBooking(String userId, String customerName, {String? buktiBayarUrl, required String metodePembayaran}) async {
-    if (_selectedServices.isEmpty || _selectedDate == null || _selectedTimeSlot == null || _selectedPets.isEmpty) {
+    if (_petPackages.isEmpty || _selectedDate == null || _selectedTimeSlot == null || _selectedPets.isEmpty) {
       throw Exception('Harap lengkapi data booking');
     }
 
+    final double feePerPet = shippingFee / _selectedPets.length;
+
     // Create a separate booking for each pet
     for (var pet in _selectedPets) {
+      final packageName = _petPackages[pet.id];
+      if (packageName == null) continue;
+
+      final package = GroomingPackageModel.availablePackages.firstWhere(
+        (p) => p.name == packageName,
+        orElse: () => GroomingPackageModel.availablePackages.first,
+      );
+      
+      final petServicesPrice = package.calculatePrice(pet.weight);
+      final petDuration = package.calculateDuration(pet.weight);
+
       final booking = GroomingBookingModel(
         bookingId: '', // Auto-generated by Firestore
         userId: userId,
         customerName: customerName,
         petName: pet.name,
         petType: pet.type,
-        serviceType: _selectedServices.join(', '),
+        serviceType: package.name,
         bookingDate: _selectedDate!,
         timeSlot: _selectedTimeSlot!,
-        totalPrice: _selectedPrice, // Price per pet
+        durationMinutes: petDuration,
+        totalPrice: petServicesPrice + feePerPet, // Price for THIS pet + distributed shipping fee
         isHomeService: _isHomeService,
         alamatLengkap: _isHomeService ? _alamatLengkap : null,
         latitude: _isHomeService ? _latitude : null,
@@ -118,8 +195,7 @@ class GroomingProvider with ChangeNotifier {
   }
 
   void reset() {
-    _selectedServices = [];
-    _selectedPrice = 0.0;
+    _petPackages = {};
     _selectedPets = [];
     _isHomeService = false;
     _alamatLengkap = '';

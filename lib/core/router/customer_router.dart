@@ -1,27 +1,36 @@
 import 'package:go_router/go_router.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/models/user_pet_model.dart';
+import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/ui/shared/auth/login/login_page.dart';
 import 'package:petshopapp/ui/shared/auth/register/register_page.dart';
 import 'package:petshopapp/ui/shared/auth/verify/email_verification_page.dart';
 import 'package:petshopapp/ui/customer/main/base_screen.dart';
 import 'package:petshopapp/ui/customer/adoption/adoption_catalog_screen.dart';
+import 'package:petshopapp/ui/customer/adoption/adoption_history_screen.dart';
 import 'package:petshopapp/ui/customer/profile/edit_profile_screen.dart';
 import 'package:petshopapp/ui/customer/profile/user_pets_screen.dart';
 import 'package:petshopapp/ui/customer/profile/add_edit_pet_screen.dart';
 import 'package:petshopapp/ui/customer/profile/points_screen.dart';
 import 'package:petshopapp/ui/customer/profile/profile_screen.dart';
+import 'package:petshopapp/ui/customer/shop/product_detail_screen.dart';
 import 'package:petshopapp/ui/customer/checkout/checkout_review_screen.dart';
 import 'package:petshopapp/ui/customer/shared/payment/payment_method_screen.dart';
 import 'package:petshopapp/ui/customer/shared/payment/payment_execution_screen.dart';
 import 'package:petshopapp/ui/customer/order/order_history_screen.dart';
+import 'package:petshopapp/ui/customer/order/order_tracking_screen.dart';
+import 'package:petshopapp/ui/customer/grooming/grooming_history_screen.dart';
+import 'package:petshopapp/ui/customer/grooming/grooming_tracking_screen.dart';
+import 'package:petshopapp/models/order_model.dart';
+import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_service_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_schedule_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_summary_screen.dart';
-import 'package:petshopapp/ui/customer/grooming/grooming_location_screen.dart';
 import 'package:petshopapp/ui/customer/chat/chat_screen.dart';
-
+import 'package:petshopapp/ui/customer/home/funfact_detail_screen.dart';
+import 'package:petshopapp/models/funfact_banner_model.dart';
+import 'package:petshopapp/ui/customer/profile/notification_list_screen.dart';
 
 /// Customer application route configuration using GoRouter.
 class CustomerRouter {
@@ -78,9 +87,19 @@ class CustomerRouter {
           builder: (context, state) => const AdoptionCatalogScreen(),
         ),
         GoRoute(
+          path: '/adoption-history',
+          name: 'adoption-history',
+          builder: (context, state) => const AdoptionHistoryScreen(),
+        ),
+        GoRoute(
           path: '/edit-profile',
           name: 'edit-profile',
           builder: (context, state) => const EditProfileScreen(),
+        ),
+        GoRoute(
+          path: '/notifications',
+          name: 'notifications',
+          builder: (context, state) => const NotificationListScreen(),
         ),
         GoRoute(
           path: '/points',
@@ -91,6 +110,14 @@ class CustomerRouter {
           path: '/order-history',
           name: 'order-history',
           builder: (context, state) => const OrderHistoryScreen(),
+        ),
+        GoRoute(
+          path: '/product-detail',
+          name: 'product-detail',
+          builder: (context, state) {
+            final product = state.extra as ProductModel;
+            return ProductDetailScreen(product: product);
+          },
         ),
         GoRoute(
           path: '/checkout-review',
@@ -162,11 +189,6 @@ class CustomerRouter {
           },
         ),
         GoRoute(
-          path: '/grooming-location',
-          name: 'grooming-location',
-          builder: (context, state) => const GroomingLocationScreen(),
-        ),
-        GoRoute(
           path: '/chat',
           name: 'chat',
           builder: (context, state) {
@@ -174,7 +196,37 @@ class CustomerRouter {
             return ChatScreen(
               receiverId: args?['receiverId'],
               receiverName: args?['receiverName'],
+              defaultTopic: args?['defaultTopic'],
             );
+          },
+        ),
+        GoRoute(
+          path: '/order-tracking',
+          name: 'order-tracking',
+          builder: (context, state) {
+            final order = state.extra as OrderModel;
+            return OrderTrackingScreen(order: order);
+          },
+        ),
+        GoRoute(
+          path: '/grooming-history',
+          name: 'grooming-history',
+          builder: (context, state) => const GroomingHistoryScreen(),
+        ),
+        GoRoute(
+          path: '/grooming-tracking',
+          name: 'grooming-tracking',
+          builder: (context, state) {
+            final booking = state.extra as GroomingBookingModel;
+            return GroomingTrackingScreen(booking: booking);
+          },
+        ),
+        GoRoute(
+          path: '/funfact-detail',
+          name: 'funfact-detail',
+          builder: (context, state) {
+            final funFact = state.extra as FunFactBannerModel;
+            return FunFactDetailScreen(funFact: funFact);
           },
         ),
       ],

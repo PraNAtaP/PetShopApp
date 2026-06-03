@@ -6,6 +6,9 @@ import 'package:petshopapp/services/adoption_service.dart';
 import 'package:petshopapp/ui/admin/adoption/admin_add_animal_screen.dart';
 import 'package:petshopapp/ui/admin/adoption/admin_edit_animal_screen.dart';
 
+import 'package:petshopapp/ui/admin/adoption/admin_adoption_orders_view.dart';
+import 'package:petshopapp/ui/admin/adoption/admin_adoption_history_view.dart';
+
 class AdminAdoptionManagementScreen extends StatefulWidget {
   const AdminAdoptionManagementScreen({super.key});
 
@@ -54,65 +57,80 @@ class _AdminAdoptionManagementScreenState extends State<AdminAdoptionManagementS
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: const Text('Kelola Hewan Adopsi', style: TextStyle(color: Colors.white)),
-        backgroundColor: AppColors.primary,
-        automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.white),
-            tooltip: 'Tambah Hewan',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AdminAddAnimalScreen()),
-              );
-            },
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: Colors.grey.shade50,
+        appBar: AppBar(
+          title: const Text('Kelola Adopsi', style: TextStyle(color: Colors.white)),
+          backgroundColor: AppColors.primary,
+          automaticallyImplyLeading: false,
+          bottom: const TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.white70,
+            indicatorColor: Colors.white,
+            tabs: [
+              Tab(text: 'Katalog Hewan'),
+              Tab(text: 'Pesanan Adopsi'),
+              Tab(text: 'Riwayat Adopsi'),
+            ],
           ),
-        ],
-      ),
-      body: StreamBuilder<List<AnimalModel>>(
-        stream: _adoptionService.getAnimals(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: AppColors.primary));
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
-          }
+        ),
+        body: TabBarView(
+          children: [
+            // Tab 1: Katalog Hewan
+            Scaffold(
+              backgroundColor: Colors.transparent,
+              body: StreamBuilder<List<AnimalModel>>(
+                stream: _adoptionService.getAnimals(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+                  }
+                  if (snapshot.hasError) {
+                    return Center(child: Text('Terjadi kesalahan: ${snapshot.error}'));
+                  }
 
-          final animals = snapshot.data ?? [];
+                  final animals = snapshot.data ?? [];
 
-          if (animals.isEmpty) {
-            return const Center(
-              child: Text(
-                'Belum ada hewan di katalog adopsi.',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
+                  if (animals.isEmpty) {
+                    return const Center(
+                      child: Text(
+                        'Belum ada hewan di katalog adopsi.',
+                        style: TextStyle(color: Colors.grey, fontSize: 16),
+                      ),
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: animals.length,
+                    itemBuilder: (context, index) {
+                      final animal = animals[index];
+                      return _buildAnimalTile(context, animal);
+                    },
+                  );
+                },
               ),
-            );
-          }
+              floatingActionButton: FloatingActionButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const AdminAddAnimalScreen()),
+                  );
+                },
+                backgroundColor: AppColors.primary,
+                child: const Icon(Icons.add, color: Colors.white),
+              ),
+            ),
+            
+            // Tab 2: Pesanan Adopsi
+            const AdminAdoptionOrdersView(),
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: animals.length,
-            itemBuilder: (context, index) {
-              final animal = animals[index];
-              return _buildAnimalTile(context, animal);
-            },
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const AdminAddAnimalScreen()),
-          );
-        },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: Colors.white),
+            // Tab 3: Riwayat Adopsi
+            const AdminAdoptionHistoryView(),
+          ],
+        ),
       ),
     );
   }

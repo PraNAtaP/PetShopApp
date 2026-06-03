@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/models/user_model.dart';
 import 'package:petshopapp/models/point_history_model.dart';
+import 'package:petshopapp/services/fcm_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:petshopapp/constants/point_constants.dart';
 
@@ -230,6 +231,31 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Mengubah password user. Membutuhkan password lama untuk re-autentikasi.
+  Future<String?> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null || user.email == null) return 'Pengguna tidak ditemukan.';
+
+    try {
+      // Re-autentikasi user
+      final AuthCredential credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+
+      await user.reauthenticateWithCredential(credential);
+      await user.updatePassword(newPassword);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      return _mapAuthError(e.code);
+    } catch (e) {
+      return 'Gagal mengubah password: $e';
+    }
+  }
+
   /// Menambah atau mengurangi poin user.
   /// [jumlahPoin] positif = tambah, negatif = kurang.
   Future<String?> tambahPoin({
@@ -331,6 +357,17 @@ class AuthService extends ChangeNotifier {
     final doc = await _firestore.collection('users').doc(uid).get();
     if (doc.exists) {
       _currentUser = UserModel.fromFirestore(doc);
+      
+      try {
+        final fcmToken = await FCMService.instance.getToken();
+        if (fcmToken != null && fcmToken != _currentUser!.fcmToken) {
+          await _firestore.collection('users').doc(uid).update({'fcm_token': fcmToken});
+          // Re-fetch to have the updated token in memory
+          final updatedDoc = await _firestore.collection('users').doc(uid).get();
+          _currentUser = UserModel.fromFirestore(updatedDoc);
+        }
+      } catch (_) {}
+
       notifyListeners();
     }
   }

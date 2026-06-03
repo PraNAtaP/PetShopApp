@@ -2,17 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:petshopapp/models/chat_message_model.dart';
+import 'package:petshopapp/core/theme/app_colors.dart';
 import 'chat_controller.dart';
 import 'chat_bubble.dart';
+import 'package:flutter/services.dart';
 
 class ChatScreen extends StatefulWidget {
   final String? receiverId;
   final String? receiverName;
+  final String? defaultTopic;
 
   const ChatScreen({
     super.key, 
     this.receiverId, 
     this.receiverName,
+    this.defaultTopic,
   });
 
   @override
@@ -20,7 +24,9 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final TextEditingController _controller = TextEditingController();
+ late TextEditingController _controller;
+ final ScrollController _scrollController = ScrollController();
+ final FocusNode _keyboardFocusNode = FocusNode();
 
   final List<Map<String, dynamic>> quickReplies = [
     {"text": "Hai saya ingin booking grooming", "icon": Icons.bathtub_outlined},
@@ -29,9 +35,46 @@ class _ChatScreenState extends State<ChatScreen> {
   ];
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.defaultTopic ?? '',
+    );
+  }
+  void _scrollToBottom() {
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+    }
+  });
+}
+
+  @override
+void dispose() {
+  _controller.dispose();
+  _scrollController.dispose();
+  _keyboardFocusNode.dispose();
+  super.dispose();
+}
+
+  /// Fungsi bantuan untuk mengubah DateTime menjadi teks "Hari ini", "Kemarin", atau Tanggal
+  String _getDateLabel(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = DateTime(now.year, now.month, now.day - 1);
+    final messageDate = DateTime(date.year, date.month, date.day);
+
+    if (messageDate == today) {
+      return "Hari ini";
+    } else if (messageDate == yesterday) {
+      return "Kemarin";
+    } else {
+      return DateFormat('d MMMM yyyy', 'id_ID').format(date); 
+    }
   }
 
   @override
@@ -45,29 +88,39 @@ class _ChatScreenState extends State<ChatScreen> {
         builder: (context, chat, child) {
           // Messages are newest-first from Firestore, reverse for display
           final displayMessages = chat.messages.reversed.toList();
-
+          if (displayMessages.isNotEmpty) {
+            Future.microtask(_scrollToBottom);
+          }
           return Scaffold(
-            backgroundColor: const Color(0xFFF5F7FB),
+            backgroundColor: AppColors.background,
             appBar: AppBar(
               leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
                 onPressed: () {
-                  Navigator.pop(context);
+                  
+                  // Mengatasi blank page karena persistent tab bar, arahkan balik ke Main/Home View Anda
+                  // Ganti atau sesuaikan '/main' atau '0' sesuai dengan pengaturan state menu home Anda.
+                  Navigator.of(context).popUntil((route) => route.isFirst);
                 },
               ),
               title: Row(
                 children: [
                   const CircleAvatar(
                     radius: 18,
-                    backgroundColor: Color(0xFFC5E1A5),
+                    backgroundColor: AppColors.secondary,
                     child: Icon(Icons.pets, color: Colors.black54, size: 20),
                   ),
                   const SizedBox(width: 10),
-                  Text(chat.receiverName, 
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                ],
+                  Text(
+                    chat.receiverName ?? 'Admin',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+               ],
               ),
-              backgroundColor: const Color(0xFF0D47A1),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               elevation: 0,
             ),
@@ -92,69 +145,103 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                         )
                       : ListView.builder(
+                          controller: _scrollController,
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           itemCount: displayMessages.length,
                           itemBuilder: (context, index) {
                             final msg = displayMessages[index];
                             final isMe = msg.senderId == chat.currentUid;
-                            return ChatBubble(message: msg, isMe: isMe);
+
+                            // LOGIKA PEMISAH TANGGAL
+                            bool showDateDivider = false;
+                            if (msg.timestamp != null) {
+                              if (index == 0) {
+                                // Pesan pertama selalu memunculkan tanggal
+                                showDateDivider = true;
+                              } else {
+                                // Cek pesan sebelumnya, jika tanggal berbeda maka munculkan pembatas baru
+                                final prevMsg = displayMessages[index - 1];
+                                if (prevMsg.timestamp != null) {
+                                  final currentLineDate = DateTime(msg.timestamp!.year, msg.timestamp!.month, msg.timestamp!.day);
+                                  final prevLineDate = DateTime(prevMsg.timestamp!.year, prevMsg.timestamp!.month, prevMsg.timestamp!.day);
+                                  if (currentLineDate != prevLineDate) {
+                                    showDateDivider = true;
+                                  }
+                                }
+                              }
+                            }
+
+                            return Column(
+                              children: [
+                                if (showDateDivider && msg.timestamp != null)
+                                  Container(
+                                    margin: const EdgeInsets.symmetric(vertical: 14),
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.05),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      _getDateLabel(msg.timestamp!),
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.grey.shade600,
+                                      ),
+                                    ),
+                                  ),
+                                ChatBubble(message: msg, isMe: isMe),
+                              ],
+                            );
                           },
                         ),
                 ),
 
-                // 2. QUICK REPLIES (Only show for customer/new chat)
-                if (displayMessages.length < 3 && widget.receiverId == null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    child: Column(
-                      children: [
-                        const Text("✨ Pilih topik cepat atau ketik sendiri ya!", 
-                          style: TextStyle(color: Colors.blue, fontSize: 12)),
-                        const SizedBox(height: 8),
-                        ...quickReplies.map((reply) => _buildQuickReply(reply, chat)),
-                      ],
-                    ),
-                  ),
-
-                // 3. INPUT AREA
+                // 2. INPUT AREA & HORIZONTAL QUICK REPLIES
                 if (chat.isUploading)
                   const LinearProgressIndicator(minHeight: 2),
+
+                // Menampilkan topik cepat bergeser ke samping (Horizontal) menggantikan posisi lama
+                if (widget.receiverId == null)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    color: Colors.white,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: quickReplies.map((reply) {
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: ActionChip(
+                              avatar: Icon(reply['icon'], size: 16, color: Colors.black54),
+                              label: Text(reply['text']),
+                              onPressed: () {
+                                _controller.text = reply['text'];
+                              },
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ),
                 _buildInputArea(chat),
               ],
             ),
           );
         },
       ),
-    );
-  }
-
-  Widget _buildQuickReply(Map<String, dynamic> reply, ChatController chat) {
-    return GestureDetector(
-      onTap: () => chat.sendMessage(reply['text']),
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.green.shade300),
-          borderRadius: BorderRadius.circular(25),
-          color: Colors.white,
-        ),
-        child: Row(
-          children: [
-            Icon(reply['icon'], size: 20, color: Colors.grey),
-            const SizedBox(width: 10),
-            Expanded(child: Text(reply['text'], style: const TextStyle(fontSize: 13))),
-          ],
-        ),
-      ),
-    );
+    );  
   }
 
   Widget _buildInputArea(ChatController chat) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: const BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardBackground,
         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, -2))],
       ),
       child: SafeArea(
@@ -171,17 +258,46 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: TextField(
-                controller: _controller,
-                decoration: InputDecoration(
-                  hintText: "Ketik pesan di sini...",
-                  filled: true,
-                  fillColor: Colors.grey[200],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
-                    borderSide: BorderSide.none,
+              child: KeyboardListener(
+                focusNode: _keyboardFocusNode,
+                onKeyEvent: (event) {
+                  final shiftPressed =
+                      HardwareKeyboard.instance.logicalKeysPressed.contains(
+                        LogicalKeyboardKey.shiftLeft,
+                      ) ||
+                      HardwareKeyboard.instance.logicalKeysPressed.contains(
+                        LogicalKeyboardKey.shiftRight,
+                      );
+
+                  if (event is KeyDownEvent &&
+                      event.logicalKey == LogicalKeyboardKey.enter &&
+                      !shiftPressed) {
+                    if (_controller.text.trim().isNotEmpty) {
+                      chat.sendMessage(_controller.text);
+                      _controller.clear();
+                      _scrollToBottom();
+                    }
+                  }
+                },
+                child: TextField(
+                  controller: _controller,
+                  keyboardType: TextInputType.multiline,
+                  minLines: 1,
+                  maxLines: 5,
+                  textInputAction: TextInputAction.newline,
+                  decoration: InputDecoration(
+                    hintText: "Ketik pesan di sini...",
+                    filled: true,
+                    fillColor: Colors.grey[200],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(25),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 12,
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20),
                 ),
               ),
             ),
@@ -193,7 +309,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   _controller.clear();
                 }
               },
-              icon: const Icon(Icons.send, color: Color(0xFF0D47A1)),
+              icon: const Icon(Icons.send, color: AppColors.primary),
             )
           ],
         ),

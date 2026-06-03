@@ -33,7 +33,7 @@ class _EmailVerificationPageState extends State<EmailVerificationPage> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Text('Sabar King, email kamu belum terverifikasi.'),
+          content: const Text('Email kamu belum terverifikasi.'),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(

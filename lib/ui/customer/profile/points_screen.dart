@@ -39,7 +39,7 @@ class PointsScreen extends StatelessWidget {
               margin: const EdgeInsets.all(20),
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: const Color(0xFFD4EED7),
+                color: AppColors.accent.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(24),
               ),
               child: Column(
@@ -47,12 +47,12 @@ class PointsScreen extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Icon(Icons.stars, color: Colors.green, size: 20),
+                      const Icon(Icons.stars, color: AppColors.accent, size: 20),
                       const SizedBox(width: 8),
                       Text(
                         'TOTAL POIN',
                         style: TextStyle(
-                          color: Colors.green.shade800,
+                          color: AppColors.textDark,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                           letterSpacing: 1.2,
@@ -201,7 +201,7 @@ class PointsScreen extends StatelessWidget {
                       padding: EdgeInsets.all(32),
                       child: Column(
                         children: [
-                          Icon(Icons.history, size: 48, color: Color(0xFFE0E0E0)),
+                          Icon(Icons.history, size: 48, color: AppColors.textLight),
                           SizedBox(height: 12),
                           Text(
                             'Belum ada riwayat poin',
@@ -234,11 +234,11 @@ class PointsScreen extends StatelessWidget {
                       icon: isPlus
                           ? Icons.add_circle_outline
                           : Icons.remove_circle_outline,
-                      iconColor: isPlus ? Colors.green : AppColors.error,
+                      iconColor: isPlus ? AppColors.secondary : AppColors.error,
                       title: keterangan,
                       subtitle: tanggal,
                       points: '${isPlus ? '+' : ''}$poin poin',
-                      pointsColor: isPlus ? Colors.green : AppColors.error,
+                      pointsColor: isPlus ? AppColors.secondary : AppColors.error,
                     );
                   },
                 );

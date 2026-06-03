@@ -2,21 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
+import 'package:petshopapp/ui/customer/profile/edit_profile_screen.dart';
+import 'package:petshopapp/ui/shared/auth/change_password_screen.dart';
 
 class AdminProfileScreen extends StatelessWidget {
   const AdminProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final authService = context.watch<AuthService>();
+    final user = authService.currentUser;
+
     return Scaffold(
       backgroundColor: AppColors.cardBackground,
       appBar: AppBar(
-        title: const Text('Anabul Care'),
+        title: const Text('Profil Admin'),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.textDark,
+        elevation: 0,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () {},
+          TextButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+              );
+            },
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            label: const Text('Edit'),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SingleChildScrollView(
@@ -34,38 +50,44 @@ class AdminProfileScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const CircleAvatar(
-                    radius: 40,
+                  CircleAvatar(
+                    radius: 50,
                     backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 40, color: Colors.grey),
+                    backgroundImage: (user?.fotoUrl != null && user!.fotoUrl!.isNotEmpty)
+                        ? NetworkImage(user.fotoUrl!)
+                        : null,
+                    child: (user?.fotoUrl == null || user!.fotoUrl!.isEmpty)
+                        ? const Icon(Icons.person, size: 50, color: Colors.grey)
+                        : null,
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Sarah Johnson',
-                    style: TextStyle(
+                  Text(
+                    user?.nama ?? 'Admin Pet Point',
+                    style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
                       color: AppColors.accent,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: const [
-                        Icon(Icons.shield, size: 14, color: AppColors.textDark),
-                        SizedBox(width: 4),
+                        Icon(Icons.verified_user, size: 14, color: AppColors.textDark),
+                        SizedBox(width: 6),
                         Text(
-                          'ADMIN',
+                          'ADMINISTRATOR',
                           style: TextStyle(
-                            fontSize: 12,
+                            fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: AppColors.textDark,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ],
@@ -75,9 +97,19 @@ class AdminProfileScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
 
             // Info Card
+            const Text(
+              'INFORMASI AKUN',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textLight,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -93,51 +125,28 @@ class AdminProfileScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.email_outlined, color: AppColors.primary, size: 20),
-                      ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('Email', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
-                          SizedBox(height: 2),
-                          Text('sarah.j@anabulcare.com', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        ],
-                      ),
-                    ],
+                  _buildInfoRow(
+                    icon: Icons.email_outlined,
+                    label: 'Email',
+                    value: user?.email ?? '-',
                   ),
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     child: Divider(height: 1),
                   ),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.blue.shade50,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.phone_outlined, color: AppColors.primary, size: 20),
-                      ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('No. Telepon', style: TextStyle(color: AppColors.textLight, fontSize: 12)),
-                          SizedBox(height: 2),
-                          Text('+62 812 3456 7890', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                        ],
-                      ),
-                    ],
+                  _buildInfoRow(
+                    icon: Icons.phone_outlined,
+                    label: 'WhatsApp / No. Telepon',
+                    value: user?.nomorWa ?? 'Belum diatur',
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Divider(height: 1),
+                  ),
+                  _buildInfoRow(
+                    icon: Icons.location_on_outlined,
+                    label: 'Alamat Cabang',
+                    value: user?.alamat ?? 'Pusat (Anabul Care)',
                   ),
                 ],
               ),
@@ -147,7 +156,7 @@ class AdminProfileScreen extends StatelessWidget {
 
             // Manajemen Section
             const Text(
-              'MANAJEMEN',
+              'PENGATURAN & KEAMANAN',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -170,49 +179,22 @@ class AdminProfileScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildActionTile(icon: Icons.inventory_2_outlined, title: 'Kelola Produk'),
-                  const Divider(height: 1, indent: 56),
-                  _buildActionTile(icon: Icons.calendar_month_outlined, title: 'Kelola Booking'),
-                  const Divider(height: 1, indent: 56),
-                  _buildActionTile(icon: Icons.pets_outlined, title: 'Kelola Adopsi'),
-                  const Divider(height: 1, indent: 56),
-                  _buildActionTile(icon: Icons.bar_chart_outlined, title: 'Laporan & Statistik'),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Pengaturan Section
-            const Text(
-              'PENGATURAN',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textLight,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
+                  _buildActionTile(
+                    icon: Icons.lock_reset_outlined, 
+                    title: 'Ubah Kata Sandi',
+                    subtitle: 'Ganti password akun admin Anda',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
+                      );
+                    },
                   ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  _buildActionTile(icon: Icons.lock_reset_outlined, title: 'Ubah Password'),
                   const Divider(height: 1, indent: 56),
                   ListTile(
                     leading: const Icon(Icons.notifications_none_outlined, color: AppColors.textDark),
-                    title: const Text('Notifikasi', style: TextStyle(fontWeight: FontWeight.w500)),
+                    title: const Text('Notifikasi Aplikasi', style: TextStyle(fontWeight: FontWeight.w500)),
+                    subtitle: const Text('Terima update booking & stok', style: TextStyle(fontSize: 11)),
                     trailing: Switch(
                       value: true,
                       onChanged: (val) {},
@@ -226,38 +208,69 @@ class AdminProfileScreen extends StatelessWidget {
             const SizedBox(height: 32),
 
             // Logout Button
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.error.withValues(alpha: 0.1),
-                foregroundColor: AppColors.error,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error.withValues(alpha: 0.1),
+                  foregroundColor: AppColors.error,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                 ),
+                icon: const Icon(Icons.logout, size: 20),
+                label: const Text(
+                  'Keluar dari Dashboard',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                onPressed: () async {
+                  final authService = context.read<AuthService>();
+                  await authService.logout();
+                },
               ),
-              icon: const Icon(Icons.logout, size: 20),
-              label: const Text('Keluar / Logout'),
-              onPressed: () async {
-                final authService = context.read<AuthService>();
-                await authService.logout();
-              },
             ),
-            const SizedBox(height: 32), // bottom padding
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildActionTile({required IconData icon, required String title}) {
+  Widget _buildInfoRow({required IconData icon, required String label, required String value}) {
+    return Row(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: AppColors.primary, size: 20),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: const TextStyle(color: AppColors.textLight, fontSize: 11)),
+              const SizedBox(height: 2),
+              Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textDark)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionTile({required IconData icon, required String title, String? subtitle, VoidCallback? onTap}) {
     return ListTile(
       leading: Icon(icon, color: AppColors.textDark),
-      title: Text(
-        title,
-        style: const TextStyle(fontWeight: FontWeight.w500),
-      ),
-      trailing: const Icon(Icons.chevron_right, color: Colors.grey),
-      onTap: () {},
+      title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
+      subtitle: subtitle != null ? Text(subtitle, style: const TextStyle(fontSize: 11)) : null,
+      trailing: const Icon(Icons.chevron_right, color: Colors.grey, size: 18),
+      onTap: onTap,
     );
   }
 }
