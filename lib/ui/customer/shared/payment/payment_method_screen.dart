@@ -81,182 +81,190 @@ class _UniversalPaymentMethodScreenState extends State<UniversalPaymentMethodScr
             ),
           ),
 
-          const SizedBox(height: 24),
-
-          // Total Harga Card
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8, offset: const Offset(0, 2))],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Konten scrollable
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.only(top: 24, bottom: 16),
+              child: Column(
                 children: [
-                  Row(children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
+                  // Total Harga Card
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 8, offset: const Offset(0, 2))],
                       ),
-                      child: const Icon(Icons.monetization_on_outlined,
-                          color: AppColors.primary),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(Icons.monetization_on_outlined,
+                                  color: AppColors.primary),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text('Total Harga',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                          ]),
+                          Text(
+                            currencyFormatter.format(_totalHarga),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: AppColors.primary),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(width: 12),
-                    const Text('Total Harga',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                  ]),
-                  Text(
-                    currencyFormatter.format(_totalHarga),
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
-                        color: AppColors.primary),
                   ),
+
+                  const SizedBox(height: 12),
+
+                  // Card Gunakan Poin
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: _usePoints ? AppColors.primary : Colors.grey.shade200,
+                          width: _usePoints ? 2 : 1,
+                        ),
+                        boxShadow: [BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 8, offset: const Offset(0, 2))],
+                      ),
+                      child: SwitchListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        title: Row(children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.stars_rounded, color: Colors.amber, size: 18),
+                          ),
+                          const SizedBox(width: 10),
+                          const Text('Gunakan Poin',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                        ]),
+                        subtitle: Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: PointConstants.canRedeem(_currentPoints)
+                              ? RichText(
+                                  text: TextSpan(
+                                    style: const TextStyle(fontSize: 12),
+                                    children: [
+                                      TextSpan(
+                                        text: 'Pakai ${PointConstants.hitungPoinTerpakai(_currentPoints).toStringAsFixed(0)} poin ',
+                                        style: const TextStyle(color: Colors.grey),
+                                      ),
+                                      TextSpan(
+                                        text: '→ hemat ${currencyFormatter.format(PointConstants.hitungDiskon(_currentPoints))}',
+                                        style: const TextStyle(
+                                            color: Colors.green, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              : Text(
+                                  'Poin belum cukup (${_currentPoints.toStringAsFixed(0)} / ${PointConstants.minPoinRedeem.toInt()} poin)',
+                                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                                ),
+                        ),
+                        value: _usePoints,
+                        onChanged: PointConstants.canRedeem(_currentPoints)
+                            ? (val) => setState(() => _usePoints = val)
+                            : null,
+                        activeColor: AppColors.primary,
+                      ),
+                    ),
+                  ),
+
+                  // Baris diskon (muncul jika pakai poin)
+                  if (_usePoints && _discount > 0) ...[
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text('Total setelah diskon',
+                                style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+                            Text(
+                              currencyFormatter.format(_totalAfterDiscount),
+                              style: const TextStyle(
+                                  color: Colors.green,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 24),
+
+                  // Payment options
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        _buildPaymentOption(
+                          method: 'QRIS',
+                          title: 'QRIS',
+                          subtitle: 'Bayar via QR Code & Upload Bukti Pembayaran.',
+                          icon: Icons.qr_code_2,
+                          color: const Color(0xFF1A73E8),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildPaymentOption(
+                          method: 'Transfer',
+                          title: 'Transfer Bank',
+                          subtitle: 'Transfer ke rekening & Upload Bukti Pembayaran.',
+                          icon: Icons.account_balance,
+                          color: const Color(0xFF34A853),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildPaymentOption(
+                          method: 'COD',
+                          title: 'Bayar di Tempat',
+                          subtitle: 'Bayar tunai di lokasi. Tanpa upload bukti.',
+                          icon: Icons.payments_outlined,
+                          color: const Color(0xFFFBBC05),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
                 ],
               ),
             ),
-          ),
+          ), // ← tutup Expanded
 
-          const SizedBox(height: 12),
-
-          // Card Gunakan Poin
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _usePoints ? AppColors.primary : Colors.grey.shade200,
-                  width: _usePoints ? 2 : 1,
-                ),
-                boxShadow: [BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8, offset: const Offset(0, 2))],
-              ),
-              child: SwitchListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                title: Row(children: [
-                  Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Icon(Icons.stars_rounded, color: Colors.amber, size: 18),
-                  ),
-                  const SizedBox(width: 10),
-                  const Text('Gunakan Poin',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                ]),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: PointConstants.canRedeem(_currentPoints) 
-                      ? RichText(
-                          text: TextSpan(
-                            style: const TextStyle(fontSize: 12),
-                            children: [
-                              TextSpan(
-                                text: 'Pakai ${PointConstants.hitungPoinTerpakai(_currentPoints).toStringAsFixed(0)} poin ',
-                                style: const TextStyle(color: Colors.grey),
-                              ),
-                              TextSpan(
-                                text: '→ hemat ${currencyFormatter.format(PointConstants.hitungDiskon(_currentPoints))}',
-                                style: const TextStyle(
-                                    color: Colors.green, fontWeight: FontWeight.bold),
-                              ),
-                            ],
-                          ),
-                        )
-                      : Text(
-                          'Poin belum cukup (${_currentPoints.toStringAsFixed(0)} / ${PointConstants.minPoinRedeem.toInt()} poin)',
-                          style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                        ),
-                ),
-                value: _usePoints,
-                onChanged: PointConstants.canRedeem(_currentPoints)
-                    ? (val) => setState(() => _usePoints = val)
-                    : null,
-                activeColor: AppColors.primary,
-              ),
-            ),
-          ),
-
-          // Baris diskon (muncul jika pakai poin)
-          if (_usePoints && _discount > 0) ...[
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.green.shade200),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Total setelah diskon',
-                        style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
-                    Text(
-                      currencyFormatter.format(_totalAfterDiscount),
-                      style: const TextStyle(
-                          color: Colors.green,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 24),
-
-          // Payment options
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                _buildPaymentOption(
-                  method: 'QRIS',
-                  title: 'QRIS',
-                  subtitle: 'Bayar via QR Code & Upload Bukti Pembayaran.',
-                  icon: Icons.qr_code_2,
-                  color: const Color(0xFF1A73E8),
-                ),
-                const SizedBox(height: 16),
-                _buildPaymentOption(
-                  method: 'Transfer',
-                  title: 'Transfer Bank',
-                  subtitle: 'Transfer ke rekening & Upload Bukti Pembayaran.',
-                  icon: Icons.account_balance,
-                  color: const Color(0xFF34A853),
-                ),
-                const SizedBox(height: 16),
-                _buildPaymentOption(
-                  method: 'COD',
-                  title: 'Bayar di Tempat',
-                  subtitle: 'Bayar tunai di lokasi. Tanpa upload bukti.',
-                  icon: Icons.payments_outlined,
-                  color: const Color(0xFFFBBC05),
-                ),
-              ],
-            ),
-          ),
-
-          const Spacer(),
-
-          // Continue button
+          // Tombol sticky di bawah
           Padding(
             padding: const EdgeInsets.all(24),
             child: SafeArea(
@@ -267,11 +275,9 @@ class _UniversalPaymentMethodScreenState extends State<UniversalPaymentMethodScr
                   onPressed: _selectedMethod == null
                       ? null
                       : () {
-                          // Logic to decide which route to push
-                          final routeName = widget.category == 'shop' 
-                              ? 'payment-execution' 
+                          final routeName = widget.category == 'shop'
+                              ? 'payment-execution'
                               : 'grooming-payment-execution';
-                          
                           context.pushNamed(
                             routeName,
                             extra: {

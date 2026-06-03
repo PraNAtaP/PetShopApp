@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:petshopapp/providers/cart_provider.dart';
 
 /// Allows the customer to select between QRIS and Transfer Bank payment.
 /// Second step in the checkout flow.
@@ -16,6 +19,13 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currencyFormatter = NumberFormat.currency(
+      locale: 'id_ID',
+      symbol: 'Rp ',
+      decimalDigits: 0,
+    );
+    final cart = context.watch<CartProvider>();
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
@@ -27,60 +37,180 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Column(
-        children: [
-          // Header
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(24),
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
+      // ✅ SafeArea membungkus seluruh body
+      body: SafeArea(
+        child: Column(
+          children: [
+            // ── Header ──────────────────────────────────────────────────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: AppColors.primary,
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(24)),
+              ),
+              child: const Column(
+                children: [
+                  Icon(Icons.account_balance_wallet,
+                      color: Colors.white, size: 40),
+                  SizedBox(height: 8),
+                  Text(
+                    'Pilih cara pembayaran Anda',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                  ),
+                ],
+              ),
             ),
-            child: const Column(
-              children: [
-                Icon(Icons.account_balance_wallet, color: Colors.white, size: 40),
-                SizedBox(height: 8),
-                Text(
-                  'Pilih cara pembayaran Anda',
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
+
+            // ── Konten scrollable ────────────────────────────────────────────
+            // ✅ Expanded hanya membungkus SingleChildScrollView
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(top: 16, bottom: 16),
+                child: Column(
+                  children: [
+                    // Rincian Pembayaran Card
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey.shade200),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Center(
+                              child: Text(
+                                'Rincian Pembayaran',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textDark,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Subtotal Pesanan',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.textLight,
+                                  ),
+                                ),
+                                Text(
+                                  currencyFormatter.format(cart.subtotal),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textDark,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Biaya Pengiriman',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.textLight,
+                                  ),
+                                ),
+                                Text(
+                                  cart.shippingFee == 0.0
+                                      ? 'Gratis'
+                                      : currencyFormatter
+                                          .format(cart.shippingFee),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: cart.shippingFee == 0.0
+                                        ? Colors.green
+                                        : AppColors.textDark,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const Divider(height: 24, thickness: 1),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text(
+                                  'Total Pembayaran',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.textDark,
+                                  ),
+                                ),
+                                Text(
+                                  currencyFormatter.format(cart.totalPrice),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    // Payment options
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        children: [
+                          _buildPaymentOption(
+                            method: 'QRIS',
+                            title: 'QRIS (Otomatis)',
+                            subtitle:
+                                'Bayar langsung via QR Code. Verifikasi otomatis.',
+                            icon: Icons.qr_code_2,
+                            color: const Color(0xFF1A73E8),
+                          ),
+                          const SizedBox(height: 16),
+                          _buildPaymentOption(
+                            method: 'Transfer',
+                            title: 'Transfer Bank (Manual)',
+                            subtitle:
+                                'Transfer ke rekening bank. Upload bukti transfer.',
+                            icon: Icons.account_balance,
+                            color: const Color(0xFF34A853),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
 
-          const SizedBox(height: 24),
-
-          // Payment options
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Column(
-              children: [
-                _buildPaymentOption(
-                  method: 'QRIS',
-                  title: 'QRIS (Otomatis)',
-                  subtitle: 'Bayar langsung via QR Code. Verifikasi otomatis.',
-                  icon: Icons.qr_code_2,
-                  color: const Color(0xFF1A73E8),
-                ),
-                const SizedBox(height: 16),
-                _buildPaymentOption(
-                  method: 'Transfer',
-                  title: 'Transfer Bank (Manual)',
-                  subtitle: 'Transfer ke rekening bank. Upload bukti transfer.',
-                  icon: Icons.account_balance,
-                  color: const Color(0xFF34A853),
-                ),
-              ],
-            ),
-          ),
-
-          const Spacer(),
-
-          // Continue button
-          Padding(
-            padding: const EdgeInsets.all(24),
-            child: SafeArea(
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
               child: SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -104,13 +234,14 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                   ),
                   child: const Text(
                     'Lanjutkan',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    style:
+                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -173,7 +304,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: isSelected ? AppColors.primary : AppColors.textDark,
+                      color:
+                          isSelected ? AppColors.primary : AppColors.textDark,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -195,7 +327,8 @@ class _PaymentMethodScreenState extends State<PaymentMethodScreen> {
                 shape: BoxShape.circle,
                 color: isSelected ? AppColors.primary : Colors.transparent,
                 border: Border.all(
-                  color: isSelected ? AppColors.primary : Colors.grey.shade300,
+                  color:
+                      isSelected ? AppColors.primary : Colors.grey.shade300,
                   width: 2,
                 ),
               ),
