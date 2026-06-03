@@ -11,6 +11,7 @@ import 'package:petshopapp/providers/grooming_provider.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/services/firestore_service.dart';
 import 'package:petshopapp/services/imgbb_service.dart';
+import 'package:petshopapp/constants/point_constants.dart';
 
 class UniversalPaymentExecutionScreen extends StatefulWidget {
   final String paymentMethod; // 'QRIS', 'Transfer', 'COD'
@@ -444,6 +445,18 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
     }
 
     await cart.clearCart();
+    // Kurangi poin jika digunakan
+    if (widget.usePoints && widget.discount > 0) {
+      final double poinTerpakai = PointConstants.hitungPoinTerpakai(
+        auth.currentUser?.poin ?? 0,
+      );
+      if (poinTerpakai > 0) {
+        await auth.kurangiPoin(
+          jumlahPoin: poinTerpakai,
+          keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
+        );
+      }
+    }
   }
 
   Future<void> _handleGroomingFinalization(String? imageUrl) async {
@@ -466,6 +479,18 @@ class _UniversalPaymentExecutionScreenState extends State<UniversalPaymentExecut
           jumlahPoin: poinDidapat,
           keterangan: 'Booking grooming — ${provider.selectedPets.length} hewan',
         );
+      }
+    }
+    // Kurangi poin jika digunakan
+    if (widget.usePoints && widget.discount > 0) {
+      final double poinTerpakai = PointConstants.hitungPoinTerpakai(
+        auth.currentUser?.poin ?? 0,
+      );
+      if (poinTerpakai > 0) {
+        await auth.kurangiPoin(
+      jumlahPoin: poinTerpakai,
+      keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
+      );
       }
     }
   }
