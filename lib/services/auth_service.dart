@@ -271,6 +271,43 @@ class AuthService extends ChangeNotifier {
       return 'Gagal memperbarui poin: $e';
     }
   }
+  Future<String?> kurangiPoin({
+    required double jumlahPoin,
+    required String keterangan,
+  }) async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return 'Pengguna tidak ditemukan.';
+
+    try {
+      final userRef = _firestore.collection('users').doc(uid);
+      final historyRef = _firestore.collection('point_history');
+
+      await _firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(userRef);
+        if (!snapshot.exists) throw Exception('User tidak ditemukan');
+
+        final double currentPoin = (snapshot.data()?['poin'] ?? 0).toDouble();
+        final double newPoin = (currentPoin - jumlahPoin).clamp(0.0, 999999.0);
+
+        transaction.update(userRef, {'poin': newPoin});
+
+        final history = PointHistoryModel(
+          id: '',
+          uid: uid,
+          poin: -jumlahPoin,
+          type: PointType.redeem,
+          keterangan: keterangan,
+        );
+
+        transaction.set(historyRef.doc(), history.toFirestore());
+      });
+
+      await refreshProfile();
+      return null;
+    } catch (e) {
+      return 'Gagal mengurangi poin: $e';
+    }
+  }
 
   double hitungPoinDariTransaksi(double totalHarga) {
     return PointConstants.hitungPoin(totalHarga);
