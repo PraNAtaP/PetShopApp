@@ -88,18 +88,44 @@ class ChatController extends ChangeNotifier {
   }
 
   /// Sends a text message.
-  void sendMessage(String text) {
+  void sendMessage(String text) async {
     if (text.trim().isEmpty || _chatId == null || _currentUid == null || _receiverId == null) return;
 
-    _chatService.sendMessage(
+    // Deteksi awal sebelum pesan pertama dimasukkan ke Firestore
+    final bool isFirstMessage = messages.isEmpty;
+    final bool isCustomer = _currentUserRole != 'admin';
+
+    // Kirim pesan asli milik Customer/Admin ke Firestore
+    await _chatService.sendMessage(
       chatId: _chatId!,
       senderId: _currentUid!,
       receiverId: _receiverId!,
       text: text.trim(),
       receiverName: _receiverName,
-      // Only send customerName if the sender is a Customer
-      customerName: _currentUserRole == 'admin' ? null : _currentUserName,
+      // Hanya kirim customerName jika pengirimnya adalah Customer asli
+      customerName: isCustomer ? _currentUserName : null,
     );
+
+    // Kirim balasan otomatis jika ini merupakan chat pembuka baru dari sisi Customer
+    if (isFirstMessage && isCustomer) {
+      // Memberikan jeda 1.5 detik agar seolah-olah admin asli sedang mengetik pesan balasan
+      await Future.delayed(const Duration(milliseconds: 1500));
+
+      const String autoReplyText = 
+          "Halo! Terima kasih telah menghubungi Pet Point Admin. 🐾\n\n"
+          "Pesan Anda telah kami terima. Admin kami akan segera membalas pesan Anda dalam beberapa saat. "
+          "Silakan tuliskan detail keperluan Anda terlebih dahulu ya!";
+
+      await _chatService.sendMessage(
+        chatId: _chatId!,
+        senderId: ChatService.adminUid,       // Dikirim menggunakan UID Admin utama
+        receiverId: _currentUid!,             // Ditujukan ke UID Customer yang sedang aktif
+        text: autoReplyText,
+        receiverName: _currentUserName,       // Penerima di mata admin adalah nama customer itu sendiri
+        customerName: _currentUserName,
+        isAutoReply: true,                    // Menandakan status auto-reply aktif
+      );
+    }
   }
 
   /// Picks and sends an image.
