@@ -72,7 +72,6 @@ class ChatService {
     String? imageUrl,
     String? receiverName,
     String? customerName,
-    bool isAutoReply = false, // Tambahan parameter opsional untuk fitur auto-reply
   }) async {
     try {
       final chatRef = _firestore.collection('chats').doc(chatId);
@@ -99,8 +98,7 @@ class ChatService {
         if (receiverDoc.exists) {
           final receiverToken = receiverDoc.data()?['fcm_token'] as String?;
           if (receiverToken != null && receiverToken.isNotEmpty) {
-            // Sesuaikan nama pengirim notifikasi jika merupakan pesan balasan otomatis
-            String senderName = isAutoReply ? adminName : (senderId == adminUid ? adminName : (customerName ?? 'Pelanggan'));
+            String senderName = senderId == adminUid ? adminName : (customerName ?? 'Pelanggan');
             
             await FCMService.instance.sendNotification(
               targetFCMToken: receiverToken,
