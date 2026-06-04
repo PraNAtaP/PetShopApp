@@ -14,7 +14,7 @@ class PointConstants {
   /// Return 10.0 jika >= Rp10.000, return 0 jika di bawah minimum.
   static double hitungPoin(double totalHarga) {
     if (totalHarga < minBelanjaEarnPoin) return 0;
-    return poinPerTransaksi;
+    return totalHarga / 1000;
   }
 
   /// Hitung nominal diskon dari poin yang dimiliki.
