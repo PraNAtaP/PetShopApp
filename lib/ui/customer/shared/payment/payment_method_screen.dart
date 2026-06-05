@@ -53,11 +53,29 @@ class _UniversalPaymentMethodScreenState
     }
   }
 
-  double get _discount =>
-      _usePoints ? PointConstants.hitungDiskon(_currentPoints) : 0;
+  double get _discount {
+    if (!_usePoints) return 0;
+    final rawDiskon = PointConstants.hitungDiskon(_currentPoints);
+    return rawDiskon.clamp(0, _totalHarga);
+  }
 
   double get _totalAfterDiscount =>
       (_totalHarga - _discount).clamp(0, double.infinity);
+
+  void _lanjutkanPembayaran() {
+    final routeName = widget.category == 'shop'
+        ? 'payment-execution'
+        : 'grooming-payment-execution';
+
+    context.pushNamed(
+      routeName,
+      extra: {
+        'metodePembayaran': _totalAfterDiscount == 0 ? 'POIN' : _selectedMethod,
+        'usePoints': _usePoints,
+        'discount': _discount,
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -310,9 +328,13 @@ class _UniversalPaymentMethodScreenState
                           ),
                           value: _usePoints,
                           onChanged: PointConstants.canRedeem(_currentPoints)
-                              ? (val) => setState(() => _usePoints = val)
-                              : null,
-                          activeColor: AppColors.primary,
+                          ? (val) {
+                              setState(() => _usePoints = val);
+                              if (val && _totalAfterDiscount == 0) {
+                                _lanjutkanPembayaran();
+                              }
+                            }
+                          : null,
                         ),
                       ),
                     ),
@@ -401,21 +423,9 @@ class _UniversalPaymentMethodScreenState
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: _selectedMethod == null
+                  onPressed: _selectedMethod == null && _totalAfterDiscount != 0
                       ? null
-                      : () {
-                          final routeName = widget.category == 'shop'
-                              ? 'payment-execution'
-                              : 'grooming-payment-execution';
-                          context.pushNamed(
-                            routeName,
-                            extra: {
-                              'metodePembayaran': _selectedMethod,
-                              'usePoints': _usePoints,
-                              'discount': _discount,
-                            },
-                          );
-                        },
+                      : () => _lanjutkanPembayaran(), 
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,

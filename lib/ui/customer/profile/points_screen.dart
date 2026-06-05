@@ -119,7 +119,7 @@ class PointsScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            _getTier(user.poin),
+                            PointConstants.getTier(user.maxPoin),
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: AppColors.primary,
@@ -282,13 +282,6 @@ class PointsScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _getTier(double poin) {
-    if (poin >= 10000) return '💎 Platinum Member';
-    if (poin >= 5000) return '🥇 Gold Member';
-    if (poin >= 1000) return '🥈 Silver Member';
-    return '🥉 Bronze Member';
   }
 
   String _formatDate(DateTime dt) {

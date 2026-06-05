@@ -280,7 +280,7 @@ class HomeScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
-                        'Tukar',
+                        'Poin Saya',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
