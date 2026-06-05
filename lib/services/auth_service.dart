@@ -275,9 +275,12 @@ class AuthService extends ChangeNotifier {
         if (!snapshot.exists) throw Exception('User tidak ditemukan');
 
         final double currentPoin = (snapshot.data()?['poin'] ?? 0).toDouble();
+        final double currentMaxPoin = (snapshot.data()?['max_poin'] ?? 0).toDouble();
         final double newPoin = (currentPoin + jumlahPoin).clamp(0.0, 999999.0);
+        final double newMaxPoin = newPoin > currentMaxPoin ? newPoin : currentMaxPoin;
+        
 
-        transaction.update(userRef, {'poin': newPoin});
+        transaction.update(userRef, {'poin': newPoin, 'max_poin': newMaxPoin});
 
         final history = PointHistoryModel(
           id: '',
