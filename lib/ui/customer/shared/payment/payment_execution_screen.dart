@@ -14,8 +14,8 @@ import 'package:petshopapp/services/imgbb_service.dart';
 import 'package:petshopapp/constants/point_constants.dart';
 
 class UniversalPaymentExecutionScreen extends StatefulWidget {
-  final String paymentMethod; // 'QRIS', 'Transfer', 'COD'
-  final String category; // 'shop', 'grooming'
+  final String paymentMethod;
+  final String category;
   final bool usePoints;
   final double discount;
 
@@ -88,8 +88,7 @@ class _UniversalPaymentExecutionScreenState
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title:
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
@@ -117,7 +116,6 @@ class _UniversalPaymentExecutionScreenState
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                // ── Total Amount Card ──────────────────────────────────
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(20),
@@ -129,8 +127,7 @@ class _UniversalPaymentExecutionScreenState
                     children: [
                       const Text(
                         'Total Pembayaran',
-                        style:
-                            TextStyle(color: Colors.white70, fontSize: 14),
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
                       ),
                       const SizedBox(height: 8),
                       Text(
@@ -141,7 +138,6 @@ class _UniversalPaymentExecutionScreenState
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      // ✅ FIX: tutup Container & Text dengan benar
                       if (widget.usePoints && widget.discount > 0) ...[
                         const SizedBox(height: 8),
                         Container(
@@ -180,23 +176,20 @@ class _UniversalPaymentExecutionScreenState
                     ],
                   ),
                 ),
-
                 const SizedBox(height: 24),
-
                 if (widget.paymentMethod == 'QRIS') _buildQrisInfo(),
                 if (widget.paymentMethod == 'Transfer') _buildBankInfo(),
                 if (widget.paymentMethod == 'COD')
                   _buildCodInfo(isDpRequired),
-
                 const SizedBox(height: 24),
-
-                if (widget.paymentMethod != 'COD' && widget.paymentMethod != 'POIN' || isDpRequired)
+                if (widget.paymentMethod != 'COD' &&
+                        widget.paymentMethod != 'POIN' ||
+                    isDpRequired)
                   _buildUploadSection(),
               ],
             ),
           ),
         ),
-
         _buildBottomButton(isDpRequired),
       ],
     );
@@ -324,8 +317,7 @@ class _UniversalPaymentExecutionScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Bank',
-                          style:
-                              TextStyle(color: Colors.grey, fontSize: 12)),
+                          style: TextStyle(color: Colors.grey, fontSize: 12)),
                       Text('BCA',
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 12)),
@@ -336,8 +328,7 @@ class _UniversalPaymentExecutionScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('No. Rekening',
-                          style:
-                              TextStyle(color: Colors.grey, fontSize: 12)),
+                          style: TextStyle(color: Colors.grey, fontSize: 12)),
                       Text('12345678',
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 12)),
@@ -348,8 +339,7 @@ class _UniversalPaymentExecutionScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Atas Nama',
-                          style:
-                              TextStyle(color: Colors.grey, fontSize: 12)),
+                          style: TextStyle(color: Colors.grey, fontSize: 12)),
                       Text('Pet Point App',
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 12)),
@@ -442,8 +432,7 @@ class _UniversalPaymentExecutionScreenState
                         SizedBox(height: 8),
                         Text(
                           'Tap untuk pilih foto bukti',
-                          style:
-                              TextStyle(color: Colors.grey, fontSize: 13),
+                          style: TextStyle(color: Colors.grey, fontSize: 13),
                         ),
                       ],
                     ),
@@ -455,16 +444,15 @@ class _UniversalPaymentExecutionScreenState
   }
 
   Widget _buildBottomButton(bool isDpRequired) {
-    bool canProceed =
-        widget.paymentMethod == 'COD' && !isDpRequired ||
+    bool canProceed = widget.paymentMethod == 'COD' && !isDpRequired ||
         widget.paymentMethod == 'POIN' ||
-            _selectedImage != null;
+        _selectedImage != null;
 
     String label = widget.paymentMethod == 'POIN'
-      ? 'Konfirmasi Pesanan'
-      : widget.paymentMethod == 'COD'
-        ? (isDpRequired ? 'Upload & Konfirmasi DP' : 'Konfirmasi Pesanan')
-        : 'Upload & Kirim';
+        ? 'Konfirmasi Pesanan'
+        : widget.paymentMethod == 'COD'
+            ? (isDpRequired ? 'Upload & Konfirmasi DP' : 'Konfirmasi Pesanan')
+            : 'Upload & Kirim';
 
     return Container(
       padding: const EdgeInsets.all(24),
@@ -588,8 +576,7 @@ class _UniversalPaymentExecutionScreenState
             child: Icon(icon, color: AppColors.primary, size: 32),
           ),
           const SizedBox(height: 8),
-          Text(label,
-              style: const TextStyle(fontWeight: FontWeight.w500)),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -597,8 +584,7 @@ class _UniversalPaymentExecutionScreenState
 
   Future<void> _getImage(ImageSource source) async {
     final picker = ImagePicker();
-    final picked =
-        await picker.pickImage(source: source, imageQuality: 70);
+    final picked = await picker.pickImage(source: source, imageQuality: 70);
     if (picked != null) setState(() => _selectedImage = picked);
   }
 
@@ -642,18 +628,6 @@ class _UniversalPaymentExecutionScreenState
     final auth = context.read<AuthService>();
     final uid = auth.currentUser?.uid ?? '';
 
-    if (widget.usePoints && widget.discount > 0) {
-      final double poinTerpakai = (widget.discount /
-              PointConstants.diskonPerRedeem) *
-          PointConstants.poinPerRedeem;
-      if (poinTerpakai > 0) {
-        await auth.kurangiPoin(
-          jumlahPoin: poinTerpakai,
-          keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
-        );
-      }
-    }
-
     final order = OrderModel(
       orderId: '',
       customerId: uid,
@@ -673,8 +647,7 @@ class _UniversalPaymentExecutionScreenState
           ? 'Pending'
           : (imageUrl != null ? 'Pending' : 'Unpaid'),
       statusPengiriman: 'Menunggu',
-      metodePengambilan:
-          cart.isDelivery ? 'Kirim ke Alamat' : 'Ambil di Toko',
+      metodePengambilan: cart.isDelivery ? 'Kirim ke Alamat' : 'Ambil di Toko',
       metodePembayaran: widget.paymentMethod,
       alamatLengkap: cart.isDelivery ? cart.alamatLengkap : null,
       latitude: cart.isDelivery ? cart.latitude : null,
@@ -699,7 +672,8 @@ class _UniversalPaymentExecutionScreenState
 
     print('usePoints: ${widget.usePoints}');
     print('discount: ${widget.discount}');
-    print('poinTerpakai: ${(widget.discount / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem}');
+    print(
+        'poinTerpakai: ${(widget.discount / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem}');
 
     if (widget.usePoints && widget.discount > 0) {
       final double poinTerpakai = (widget.discount /
@@ -708,8 +682,7 @@ class _UniversalPaymentExecutionScreenState
       if (poinTerpakai > 0) {
         await auth.kurangiPoin(
           jumlahPoin: poinTerpakai,
-          keterangan:
-              'Penukaran poin — diskon Rp${widget.discount.toInt()}',
+          keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
         );
       }
     }
@@ -736,8 +709,7 @@ class _UniversalPaymentExecutionScreenState
       if (poinTerpakai > 0) {
         await auth.kurangiPoin(
           jumlahPoin: poinTerpakai,
-          keterangan:
-              'Penukaran poin — diskon Rp${widget.discount.toInt()}',
+          keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
         );
       }
     }
@@ -761,8 +733,7 @@ class _UniversalPaymentExecutionScreenState
             const SizedBox(height: 24),
             const Text(
               'Pesanan Berhasil!',
-              style:
-                  TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
             Text(

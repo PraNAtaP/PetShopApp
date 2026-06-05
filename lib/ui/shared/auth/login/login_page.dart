@@ -76,6 +76,68 @@ class _LoginPageState extends State<LoginPage> {
     // On success (result == null), GoRouter's refreshListenable → /home
   } 
 
+  Future<void> _showForgotPasswordDialog() async {
+    final resetEmailController = TextEditingController(text: _emailController.text);
+    final formKey = GlobalKey<FormState>();
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Lupa Password?'),
+        content: Form(
+          key: formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Masukkan email Anda yang terdaftar untuk menerima link reset password.',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: resetEmailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  hintText: 'Email',
+                  prefixIcon: Icon(Icons.email_outlined),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) return 'Email tidak boleh kosong';
+                  if (!value.contains('@')) return 'Format email tidak valid';
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(ctx);
+                final authService = context.read<AuthService>();
+                final result = await authService.resetPassword(email: resetEmailController.text.trim());
+                if (!mounted) return;
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(result ?? 'Link reset password berhasil dikirim ke email Anda.'),
+                    backgroundColor: result == null ? Colors.green : AppColors.error,
+                  ),
+                );
+              }
+            },
+            child: const Text('Kirim Link'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -229,7 +291,20 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 32),
+                  
+                  // ── Lupa Password ──────────────────────────────────────
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: _isLoading ? null : _showForgotPasswordDialog,
+                      child: const Text(
+                        'Lupa Password?',
+                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  
+                  const SizedBox(height: 24),
 
                   // ── Tombol Login ─────────────────────────────────────────
                   ElevatedButton(

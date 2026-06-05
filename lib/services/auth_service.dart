@@ -256,6 +256,22 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Mengirim email reset password.
+  Future<String?> resetPassword({required String email}) async {
+    _setLoading(true);
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      _setLoading(false);
+      return null;
+    } on FirebaseAuthException catch (e) {
+      _setLoading(false);
+      return _mapAuthError(e.code);
+    } catch (e) {
+      _setLoading(false);
+      return 'Gagal mengirim email reset password: $e';
+    }
+  }
+
   /// Menambah atau mengurangi poin user.
   /// [jumlahPoin] positif = tambah, negatif = kurang.
   Future<String?> tambahPoin({

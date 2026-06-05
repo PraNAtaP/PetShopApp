@@ -36,11 +36,21 @@ class _UniversalPaymentMethodScreenState
 
   Future<void> _loadData() async {
     final auth = context.read<AuthService>();
-    final cart = context.read<CartProvider>();
     setState(() {
       _currentPoints = auth.currentUser?.poin ?? 0.0;
-      _totalHarga = cart.totalPrice;
     });
+
+    if (widget.category == 'shop') {
+      final cart = context.read<CartProvider>();
+      setState(() {
+        _totalHarga = cart.totalPrice;
+      });
+    } else if (widget.category == 'grooming') {
+      final grooming = context.read<GroomingProvider>();
+      setState(() {
+        _totalHarga = grooming.selectedPrice + grooming.shippingFee;
+      });
+    }
   }
 
   double get _discount {
@@ -83,8 +93,7 @@ class _UniversalPaymentMethodScreenState
       totalPrice = cart.totalPrice;
     } else if (widget.category == 'grooming') {
       final grooming = context.watch<GroomingProvider>();
-      subtotal =
-          (grooming.selectedPrice * grooming.selectedPets.length).toDouble();
+      subtotal = grooming.selectedPrice;
       shippingFee = grooming.shippingFee;
       totalPrice = subtotal + shippingFee;
     }
@@ -235,59 +244,6 @@ class _UniversalPaymentMethodScreenState
                                   ),
                                 ),
                               ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // ── Total Harga ────────────────────────────────────
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.04),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary
-                                        .withValues(alpha: 0.1),
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: const Icon(
-                                      Icons.monetization_on_outlined,
-                                      color: AppColors.primary),
-                                ),
-                                const SizedBox(width: 12),
-                                const Text('Total Harga',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15)),
-                              ],
-                            ),
-                            Text(
-                              currencyFormatter.format(_totalHarga),
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: AppColors.primary),
                             ),
                           ],
                         ),
