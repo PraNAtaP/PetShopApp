@@ -31,7 +31,7 @@ class HomeScreen extends StatelessWidget {
       body: CustomScrollView(
         slivers: [
           // ── Custom Header ──
-          SliverToBoxAdapter(child: _buildHeader(context, firstName, user.poin.toInt())),
+          SliverToBoxAdapter(child: _buildHeader(context, firstName, user.poin.toDouble())),
 
           // ── Tips & Fun Facts Slider ──
           SliverToBoxAdapter(
@@ -280,7 +280,7 @@ class HomeScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: const Text(
-                        'Tukar',
+                        'Poin Saya',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
