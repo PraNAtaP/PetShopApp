@@ -48,7 +48,7 @@ class _UniversalPaymentMethodScreenState
     } else if (widget.category == 'grooming') {
       final grooming = context.read<GroomingProvider>();
       setState(() {
-        _totalHarga = (grooming.selectedPrice * grooming.selectedPets.length).toDouble() + grooming.shippingFee;
+        _totalHarga = grooming.selectedPrice + grooming.shippingFee;
       });
     }
   }
@@ -75,8 +75,7 @@ class _UniversalPaymentMethodScreenState
       totalPrice = cart.totalPrice;
     } else if (widget.category == 'grooming') {
       final grooming = context.watch<GroomingProvider>();
-      subtotal =
-          (grooming.selectedPrice * grooming.selectedPets.length).toDouble();
+      subtotal = grooming.selectedPrice;
       shippingFee = grooming.shippingFee;
       totalPrice = subtotal + shippingFee;
     }
