@@ -44,6 +44,7 @@ class UserModel {
   final String? alamat;
   final GeoPoint? koordinat;
   final double poin;
+  final double maxPoin;
   final String? fcmToken;
   final DateTime? createdAt;
 
@@ -58,6 +59,7 @@ class UserModel {
     this.alamat,
     this.koordinat,
     this.poin = 0.0,
+    this.maxPoin = 0.0,
     this.fcmToken,
     this.createdAt,
   });
@@ -74,7 +76,8 @@ class UserModel {
       nomorWa: data['nomor_wa'] as String?,
       alamat: data['alamat'] as String?,
       koordinat: data['koordinat'] as GeoPoint?,
-poin: (data['poin'] ?? 0).toDouble(),
+      poin: (data['poin'] ?? 0).toDouble(),
+      maxPoin: (data['max_poin'] ?? 0).toDouble(),
       fcmToken: data['fcm_token'] as String?,
       createdAt: (data['created_at'] as Timestamp?)?.toDate(),
     );
@@ -91,6 +94,7 @@ poin: (data['poin'] ?? 0).toDouble(),
       'alamat': alamat,
       'koordinat': koordinat,
       'poin': poin,
+      'max_poin': maxPoin,
       if (fcmToken != null) 'fcm_token': fcmToken,
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
     };
@@ -116,6 +120,7 @@ poin: (data['poin'] ?? 0).toDouble(),
     String? alamat,
     GeoPoint? koordinat,
     double? poin,
+    double? maxPoin,
     String? fcmToken,
     DateTime? createdAt,
   }) {
@@ -129,6 +134,7 @@ poin: (data['poin'] ?? 0).toDouble(),
       alamat: alamat ?? this.alamat,
       koordinat: koordinat ?? this.koordinat,
       poin: poin ?? this.poin,
+      maxPoin: maxPoin ?? this.maxPoin,
       fcmToken: fcmToken ?? this.fcmToken,
       createdAt: createdAt ?? this.createdAt,
     );
