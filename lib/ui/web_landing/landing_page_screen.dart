@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 import 'dart:math' as math;
 
 class LandingPageScreen extends StatefulWidget {
@@ -60,7 +62,6 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
               child: Column(
                 children: [
                 Container(key: _homeKey, child: _buildHeroSection(context)),
-                _buildClientLogos(context),
                 Container(key: _aboutKey, child: _buildAboutSection(context)),
                 _buildAppDemoSection(context),
                 Container(key: _teamKey, child: _buildTeamGrid(context)),
@@ -83,10 +84,11 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
   }
 
   Widget _buildNavbar(BuildContext context) {
+    bool isMobile = MediaQuery.of(context).size.width < 800;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       height: 80,
-      padding: const EdgeInsets.symmetric(horizontal: 50),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 50),
       decoration: BoxDecoration(
         color: _isScrolled ? Colors.white : Colors.transparent,
         boxShadow: _isScrolled
@@ -110,21 +112,23 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                 'lib/assets/img/1776076564947.png',
                 height: 36,
               ),
-              const SizedBox(width: 12),
-              Text(
-                'Pet Point',
-                style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  color: _isScrolled ? AppColors.textDark : Colors.white,
-                  letterSpacing: -0.5,
+              if (!isMobile) ...[
+                const SizedBox(width: 12),
+                Text(
+                  'Pet Point',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: _isScrolled ? AppColors.textDark : Colors.white,
+                    letterSpacing: -0.5,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
           
           // Center Nav Links (Hidden on small screens)
-          if (MediaQuery.of(context).size.width > 800)
+          if (!isMobile)
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -140,18 +144,18 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
           ElevatedButton(
             onPressed: () => context.push('/login'),
             style: ElevatedButton.styleFrom(
-              minimumSize: const Size(120, 50),
+              minimumSize: isMobile ? const Size(100, 40) : const Size(120, 50),
               backgroundColor: const Color(0xFFC6FF00), // Lime green accent
               foregroundColor: Colors.black,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: isMobile ? 12 : 20),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(30),
               ),
               elevation: 0,
             ),
-            child: const Text(
+            child: Text(
               'MASUK ADMIN',
-              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 1),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 11 : 13, letterSpacing: 1),
             ),
           )
         ],
@@ -179,6 +183,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
   }
 
   Widget _buildHeroSection(BuildContext context) {
+    bool isMobile = MediaQuery.of(context).size.width < 800;
     return Container(
       width: double.infinity,
       // Background image of a pet in a landscape
@@ -201,77 +206,126 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
           ],
         ),
       ),
-      padding: const EdgeInsets.only(top: 150, bottom: 60),
+      padding: const EdgeInsets.only(top: 110, bottom: 45),
       child: Column(
         children: [
           // Typography
           ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
+            constraints: BoxConstraints(maxWidth: isMobile ? 360 : 800),
             child: Column(
               children: [
-                const Text(
+                Text(
                   'Solusi All-in-One untuk\nAnabul Kesayanganmu',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 64,
+                    fontSize: isMobile ? 32 : 43,
                     fontWeight: FontWeight.w400,
-                    letterSpacing: -1.5,
+                    letterSpacing: -1.0,
                     color: Colors.white,
                     height: 1.1,
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text(
+                Text(
                   'Mulai dari grooming, adopsi, konsultasi, hingga belanja barang peliharaan\nsemua jadi gampang buat kalian yang ada di sekitar Malang.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: isMobile ? 12 : 12,
                     color: Colors.white70,
                     height: 1.5,
                   ),
                 ),
                 const SizedBox(height: 40),
                 // Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    OutlinedButton(
-                      onPressed: () {},
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(150, 50),
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white24, width: 2),
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                if (isMobile)
+                  Column(
+                    children: [
+                      OutlinedButton(
+                        onPressed: () {},
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(200, 50),
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white24, width: 2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                        ),
+                        child: const Text('LIHAT DEMO', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final Uri url = Uri.parse('download/PetPoint.apk');
+                          if (!await launchUrl(url)) {
+                            debugPrint('Could not launch $url');
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(200, 50),
+                          backgroundColor: const Color(0xFFC6FF00),
+                          foregroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('UNDUH APLIKASI', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+                            SizedBox(width: 8),
+                            Icon(Icons.arrow_outward, size: 18),
+                          ],
                         ),
                       ),
-                      child: const Text('LIHAT DEMO', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
-                    ),
-                    const SizedBox(width: 16),
-                    ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(150, 50),
-                        backgroundColor: const Color(0xFFC6FF00),
-                        foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
+                    ],
+                  )
+                else
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      OutlinedButton(
+                        onPressed: () {},
+                        style: OutlinedButton.styleFrom(
+                          minimumSize: const Size(150, 50),
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white24, width: 2),
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
                         ),
-                        elevation: 0,
+                        child: const Text('LIHAT DEMO', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text('UNDUH APLIKASI', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
-                          SizedBox(width: 8),
-                          Icon(Icons.arrow_outward, size: 18),
-                        ],
+                      const SizedBox(width: 16),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final Uri url = Uri.parse('download/PetPoint.apk');
+                          if (!await launchUrl(url)) {
+                            debugPrint('Could not launch $url');
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(150, 50),
+                          backgroundColor: const Color(0xFFC6FF00),
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('UNDUH APLIKASI', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+                            SizedBox(width: 8),
+                            Icon(Icons.arrow_outward, size: 18),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -280,150 +334,153 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
 
           // 3D Curved Cards Mockup
           IgnorePointer(
-            child: SizedBox(
-              width: MediaQuery.of(context).size.width,
-              height: 350,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Far Left Card
-                Transform.translate(
-                  offset: const Offset(-450, -20),
-                  child: Transform(
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001)
-                      ..rotateY(-0.3)
-                      ..rotateZ(-0.05),
-                    alignment: Alignment.center,
-                    child: _buildMockupCard(
-                      width: 200, height: 260, color: Colors.white.withOpacity(0.9),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.healing, size: 40, color: Colors.blue),
-                          SizedBox(height: 16),
-                          Text('Klinik & Grooming', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                // Mid Left Card
-                Transform.translate(
-                  offset: const Offset(-250, 0),
-                  child: Transform(
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001)
-                      ..rotateY(-0.15),
-                    alignment: Alignment.center,
-                    child: _buildMockupCard(
-                      width: 220, height: 280, color: Colors.white,
-                      child: const Padding(
-                        padding: EdgeInsets.all(24.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Hewan Adopsi', style: TextStyle(color: Colors.grey)),
-                            SizedBox(height: 8),
-                            Text('500+', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold)),
-                            Spacer(),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                Chip(
-                                  label: Text('Kucing', style: TextStyle(fontSize: 12)),
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                                Chip(
-                                  label: Text('Anjing', style: TextStyle(fontSize: 12)),
-                                  visualDensity: VisualDensity.compact,
-                                ),
-                              ],
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                // Far Right Card
-                Transform.translate(
-                  offset: const Offset(450, -20),
-                  child: Transform(
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001)
-                      ..rotateY(0.3)
-                      ..rotateZ(0.05),
-                    alignment: Alignment.center,
-                    child: _buildMockupCard(
-                      width: 200, height: 260, color: Colors.white.withOpacity(0.9),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.support_agent, size: 40, color: Colors.blue),
-                          SizedBox(height: 16),
-                          Text('Tanya Dokter', style: TextStyle(fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                // Mid Right Card
-                Transform.translate(
-                  offset: const Offset(250, 0),
-                  child: Transform(
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001)
-                      ..rotateY(0.15),
-                    alignment: Alignment.center,
-                    child: _buildMockupCard(
-                      width: 220, height: 280, color: const Color(0xFF1E1E1E),
-                      child: const Padding(
-                        padding: EdgeInsets.all(24.0),
-                        child: Column(
+            child: Transform.scale(
+              scale: isMobile ? MediaQuery.of(context).size.width / 800 : 1.0,
+              child: SizedBox(
+                width: 800, // Fixed logical width for the 3D stack
+                height: 350,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Far Left Card
+                  Transform.translate(
+                    offset: const Offset(-306, -13),
+                    child: Transform(
+                      transform: Matrix4.identity()
+                        ..setEntry(3, 2, 0.001)
+                        ..rotateY(-0.3)
+                        ..rotateZ(-0.05),
+                      alignment: Alignment.center,
+                      child: _buildMockupCard(
+                        width: 135, height: 175, color: Colors.white.withOpacity(0.9),
+                        child: const Column(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Belanja Pakan &', style: TextStyle(color: Colors.white70, fontSize: 16)),
-                            Text('Aksesoris Hewan', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                            Text('Terlengkap!', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                            Icon(Icons.healing, size: 36, color: Colors.blue),
+                            SizedBox(height: 14),
+                            Text('Klinik & Grooming', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10)),
                           ],
                         ),
                       ),
                     ),
                   ),
-                ),
-                // Center Focus Card
-                Transform.translate(
-                  offset: const Offset(0, 20),
-                  child: _buildMockupCard(
-                    width: 260, height: 320, 
-                    color: const Color(0xFF2196F3).withValues(alpha: 0.85), // Glassy blue
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white24),
-                          child: Image.asset(
-                            'lib/assets/img/1776076564947.png',
-                            height: 60,
-                            width: 60,
+                  // Mid Left Card
+                  Transform.translate(
+                    offset: const Offset(-171, 0),
+                    child: Transform(
+                      transform: Matrix4.identity()
+                        ..setEntry(3, 2, 0.001)
+                        ..rotateY(-0.15),
+                      alignment: Alignment.center,
+                      child: _buildMockupCard(
+                        width: 148, height: 189, color: Colors.white,
+                        child: const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Hewan Adopsi', style: TextStyle(color: Colors.grey, fontSize: 8)),
+                              SizedBox(height: 4),
+                              Text('500+', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
+                              Spacer(),
+                              Wrap(
+                                spacing: 5,
+                                runSpacing: 5,
+                                children: [
+                                  Chip(
+                                    label: Text('Kucing', style: TextStyle(fontSize: 8)),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                  Chip(
+                                    label: Text('Anjing', style: TextStyle(fontSize: 8)),
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                ],
+                              )
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 24),
-                        const Text('Pet Point', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        const Text('Ekosistem Anabulmu', style: TextStyle(color: Colors.white70)),
-                      ],
+                      ),
                     ),
                   ),
+                  // Far Right Card
+                  Transform.translate(
+                    offset: const Offset(306, -13),
+                    child: Transform(
+                      transform: Matrix4.identity()
+                        ..setEntry(3, 2, 0.001)
+                        ..rotateY(0.3)
+                        ..rotateZ(0.05),
+                      alignment: Alignment.center,
+                      child: _buildMockupCard(
+                        width: 135, height: 175, color: Colors.white.withOpacity(0.9),
+                        child: const Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.support_agent, size: 27, color: Colors.blue),
+                            SizedBox(height: 10),
+                            Text('Tanya Dokter', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Mid Right Card
+                  Transform.translate(
+                    offset: const Offset(171, 0),
+                    child: Transform(
+                      transform: Matrix4.identity()
+                        ..setEntry(3, 2, 0.001)
+                        ..rotateY(0.15),
+                      alignment: Alignment.center,
+                      child: _buildMockupCard(
+                        width: 148, height: 189, color: const Color(0xFF1E1E1E),
+                        child: const Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Belanja Pakan &', style: TextStyle(color: Colors.white70, fontSize: 9)),
+                              Text('Aksesoris Hewan', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                              Text('Terlengkap!', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Center Focus Card
+                  Transform.translate(
+                    offset: const Offset(0, 13),
+                    child: _buildMockupCard(
+                      width: 175, height: 216, 
+                      color: const Color(0xFF2196F3).withValues(alpha: 0.85), // Glassy blue
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white24),
+                            child: Image.asset(
+                              'lib/assets/img/1776076564947.png',
+                              height: 40,
+                              width: 40,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          const Text('Pet Point', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 5),
+                          const Text('Ekosistem Anabulmu', style: TextStyle(color: Colors.white70, fontSize: 10)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
 
           const SizedBox(height: 40),
           
@@ -469,43 +526,22 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
     );
   }
 
-  Widget _buildClientLogos(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      color: Colors.white,
-      child: Wrap(
-        alignment: WrapAlignment.spaceEvenly,
-        spacing: 40,
-        runSpacing: 20,
-        children: List.generate(5, (index) => 
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.pets, color: Colors.grey.shade300, size: 24),
-              const SizedBox(width: 8),
-              Text('PetIpsum', style: TextStyle(color: Colors.grey.shade400, fontSize: 20, fontWeight: FontWeight.bold)),
-            ],
-          )
-        ),
-      ),
-    );
-  }
 
   Widget _buildAboutSection(BuildContext context) {
+    bool isMobile = MediaQuery.of(context).size.width < 800;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 80, horizontal: 24),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 40 : 80, horizontal: isMobile ? 16 : 24),
       color: Colors.white,
       child: Column(
         children: [
-          const Text('• TENTANG KAMI', style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold, color: Colors.grey)),
+          const Text('• MENGAPA PET POINT?', style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold, color: Colors.grey)),
           const SizedBox(height: 32),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 900),
-            child: const Text(
-              'Partner terbaik untuk anabulmu\nyang bikin hidup lebih ✅ praktis\ndan 💡 menyenangkan.',
+            child: Text(
+              'Satu aplikasi untuk seluruh kebutuhan anabul kesayanganmu.\nMulai dari Adopsi, grooming, hingga belanja keperluan Anabul.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 48, fontWeight: FontWeight.w400, color: Colors.black, height: 1.2, letterSpacing: -1),
+              style: TextStyle(fontSize: isMobile ? 24 : 42, fontWeight: FontWeight.w400, color: Colors.black, height: 1.3, letterSpacing: -1),
             ),
           ),
         ],
@@ -514,18 +550,23 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
   }
 
   Widget _buildAppDemoSection(BuildContext context) {
+    bool isMobile = MediaQuery.of(context).size.width < 800;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 80),
+      padding: EdgeInsets.symmetric(vertical: isMobile ? 40 : 80, horizontal: 16),
       color: Colors.grey.shade50,
       child: Column(
         children: [
           const Text('• PREVIEW APLIKASI', style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold, color: Colors.grey)),
           const SizedBox(height: 16),
-          const Text('Lihat Aplikasi Pet Point Beraksi', style: TextStyle(fontSize: 36, fontWeight: FontWeight.bold, color: Colors.black)),
-          const SizedBox(height: 60),
+          Text('Lihat Aplikasi Pet Point Beraksi', 
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: isMobile ? 28 : 36, fontWeight: FontWeight.bold, color: Colors.black)),
+          SizedBox(height: isMobile ? 30 : 60),
           // Realistic Android Frame
-          Container(
+          Transform.scale(
+            scale: isMobile ? (MediaQuery.of(context).size.width / 400).clamp(0.5, 1.0) : 1.0,
+            child: Container(
             width: 320,
             height: 650,
             decoration: BoxDecoration(
@@ -554,50 +595,21 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                 clipBehavior: Clip.antiAlias,
                 child: Stack(
                   children: [
-                    // Placeholder for the actual app demo GIF
-                    Image.asset(
-                      'assets/images/app_demo.gif',
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: double.infinity,
-                      errorBuilder: (context, error, stackTrace) => Container(
-                        color: const Color(0xFFF0F4F8),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(Icons.gif_box_rounded, size: 64, color: Colors.blue),
-                              const SizedBox(height: 12),
-                              const Text(
-                                'App Demo GIF',
-                                style: TextStyle(
-                                  color: Colors.blue,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                              Text(
-                                '(assets/images/app_demo.gif)',
-                                style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Front Camera Punch-hole Notch
+                    // Auto-playing Video Demo
+                    const _AutoPlayVideoDemo(),
+                    
+                    // Top Notch (Poni Kamera)
                     Align(
                       alignment: Alignment.topCenter,
                       child: Container(
-                        margin: const EdgeInsets.only(top: 14),
-                        width: 18,
-                        height: 18,
+                        width: 130,
+                        height: 26,
                         decoration: const BoxDecoration(
                           color: Color(0xFF1E1E1E),
-                          shape: BoxShape.circle,
+                          borderRadius: BorderRadius.only(
+                            bottomLeft: Radius.circular(16),
+                            bottomRight: Radius.circular(16),
+                          ),
                         ),
                       ),
                     ),
@@ -606,45 +618,47 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
               ),
             ),
           ),
+          ), // Closing Transform.scale
         ],
       ),
     );
   }
 
   Widget _buildTeamGrid(BuildContext context) {
+    bool isMobile = MediaQuery.of(context).size.width < 800;
     final List<Map<String, dynamic>> teamMembers = [
       {
         'name': 'Pranata Putrandana',
         'role': 'Chief Executive Officer',
         'color': const Color(0xFF1E88E5), // Blue
         'textColor': Colors.white,
-        'image': 'assets/images/team_1.png',
+        'image': 'lib/assets/img/team_1.jpg',
       },
       {
         'name': 'Muh. Zaky Dawamul B.',
         'role': 'Chief Technology Officer',
         'color': const Color(0xFFF5F5F5), // Light Grey
         'textColor': Colors.black,
-        'image': 'assets/images/team_2.png',
+        'image': 'lib/assets/img/team_2.png',
       },
       {
         'name': 'Bunga Aulia Sari',
         'role': 'Chief Marketing Officer',
         'color': const Color(0xFFC6FF00), // Lime Green
         'textColor': Colors.black,
-        'image': 'assets/images/team_3.png',
+        'image': 'lib/assets/img/team_3.png',
       },
       {
         'name': 'Khoirun Nisa Fitriani',
         'role': 'Chief Operating Officer',
         'color': const Color(0xFF1E1E1E), // Dark
         'textColor': Colors.white,
-        'image': 'assets/images/team_4.png',
+        'image': 'lib/assets/img/team_4.png',
       },
     ];
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 40),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 20 : 50, vertical: 40),
       color: Colors.white,
       child: Center(
         child: ConstrainedBox(
@@ -694,7 +708,6 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
               radius: 50,
               backgroundColor: data['textColor'].withValues(alpha: 0.1),
               backgroundImage: AssetImage(data['image']),
-              child: Icon(Icons.person, size: 50, color: data['textColor'].withValues(alpha: 0.5)),
             ),
           ),
           const SizedBox(height: 24),
@@ -721,9 +734,10 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
   }
 
   Widget _buildFooter(BuildContext context) {
+    bool isMobile = MediaQuery.of(context).size.width < 800;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 50),
+      padding: EdgeInsets.symmetric(vertical: 40, horizontal: isMobile ? 20 : 50),
       color: Colors.white,
       child: Center(
         child: ConstrainedBox(
@@ -732,33 +746,110 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
             children: [
               const Divider(color: Colors.black12),
               const SizedBox(height: 40),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    '© 2026 Aplikasi Pet Point Malang. Hak Cipta Dilindungi.',
-                    style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
-                  ),
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text('Kebijakan Privasi', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                      ),
-                      const SizedBox(width: 16),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text('Syarat & Ketentuan', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-                      ),
-                    ],
-                  )
-                ],
-              ),
+              isMobile 
+              ? Column(
+                  children: [
+                    const Text(
+                      '© 2026 Aplikasi Pet Point Malang. Hak Cipta Dilindungi.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      alignment: WrapAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: () {},
+                          child: const Text('Kebijakan Privasi', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(width: 16),
+                        TextButton(
+                          onPressed: () {},
+                          child: const Text('Syarat & Ketentuan', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    )
+                  ]
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '© 2026 Aplikasi Pet Point Malang. Hak Cipta Dilindungi.',
+                      style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+                    ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        TextButton(
+                          onPressed: () {},
+                          child: const Text('Kebijakan Privasi', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                        ),
+                        const SizedBox(width: 16),
+                        TextButton(
+                          onPressed: () {},
+                          child: const Text('Syarat & Ketentuan', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
             ],
           ),
         ),
       ),
     );
+  }
+}
+
+class _AutoPlayVideoDemo extends StatefulWidget {
+  const _AutoPlayVideoDemo();
+
+  @override
+  State<_AutoPlayVideoDemo> createState() => _AutoPlayVideoDemoState();
+}
+
+class _AutoPlayVideoDemoState extends State<_AutoPlayVideoDemo> {
+  late VideoPlayerController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    // Video lucu anjing dan kucing sebagai placeholder demo aplikasi
+    _controller = VideoPlayerController.networkUrl(Uri.parse(
+        'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4'))
+      ..initialize().then((_) {
+        _controller.setLooping(true);
+        _controller.setVolume(0); // Harus di-mute agar bisa auto-play di Web
+        _controller.play();
+        setState(() {});
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return _controller.value.isInitialized
+        ? SizedBox.expand(
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: _controller.value.size.width,
+                height: _controller.value.size.height,
+                child: VideoPlayer(_controller),
+              ),
+            ),
+          )
+        : Container(
+            color: const Color(0xFFF0F4F8),
+            child: const Center(
+              child: CircularProgressIndicator(color: Colors.blue),
+            ),
+          );
   }
 }

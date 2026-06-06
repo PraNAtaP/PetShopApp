@@ -146,7 +146,7 @@ class _AdminAppState extends State<AdminApp> {
     ),
   ],
       child: MaterialApp.router(
-        title: 'Pet Point Admin',
+        title: 'Pet Point',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         routerConfig: _router,

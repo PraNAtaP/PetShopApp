@@ -54,8 +54,15 @@ class _LoginPageState extends State<LoginPage> {
     } else {
       // On success, tell the OS to save the credentials
       TextInput.finishAutofillContext();
+      
+      // Explicitly navigate instead of relying solely on GoRouter's refreshListenable
+      final role = authService.currentUser?.role.value;
+      if (role == 'admin') {
+        context.go('/admin/dashboard');
+      } else {
+        context.go('/home');
+      }
     }
-    // On success (result == null), GoRouter's refreshListenable → /home
   }
 
   Future<void> _handleGoogleSignIn() async {
@@ -72,8 +79,14 @@ class _LoginPageState extends State<LoginPage> {
 
     if (result != null) {
       setState(() => _errorMessage = result);
+    } else {
+      final role = authService.currentUser?.role.value;
+      if (role == 'admin') {
+        context.go('/admin/dashboard');
+      } else {
+        context.go('/home');
+      }
     }
-    // On success (result == null), GoRouter's refreshListenable → /home
   } 
 
   Future<void> _showForgotPasswordDialog() async {
