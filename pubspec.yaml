@@ -91,7 +91,6 @@ flutter:
     - lib/assets/img/1776076564947.png
     - lib/assets/img/qris_placeholder.png
     - lib/assets/img/google_logo.png
-    - lib/assets/secret/pet-shop-app-115fb-firebase-adminsdk-fbsvc-253fd21e4e.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
