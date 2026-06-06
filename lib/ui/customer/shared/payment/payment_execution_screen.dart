@@ -670,10 +670,12 @@ class _UniversalPaymentExecutionScreenState
 
     await cart.clearCart();
 
-    print('usePoints: ${widget.usePoints}');
-    print('discount: ${widget.discount}');
-    print(
-        'poinTerpakai: ${(widget.discount / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem}');
+  }
+
+  Future<void> _handleGroomingFinalization(String? imageUrl) async {
+    final provider = context.read<GroomingProvider>();
+    final auth = context.read<AuthService>();
+    final user = auth.currentUser;
 
     if (widget.usePoints && widget.discount > 0) {
       final double poinTerpakai = (widget.discount /
@@ -686,12 +688,6 @@ class _UniversalPaymentExecutionScreenState
         );
       }
     }
-  }
-
-  Future<void> _handleGroomingFinalization(String? imageUrl) async {
-    final provider = context.read<GroomingProvider>();
-    final auth = context.read<AuthService>();
-    final user = auth.currentUser;
 
     if (user != null) {
       await provider.confirmBooking(
@@ -702,19 +698,26 @@ class _UniversalPaymentExecutionScreenState
       );
     }
 
-    if (widget.usePoints && widget.discount > 0) {
-      final double poinTerpakai = PointConstants.hitungPoinTerpakai(
-        auth.currentUser?.poin ?? 0,
+    final double baseTotal =
+          (provider.selectedPrice * provider.selectedPets.length) +
+          provider.shippingFee;
+    final double totalAfterDiscount =
+          (baseTotal - widget.discount).clamp(0, double.infinity);
+    final double poinDidapat = PointConstants.hitungPoin(totalAfterDiscount);
+
+    print('=== EARN POIN GROOMING ===');
+    print('baseTotal: $baseTotal');
+    print('totalAfterDiscount: $totalAfterDiscount');
+    print('poinDidapat: $poinDidapat');
+    
+    if (poinDidapat > 0 && user != null) {
+      await auth.tambahPoin(
+        jumlahPoin: poinDidapat,
+        keterangan: 'Grooming (Rp${totalAfterDiscount.toInt()})',
       );
-      if (poinTerpakai > 0) {
-        await auth.kurangiPoin(
-          jumlahPoin: poinTerpakai,
-          keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
-        );
-      }
     }
   }
-
+  
   Widget _buildSuccessView() {
     return Center(
       child: Padding(
