@@ -38,20 +38,16 @@ class _UniversalPaymentMethodScreenState
     final auth = context.read<AuthService>();
     setState(() {
       _currentPoints = auth.currentUser?.poin ?? 0.0;
-    });
 
-    if (widget.category == 'shop') {
-      final cart = context.read<CartProvider>();
-      setState(() {
-        _totalHarga = cart.totalPrice;
-      });
-    } else if (widget.category == 'grooming') {
+      if (widget.category == 'shop') {
+      _totalHarga = context.read<CartProvider>().totalPrice;
+    } else {
       final grooming = context.read<GroomingProvider>();
-      setState(() {
-        _totalHarga = grooming.selectedPrice + grooming.shippingFee;
-      });
+      _totalHarga = (grooming.selectedPrice * grooming.selectedPets.length) +
+          grooming.shippingFee;
     }
-  }
+  });
+}
 
   double get _discount {
     if (!_usePoints) return 0;
