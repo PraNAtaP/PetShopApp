@@ -654,18 +654,29 @@ class _UniversalPaymentExecutionScreenState
       longitude: cart.isDelivery ? cart.longitude : null,
     );
 
-    await FirestoreService.instance.createOrder(order);
+    final String realOrderId = await FirestoreService.instance.createOrder(order);
+
+    if (widget.usePoints && widget.discount > 0) {
+      final double poinTerpakai = (widget.discount / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem;
+      if (poinTerpakai > 0) {
+        final error = await auth.kurangiPoin(
+          jumlahPoin: poinTerpakai,
+          keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
+        );
+        if (error != null) debugPrint('Gagal mengurangi poin: $error');
+      }
+    }
 
     final double totalAfterDiscount =
         (cart.totalPrice - widget.discount).clamp(0, double.infinity);
     final double poinDidapat = PointConstants.hitungPoin(totalAfterDiscount);
     if (poinDidapat > 0) {
-      await auth.tambahPoin(
+      final error = await auth.tambahPoin(
         jumlahPoin: poinDidapat,
-        keterangan:
-            'Pembelian produk (Rp${totalAfterDiscount.toInt()}) — ${cart.totalItems} item',
-        orderId: order.orderId,
+        keterangan: 'Pembelian produk (Rp${totalAfterDiscount.toInt()}) — ${cart.totalItems} item',
+        orderId: realOrderId,
       );
+      if (error != null) debugPrint('Gagal menambah poin: $error');
     }
 
     await cart.clearCart();

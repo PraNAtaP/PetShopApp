@@ -7,6 +7,7 @@ import 'package:petshopapp/ui/customer/order/order_history_screen.dart';
 import 'package:petshopapp/ui/customer/grooming/grooming_history_screen.dart';
 import 'package:petshopapp/ui/customer/profile/address_list_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:petshopapp/constants/point_constants.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -92,6 +93,32 @@ class ProfileScreen extends StatelessWidget {
                           color: Colors.white70,
                           fontSize: 14,
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  PointConstants.getTier(user?.maxPoin ?? 0),
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () => _showTierInfo(context),
+                                  child: const Icon(Icons.info_outline, color: Colors.white, size: 18),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
@@ -414,6 +441,67 @@ class ProfileScreen extends StatelessWidget {
         ],
       ),
       onTap: onTap,
+    );
+  }
+
+  void _showTierInfo(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Informasi Tier Membership',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Tier ditentukan dari total poin yang pernah kamu kumpulkan seumur hidup. Poin yang terpakai tidak akan menurunkan tier kamu.',
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+              const SizedBox(height: 20),
+              _buildTierItem('💎 Diamond Member', '50.000+ Poin'),
+              _buildTierItem('🛡️ Platinum Member', '20.000 - 49.999 Poin'),
+              _buildTierItem('🥇 Gold Member', '5.000 - 19.999 Poin'),
+              _buildTierItem('🥈 Silver Member', '1.000 - 4.999 Poin'),
+              _buildTierItem('🥉 Bronze Member', '0 - 999 Poin'),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Tutup', style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTierItem(String title, String poin) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(poin, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+        ],
+      ),
     );
   }
 }

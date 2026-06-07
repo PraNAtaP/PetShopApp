@@ -306,10 +306,11 @@ class FirestoreService {
       
       // 1. Buat dokumen order baru
       final docRef = _ordersRef.doc();
-      batch.set(docRef, order);
+      final newOrder = order.copyWith(orderId: docRef.id);
+      batch.set(docRef, newOrder);
       
       // 2. Kurangi stok produk dan tambah jumlah terjual
-      for (final item in order.items) {
+      for (final item in newOrder.items) {
         final productRef = _productsRef.doc(item.productId);
         batch.update(productRef, {
           'stok': FieldValue.increment(-item.jumlah),
