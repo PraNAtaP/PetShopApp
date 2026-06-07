@@ -166,14 +166,6 @@ class AdminDashboardScreen extends StatelessWidget {
                           child: _buildKpiCard(
                             title: 'Log Aktivitas',
                             value: 'Lihat Riwayat',
-                            valueStyle: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.primary,
-                              decoration: TextDecoration.underline,
-                              decorationColor: AppColors.primary,
-                              decorationThickness: 2,
-                            ),
                             icon: Icons.history,
                             color: Colors.white,
                             textColor: AppColors.primary,
