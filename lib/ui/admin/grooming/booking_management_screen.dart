@@ -10,6 +10,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:petshopapp/services/pdf_invoice_service.dart';
+import 'package:petshopapp/core/constants/point_constants.dart';
+import 'package:petshopapp/services/auth_service.dart';
+import 'package:provider/provider.dart';
 
 class BookingManagementScreen extends StatefulWidget {
   const BookingManagementScreen({super.key});
@@ -592,6 +595,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                                   child: ElevatedButton(
                                     onPressed: () async {
                                       await GroomingService.instance.updateBookingStatus(booking.bookingId, 'Dibatalkan');
+                                      await _handlePointLogic(booking, 'Dibatalkan');
                                       await FirebaseFirestore.instance
                                           .collection('grooming_bookings')
                                           .doc(booking.bookingId)
@@ -612,7 +616,9 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                                   child: ElevatedButton(
                                     onPressed: () async {
                                       final isPaid = booking.buktiBayarUrl != null && booking.buktiBayarUrl!.isNotEmpty;
-                                      await GroomingService.instance.updateBookingStatus(booking.bookingId, isPaid ? 'Confirmed' : 'Pending');
+                                      final newStatus = isPaid ? 'Confirmed' : 'Pending';
+                                      await GroomingService.instance.updateBookingStatus(booking.bookingId, newStatus);
+                                      await _handlePointLogic(booking, newStatus);
                                       await FirebaseFirestore.instance
                                           .collection('grooming_bookings')
                                           .doc(booking.bookingId)
@@ -824,6 +830,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                 setState(() => isSaving = true);
                 try {
                   await GroomingService.instance.updateBookingStatus(booking.bookingId, selectedStatus);
+                  await _handlePointLogic(booking, selectedStatus);
                   if (mounted) {
                     Navigator.pop(dialogContext); 
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -885,6 +892,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
               Navigator.pop(context);
               try {
                 await GroomingService.instance.updateBookingStatus(booking.bookingId, 'Completed');
+                await _handlePointLogic(booking, 'Completed');
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaksi Selesai & Masuk Kas!'), backgroundColor: Colors.green));
                 }
@@ -901,6 +909,39 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
       ),
     );
   }
+  Future<void> _handlePointLogic(GroomingBookingModel booking, String newStatus) async {
+    if (booking.status == newStatus) return;
+
+    final auth = context.read<AuthService>();
+    final isNowCompleted = (newStatus == 'Completed');
+    final isNowCanceled = (newStatus == 'Dibatalkan');
+
+    if (isNowCanceled && booking.diskonPoin > 0) {
+      final double poinTerpakai = (booking.diskonPoin / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem;
+      await auth.tambahPoinForUser(
+        uid: booking.userId,
+        jumlahPoin: poinTerpakai,
+        keterangan: 'Refund penukaran poin (Grooming Dibatalkan)',
+      );
+    }
+
+    if (isNowCompleted) {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(booking.userId).get();
+      final double maxPoin = (userDoc.data()?['max_poin'] ?? 0.0).toDouble();
+      
+      final double totalAfterDiscount = (booking.totalPrice - booking.diskonPoin).clamp(0, double.infinity);
+      final double poinDidapat = PointConstants.hitungPoin(totalAfterDiscount, maxPoin);
+      
+      if (poinDidapat > 0) {
+        await auth.tambahPoinForUser(
+          uid: booking.userId,
+          jumlahPoin: poinDidapat,
+          keterangan: 'Grooming (Rp${totalAfterDiscount.toInt()})',
+        );
+      }
+    }
+  }
+
   Future<DateTimeRange?> _showDateRangePopup(BuildContext context, DateTimeRange? initialDateRange) async {
     DateTime? start = initialDateRange?.start;
     DateTime? end = initialDateRange?.end;

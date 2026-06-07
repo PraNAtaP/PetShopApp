@@ -519,7 +519,7 @@ class _GroomingPaymentExecutionScreenState extends State<GroomingPaymentExecutio
     final user = auth.currentUser;
     
     if (user != null) {
-      await provider.confirmBooking(user.uid, user.nama);
+      await provider.confirmBooking(user.uid, user.nama, metodePembayaran: widget.paymentMethod);
     }
   }
 

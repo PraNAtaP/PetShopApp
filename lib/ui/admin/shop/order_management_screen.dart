@@ -9,6 +9,9 @@ import 'package:petshopapp/services/pdf_invoice_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:petshopapp/core/constants/point_constants.dart';
+import 'package:petshopapp/services/auth_service.dart';
+import 'package:provider/provider.dart';
 
 class OrderManagementScreen extends StatefulWidget {
   const OrderManagementScreen({super.key});
@@ -603,6 +606,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                                         statusBayar: 'Dibatalkan',
                                         statusPengiriman: 'Dibatalkan',
                                       );
+                                      await _handlePointLogic(order, 'Dibatalkan', 'Dibatalkan');
                                       await FirebaseFirestore.instance
                                           .collection('orders')
                                           .doc(order.orderId)
@@ -630,11 +634,14 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                                   child: ElevatedButton(
                                     onPressed: () async {
                                       final isPaid = order.buktiBayarUrl != null && order.buktiBayarUrl!.isNotEmpty;
+                                      final newPaymentStatus = isPaid ? 'Lunas' : 'Menunggu Verifikasi';
+                                      final newShippingStatus = isPaid ? 'Diproses' : 'Menunggu';
                                       await _firestoreService.updateOrderFullStatus(
                                         orderId: order.orderId,
-                                        statusBayar: isPaid ? 'Lunas' : 'Menunggu Verifikasi',
-                                        statusPengiriman: isPaid ? 'Diproses' : 'Menunggu',
+                                        statusBayar: newPaymentStatus,
+                                        statusPengiriman: newShippingStatus,
                                       );
+                                      await _handlePointLogic(order, newPaymentStatus, newShippingStatus);
                                       await FirebaseFirestore.instance
                                           .collection('orders')
                                           .doc(order.orderId)
@@ -713,7 +720,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                                   SizedBox(
                                     width: double.infinity,
                                     child: ElevatedButton(
-                                      onPressed: () => _verifyPayment(order.orderId),
+                                      onPressed: () => _verifyPayment(order),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.green,
                                         foregroundColor: Colors.white,
@@ -874,6 +881,7 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                     statusBayar: selectedPaymentStatus,
                     statusPengiriman: selectedShippingStatus,
                   );
+                  await _handlePointLogic(order, selectedPaymentStatus, selectedShippingStatus);
                   if (context.mounted) {
                     Navigator.pop(context); 
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -905,13 +913,49 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
     );
   }
 
-  Future<void> _verifyPayment(String orderId) async {
+  Future<void> _handlePointLogic(OrderModel order, String newPaymentStatus, String newShippingStatus) async {
+    if (order.statusBayar == newPaymentStatus && order.statusPengiriman == newShippingStatus) return;
+
+    final auth = context.read<AuthService>();
+    final isNowCompleted = (newPaymentStatus == 'Lunas' && newShippingStatus == 'Selesai');
+    final isNowCanceled = (newPaymentStatus == 'Dibatalkan' || newShippingStatus == 'Dibatalkan');
+
+    if (isNowCanceled && order.diskonPoin > 0) {
+      final double poinTerpakai = (order.diskonPoin / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem;
+      await auth.tambahPoinForUser(
+        uid: order.customerId,
+        jumlahPoin: poinTerpakai,
+        keterangan: 'Refund penukaran poin (Pesanan Dibatalkan)',
+        orderId: order.orderId,
+      );
+    }
+
+    if (isNowCompleted) {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(order.customerId).get();
+      final double maxPoin = (userDoc.data()?['max_poin'] ?? 0.0).toDouble();
+      
+      final double totalAfterDiscount = (order.totalHarga - order.diskonPoin).clamp(0, double.infinity);
+      final double poinDidapat = PointConstants.hitungPoin(totalAfterDiscount, maxPoin);
+      
+      if (poinDidapat > 0) {
+        await auth.tambahPoinForUser(
+          uid: order.customerId,
+          jumlahPoin: poinDidapat,
+          keterangan: 'Pembelian produk (Rp${totalAfterDiscount.toInt()})',
+          orderId: order.orderId,
+        );
+      }
+    }
+  }
+
+  Future<void> _verifyPayment(OrderModel order) async {
     try {
       await _firestoreService.updateOrderFullStatus(
-        orderId: orderId,
+        orderId: order.orderId,
         statusBayar: 'Lunas',
         statusPengiriman: 'Diproses',
       );
+      await _handlePointLogic(order, 'Lunas', 'Diproses');
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(

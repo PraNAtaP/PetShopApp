@@ -677,18 +677,7 @@ class _UniversalPaymentExecutionScreenState
       }
     }
 
-    final double totalAfterDiscount =
-        (cart.totalPrice - widget.discount).clamp(0, double.infinity);
-    final double maxPoin = auth.currentUser?.maxPoin ?? 0.0;
-    final double poinDidapat = PointConstants.hitungPoin(totalAfterDiscount, maxPoin);
-    if (poinDidapat > 0) {
-      final error = await auth.tambahPoin(
-        jumlahPoin: poinDidapat,
-        keterangan: 'Pembelian produk (Rp${totalAfterDiscount.toInt()}) — ${cart.totalItems} item',
-        orderId: realOrderId,
-      );
-      if (error != null) debugPrint('Gagal menambah poin: $error');
-    }
+
 
     await cart.clearCart();
 
@@ -721,25 +710,7 @@ class _UniversalPaymentExecutionScreenState
       );
     }
 
-    final double baseTotal =
-          (provider.selectedPrice * provider.selectedPets.length) +
-          provider.shippingFee;
-    final double totalAfterDiscount =
-          (baseTotal - widget.discount).clamp(0, double.infinity);
-    final double maxPoin = user?.maxPoin ?? 0.0;
-    final double poinDidapat = PointConstants.hitungPoin(totalAfterDiscount, maxPoin);
 
-    print('=== EARN POIN GROOMING ===');
-    print('baseTotal: $baseTotal');
-    print('totalAfterDiscount: $totalAfterDiscount');
-    print('poinDidapat: $poinDidapat');
-    
-    if (poinDidapat > 0 && user != null) {
-      await auth.tambahPoin(
-        jumlahPoin: poinDidapat,
-        keterangan: 'Grooming (Rp${totalAfterDiscount.toInt()})',
-      );
-    }
   }
   
   Widget _buildSuccessView() {
