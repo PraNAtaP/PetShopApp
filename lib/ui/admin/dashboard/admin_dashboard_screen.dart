@@ -4,10 +4,13 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/order_model.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/models/grooming_booking_model.dart';
+import 'package:petshopapp/models/admin_log_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
 import 'package:petshopapp/services/grooming_service.dart';
+import 'package:petshopapp/services/admin_log_service.dart';
 
 import 'package:petshopapp/ui/admin/dashboard/cash_history_screen.dart';
+import 'package:petshopapp/ui/admin/dashboard/admin_log_history_screen.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -95,7 +98,7 @@ class AdminDashboardScreen extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Container(
                       width: double.infinity,
@@ -112,6 +115,7 @@ class AdminDashboardScreen extends StatelessWidget {
                         ),
                       ),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           const Text(
                             'Dashboard Keuangan',
@@ -157,6 +161,36 @@ class AdminDashboardScreen extends StatelessWidget {
                             textColor: AppColors.textDark,
                           ),
                         ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildKpiCard(
+                            title: 'Log Aktivitas',
+                            value: 'Lihat Riwayat',
+                            valueStyle: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primary,
+                              decoration: TextDecoration.underline,
+                              decorationColor: AppColors.primary,
+                              decorationThickness: 2,
+                            ),
+                            icon: Icons.history,
+                            color: Colors.white,
+                            textColor: AppColors.primary,
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.3),
+                              width: 1.5,
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const AdminLogHistoryScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ],
                     ),
                     
@@ -195,7 +229,7 @@ class AdminDashboardScreen extends StatelessWidget {
                             ? const Center(child: Text('Belum ada transaksi.'))
                             : ListView.separated(
                                 padding: const EdgeInsets.all(16),
-                                itemCount: recentTransactions.take(20).length, // Show up to 20 recent transactions
+                                itemCount: recentTransactions.take(20).length,
                                 separatorBuilder: (context, index) => const Divider(),
                                 itemBuilder: (context, index) {
                                   final item = recentTransactions[index];
@@ -285,32 +319,66 @@ class AdminDashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildKpiCard({required String title, required String value, required IconData icon, required Color color, Color textColor = Colors.white}) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: color.withOpacity(0.4), blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: TextStyle(color: textColor.withOpacity(0.9), fontSize: 16, fontWeight: FontWeight.w600)),
-              Icon(icon, color: textColor.withOpacity(0.8), size: 28),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            value,
-            style: TextStyle(color: textColor, fontSize: 28, fontWeight: FontWeight.bold),
-          ),
-        ],
+  Widget _buildKpiCard({
+    required String title,
+    required String value,
+    required IconData icon,
+    required Color color,
+    Color textColor = Colors.white,
+    BoxBorder? border,
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(16),
+          border: border,
+          boxShadow: [
+            BoxShadow(
+              color: color == Colors.white 
+                  ? Colors.black.withOpacity(0.05) 
+                  : color.withOpacity(0.4),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: textColor.withOpacity(0.9),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(icon, color: textColor.withOpacity(0.8), size: 28),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              value,
+              style: TextStyle(
+                color: textColor,
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       ),
     );
   }
