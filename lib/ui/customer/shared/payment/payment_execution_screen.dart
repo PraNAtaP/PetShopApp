@@ -66,7 +66,7 @@ class _UniversalPaymentExecutionScreenState
     super.dispose();
   }
 
-  double _getTotalAmount() {
+  double _getBaseAmount() {
     double base;
     if (widget.category == 'shop') {
       base = context.read<CartProvider>().totalPrice;
@@ -75,7 +75,11 @@ class _UniversalPaymentExecutionScreenState
       base = (provider.selectedPrice * provider.selectedPets.length) +
           provider.shippingFee;
     }
-    return (base - widget.discount).clamp(0, double.infinity);
+    return base;
+  }
+
+  double _getTotalAmount() {
+    return (_getBaseAmount() - widget.discount).clamp(0, double.infinity);
   }
 
   @override
@@ -101,12 +105,15 @@ class _UniversalPaymentExecutionScreenState
     final total = _getTotalAmount();
     final cart = context.watch<CartProvider>();
     final grooming = context.watch<GroomingProvider>();
+    final baseTotal = _getBaseAmount();
+    final isDpCoveredByPoints = widget.usePoints && widget.discount >= (baseTotal * 0.5);
+
     bool isDpRequired = false;
     if (widget.category == 'shop') {
-      isDpRequired = widget.paymentMethod == 'COD' && !cart.isDelivery;
+      isDpRequired = widget.paymentMethod == 'COD' && !cart.isDelivery && !isDpCoveredByPoints;
     } else if (widget.category == 'grooming') {
       isDpRequired =
-          widget.paymentMethod == 'COD' && !grooming.isHomeService;
+          widget.paymentMethod == 'COD' && !grooming.isHomeService && !isDpCoveredByPoints;
     }
 
     return Column(

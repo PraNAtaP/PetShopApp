@@ -53,9 +53,14 @@ class _UniversalPaymentMethodScreenState
 
   double get _discount {
     if (!_usePoints) return 0;
-    final rawDiskon = PointConstants.hitungDiskon(_currentPoints, _maxPoints);
-    return rawDiskon.clamp(0, _totalHarga);
+    return _maxDiscountForOrder;
   }
+
+  double get _maxDiscountForOrder =>
+      PointConstants.hitungDiskon(_currentPoints, _maxPoints).clamp(0, _totalHarga * 0.5).toDouble();
+
+  double get _pointsUsedForOrder =>
+      (_maxDiscountForOrder / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem;
 
   double get _totalAfterDiscount =>
       (_totalHarga - _discount).clamp(0, double.infinity);
@@ -303,13 +308,13 @@ class _UniversalPaymentMethodScreenState
                                       children: [
                                         TextSpan(
                                           text:
-                                              'Pakai ${PointConstants.hitungPoinTerpakai(_currentPoints, _maxPoints).toStringAsFixed(0)} poin ',
+                                              'Pakai ${_pointsUsedForOrder.toStringAsFixed(0)} poin ',
                                           style: const TextStyle(
                                               color: Colors.grey),
                                         ),
                                         TextSpan(
                                           text:
-                                              '→ hemat ${currencyFormatter.format(PointConstants.hitungDiskon(_currentPoints, _maxPoints))}',
+                                              '→ hemat ${currencyFormatter.format(_maxDiscountForOrder)}',
                                           style: const TextStyle(
                                               color: Colors.green,
                                               fontWeight: FontWeight.bold),
@@ -328,9 +333,6 @@ class _UniversalPaymentMethodScreenState
                           onChanged: PointConstants.canRedeem(_currentPoints, _maxPoints)
                           ? (val) {
                               setState(() => _usePoints = val);
-                              if (val && _totalAfterDiscount == 0) {
-                                _lanjutkanPembayaran();
-                              }
                             }
                           : null,
                         ),
@@ -455,42 +457,36 @@ class _UniversalPaymentMethodScreenState
     required Color color,
   }) {
     final isSelected = _selectedMethod == method;
+    bool showWarning = false;
+    String warningText = '';
+    final bool isDpCoveredByPoints = _usePoints && (_maxDiscountForOrder >= (_totalHarga * 0.5));
+
+    if (isSelected && method == 'COD' && !isDpCoveredByPoints) {
+      if (widget.category == 'shop') {
+        final cart = context.read<CartProvider>();
+        if (!cart.isDelivery) {
+          showWarning = true;
+          warningText = 'Untuk pengambilan di tempat dengan Bayar di Tempat, Anda diharuskan membayar DP 50% terlebih dahulu.';
+        }
+      } else if (widget.category == 'grooming') {
+        final grooming = context.read<GroomingProvider>();
+        if (!grooming.isHomeService) {
+          showWarning = true;
+          warningText = 'Untuk layanan di salon dengan Bayar di Tempat, Anda diharuskan membayar DP 50% terlebih dahulu.';
+        }
+      }
+    }
 
     return GestureDetector(
       onTap: () {
         setState(() => _selectedMethod = method);
-        if (method == 'COD') {
-          if (widget.category == 'shop') {
-            final cart = context.read<CartProvider>();
-            if (!cart.isDelivery) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Untuk pengambilan di tempat dengan Bayar di Tempat, Anda diharuskan membayar DP 50% terlebih dahulu.',
-                  ),
-                  backgroundColor: Colors.orange,
-                ),
-              );
-            }
-          } else if (widget.category == 'grooming') {
-            final grooming = context.read<GroomingProvider>();
-            if (!grooming.isHomeService) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Untuk layanan di salon dengan Bayar di Tempat, Anda diharuskan membayar DP 50% terlebih dahulu.',
-                  ),
-                  backgroundColor: Colors.orange,
-                ),
-              );
-            }
-          }
-        }
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
+      child: Column(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
@@ -568,6 +564,31 @@ class _UniversalPaymentMethodScreenState
             ),
           ],
         ),
+      ),
+      if (showWarning)
+        Container(
+          margin: const EdgeInsets.only(top: 8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.orange.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.orange.shade200),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.info_outline, color: Colors.orange.shade800, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  warningText,
+                  style: TextStyle(color: Colors.orange.shade800, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
       ),
     );
   }
