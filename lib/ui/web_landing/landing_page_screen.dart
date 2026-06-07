@@ -105,7 +105,8 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
 
   void _playBackgroundMusic() {
     // Pada Flutter Web, path file statis berada di dalam folder assets/
-    _webAudioPlayer = html.AudioElement('assets/lib/assets/music/music.mp3')
+    _webAudioPlayer = html.AudioElement()
+      ..src = 'assets/lib/assets/music/music.mp3'
       ..loop = true
       ..autoplay = false;
       
