@@ -57,14 +57,15 @@ class AdminDashboardScreen extends StatelessWidget {
                 if (order.createdAt == null) continue;
                 final date = order.createdAt!;
                 
+                final netRevenue = (order.totalHarga - order.diskonPoin).clamp(0, double.infinity).toDouble();
                 if (date.isAfter(monthStart) || date.isAtSameMomentAs(monthStart)) {
-                  monthRevenue += order.totalHarga;
+                  monthRevenue += netRevenue;
                 }
                 if (date.isAfter(weekStart) || date.isAtSameMomentAs(weekStart)) {
-                  weekRevenue += order.totalHarga;
+                  weekRevenue += netRevenue;
                 }
                 if (date.isAfter(todayStart) || date.isAtSameMomentAs(todayStart)) {
-                  todayRevenue += order.totalHarga;
+                  todayRevenue += netRevenue;
                 }
               }
 
@@ -72,14 +73,15 @@ class AdminDashboardScreen extends StatelessWidget {
               for (var grooming in paidGroomings) {
                 final date = grooming.createdAt;
                 
+                final netRevenue = (grooming.totalPrice - grooming.diskonPoin).clamp(0, double.infinity).toDouble();
                 if (date.isAfter(monthStart) || date.isAtSameMomentAs(monthStart)) {
-                  monthRevenue += grooming.totalPrice;
+                  monthRevenue += netRevenue;
                 }
                 if (date.isAfter(weekStart) || date.isAtSameMomentAs(weekStart)) {
-                  weekRevenue += grooming.totalPrice;
+                  weekRevenue += netRevenue;
                 }
                 if (date.isAfter(todayStart) || date.isAtSameMomentAs(todayStart)) {
-                  todayRevenue += grooming.totalPrice;
+                  todayRevenue += netRevenue;
                 }
               }
 
@@ -248,7 +250,7 @@ class AdminDashboardScreen extends StatelessWidget {
                                         crossAxisAlignment: CrossAxisAlignment.end,
                                         children: [
                                           Text(
-                                            currencyFormatter.format(order.totalHarga),
+                                            currencyFormatter.format((order.totalHarga - order.diskonPoin).clamp(0, double.infinity)),
                                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                           ),
                                           Text(
@@ -281,7 +283,7 @@ class AdminDashboardScreen extends StatelessWidget {
                                         crossAxisAlignment: CrossAxisAlignment.end,
                                         children: [
                                           Text(
-                                            currencyFormatter.format(grooming.totalPrice),
+                                            currencyFormatter.format((grooming.totalPrice - grooming.diskonPoin).clamp(0, double.infinity)),
                                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                           ),
                                           Text(

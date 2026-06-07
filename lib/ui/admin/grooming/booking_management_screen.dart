@@ -10,6 +10,9 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:petshopapp/services/pdf_invoice_service.dart';
+import 'package:petshopapp/constants/point_constants.dart';
+import 'package:petshopapp/services/auth_service.dart';
+import 'package:provider/provider.dart';
 
 class BookingManagementScreen extends StatefulWidget {
   const BookingManagementScreen({super.key});
@@ -40,19 +43,6 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
         backgroundColor: Colors.white,
         foregroundColor: AppColors.primary,
         elevation: 0,
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) => const AdminAddGroomingDialog(),
-          );
-        },
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Booking Manual'),
       ),
       body: Column(
         children: [
@@ -277,7 +267,20 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
             ],
           ),
         ),
-        DataCell(Text(currencyFormat.format(booking.totalPrice))),
+        DataCell(
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(currencyFormat.format(booking.totalPrice)),
+              if (booking.diskonPoin > 0)
+                Text(
+                  '(Poin: -Rp${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(booking.diskonPoin)})',
+                  style: const TextStyle(fontSize: 10, color: Colors.red),
+                ),
+            ],
+          ),
+        ),
         DataCell(_buildLocationTypeChip(booking.isHomeService)),
         DataCell(_buildStatusChip(booking.status)),
         DataCell(
@@ -494,12 +497,25 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                     _buildDetailItem('Tipe Layanan', booking.serviceType),
                     
                     const Divider(height: 32),
+                    if (booking.diskonPoin > 0) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Potongan Poin', style: TextStyle(fontSize: 14, color: AppColors.textLight)),
+                          Text(
+                            '- ${currencyFormat.format(booking.diskonPoin)}',
+                            style: const TextStyle(fontSize: 14, color: Colors.red),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Total Pembayaran', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const Text('Total Pendapatan Bersih', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         Text(
-                          currencyFormat.format(booking.totalPrice),
+                          currencyFormat.format(booking.totalPrice - booking.diskonPoin),
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
                         ),
                       ],
@@ -566,6 +582,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                                   child: ElevatedButton(
                                     onPressed: () async {
                                       await GroomingService.instance.updateBookingStatus(booking.bookingId, 'Dibatalkan');
+                                      await _handlePointLogic(booking, 'Dibatalkan');
                                       await FirebaseFirestore.instance
                                           .collection('grooming_bookings')
                                           .doc(booking.bookingId)
@@ -586,7 +603,9 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                                   child: ElevatedButton(
                                     onPressed: () async {
                                       final isPaid = booking.buktiBayarUrl != null && booking.buktiBayarUrl!.isNotEmpty;
-                                      await GroomingService.instance.updateBookingStatus(booking.bookingId, isPaid ? 'Confirmed' : 'Pending');
+                                      final newStatus = isPaid ? 'Confirmed' : 'Pending';
+                                      await GroomingService.instance.updateBookingStatus(booking.bookingId, newStatus);
+                                      await _handlePointLogic(booking, newStatus);
                                       await FirebaseFirestore.instance
                                           .collection('grooming_bookings')
                                           .doc(booking.bookingId)
@@ -798,6 +817,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                 setState(() => isSaving = true);
                 try {
                   await GroomingService.instance.updateBookingStatus(booking.bookingId, selectedStatus);
+                  await _handlePointLogic(booking, selectedStatus);
                   if (mounted) {
                     Navigator.pop(dialogContext); 
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -859,6 +879,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
               Navigator.pop(context);
               try {
                 await GroomingService.instance.updateBookingStatus(booking.bookingId, 'Completed');
+                await _handlePointLogic(booking, 'Completed');
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Transaksi Selesai & Masuk Kas!'), backgroundColor: Colors.green));
                 }
@@ -875,6 +896,39 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
       ),
     );
   }
+  Future<void> _handlePointLogic(GroomingBookingModel booking, String newStatus) async {
+    if (booking.status == newStatus) return;
+
+    final auth = context.read<AuthService>();
+    final isNowCompleted = (newStatus == 'Completed');
+    final isNowCanceled = (newStatus == 'Dibatalkan');
+
+    if (isNowCanceled && booking.diskonPoin > 0) {
+      final double poinTerpakai = (booking.diskonPoin / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem;
+      await auth.tambahPoinForUser(
+        uid: booking.userId,
+        jumlahPoin: poinTerpakai,
+        keterangan: 'Refund penukaran poin (Grooming Dibatalkan)',
+      );
+    }
+
+    if (isNowCompleted) {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(booking.userId).get();
+      final double maxPoin = (userDoc.data()?['max_poin'] ?? 0.0).toDouble();
+      
+      final double totalAfterDiscount = (booking.totalPrice - booking.diskonPoin).clamp(0, double.infinity);
+      final double poinDidapat = PointConstants.hitungPoin(totalAfterDiscount, maxPoin);
+      
+      if (poinDidapat > 0) {
+        await auth.tambahPoinForUser(
+          uid: booking.userId,
+          jumlahPoin: poinDidapat,
+          keterangan: 'Grooming (Rp${totalAfterDiscount.toInt()})',
+        );
+      }
+    }
+  }
+
   Future<DateTimeRange?> _showDateRangePopup(BuildContext context, DateTimeRange? initialDateRange) async {
     DateTime? start = initialDateRange?.start;
     DateTime? end = initialDateRange?.end;

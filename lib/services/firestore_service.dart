@@ -302,22 +302,43 @@ class FirestoreService {
   /// Creates a new order in Firestore. Returns the generated document ID.
   Future<String> createOrder(OrderModel order) async {
     try {
-      final batch = _db.batch();
-      
-      // 1. Buat dokumen order baru
       final docRef = _ordersRef.doc();
-      batch.set(docRef, order);
-      
-      // 2. Kurangi stok produk dan tambah jumlah terjual
-      for (final item in order.items) {
-        final productRef = _productsRef.doc(item.productId);
-        batch.update(productRef, {
-          'stok': FieldValue.increment(-item.jumlah),
-          'terjual': FieldValue.increment(item.jumlah),
-        });
-      }
-      
-      await batch.commit();
+      final newOrder = order.copyWith(orderId: docRef.id);
+
+      await _db.runTransaction((transaction) async {
+        final productRefs = newOrder.items.map((item) => _productsRef.doc(item.productId)).toList();
+        final List<DocumentSnapshot<ProductModel>> snapshots = [];
+        
+        for (final ref in productRefs) {
+          final snapshot = await transaction.get(ref);
+          if (!snapshot.exists) {
+            throw Exception('Produk tidak ditemukan atau sudah dihapus.');
+          }
+          snapshots.add(snapshot);
+        }
+
+        for (int i = 0; i < newOrder.items.length; i++) {
+          final item = newOrder.items[i];
+          final product = snapshots[i].data()!;
+          if (product.stok < item.jumlah) {
+            throw Exception('Stok tidak mencukupi untuk ${product.namaProduk} (Sisa: ${product.stok})');
+          }
+        }
+
+        for (int i = 0; i < newOrder.items.length; i++) {
+          final item = newOrder.items[i];
+          final ref = productRefs[i];
+          final product = snapshots[i].data()!;
+          
+          transaction.update(ref, {
+            'stok': product.stok - item.jumlah,
+            'terjual': product.terjual + item.jumlah,
+          });
+        }
+        
+        transaction.set(docRef, newOrder);
+      });
+
       return docRef.id;
     } catch (e) {
       throw Exception('Gagal membuat pesanan: $e');

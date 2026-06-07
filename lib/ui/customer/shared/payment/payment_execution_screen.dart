@@ -66,7 +66,7 @@ class _UniversalPaymentExecutionScreenState
     super.dispose();
   }
 
-  double _getTotalAmount() {
+  double _getBaseAmount() {
     double base;
     if (widget.category == 'shop') {
       base = context.read<CartProvider>().totalPrice;
@@ -75,7 +75,11 @@ class _UniversalPaymentExecutionScreenState
       base = (provider.selectedPrice * provider.selectedPets.length) +
           provider.shippingFee;
     }
-    return (base - widget.discount).clamp(0, double.infinity);
+    return base;
+  }
+
+  double _getTotalAmount() {
+    return (_getBaseAmount() - widget.discount).clamp(0, double.infinity);
   }
 
   @override
@@ -101,12 +105,15 @@ class _UniversalPaymentExecutionScreenState
     final total = _getTotalAmount();
     final cart = context.watch<CartProvider>();
     final grooming = context.watch<GroomingProvider>();
+    final baseTotal = _getBaseAmount();
+    final isDpCoveredByPoints = widget.usePoints && widget.discount >= (baseTotal * 0.5);
+
     bool isDpRequired = false;
     if (widget.category == 'shop') {
-      isDpRequired = widget.paymentMethod == 'COD' && !cart.isDelivery;
+      isDpRequired = widget.paymentMethod == 'COD' && !cart.isDelivery && !isDpCoveredByPoints;
     } else if (widget.category == 'grooming') {
       isDpRequired =
-          widget.paymentMethod == 'COD' && !grooming.isHomeService;
+          widget.paymentMethod == 'COD' && !grooming.isHomeService && !isDpCoveredByPoints;
     }
 
     return Column(
@@ -642,10 +649,13 @@ class _UniversalPaymentExecutionScreenState
           )
           .toList(),
       totalHarga: cart.totalPrice,
+      diskonPoin: widget.usePoints ? widget.discount : 0.0,
       buktiBayarUrl: imageUrl,
-      statusBayar: widget.paymentMethod == 'COD'
-          ? 'Pending'
-          : (imageUrl != null ? 'Pending' : 'Unpaid'),
+      statusBayar: (cart.totalPrice - (widget.usePoints ? widget.discount : 0.0)) <= 0
+          ? 'Lunas'
+          : (widget.paymentMethod == 'COD'
+              ? 'Pending'
+              : (imageUrl != null ? 'Pending' : 'Unpaid')),
       statusPengiriman: 'Menunggu',
       metodePengambilan: cart.isDelivery ? 'Kirim ke Alamat' : 'Ambil di Toko',
       metodePembayaran: widget.paymentMethod,
@@ -656,17 +666,18 @@ class _UniversalPaymentExecutionScreenState
 
     await FirestoreService.instance.createOrder(order);
 
-    final double totalAfterDiscount =
-        (cart.totalPrice - widget.discount).clamp(0, double.infinity);
-    final double poinDidapat = PointConstants.hitungPoin(totalAfterDiscount);
-    if (poinDidapat > 0) {
-      await auth.tambahPoin(
-        jumlahPoin: poinDidapat,
-        keterangan:
-            'Pembelian produk (Rp${totalAfterDiscount.toInt()}) — ${cart.totalItems} item',
-        orderId: order.orderId,
-      );
+    if (widget.usePoints && widget.discount > 0) {
+      final double poinTerpakai = (widget.discount / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem;
+      if (poinTerpakai > 0) {
+        final error = await auth.kurangiPoin(
+          jumlahPoin: poinTerpakai,
+          keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
+        );
+        if (error != null) debugPrint('Gagal mengurangi poin: $error');
+      }
     }
+
+
 
     await cart.clearCart();
 
@@ -695,27 +706,11 @@ class _UniversalPaymentExecutionScreenState
         user.nama,
         buktiBayarUrl: imageUrl,
         metodePembayaran: widget.paymentMethod,
+        diskonPoin: widget.usePoints ? widget.discount : 0.0,
       );
     }
 
-    final double baseTotal =
-          (provider.selectedPrice * provider.selectedPets.length) +
-          provider.shippingFee;
-    final double totalAfterDiscount =
-          (baseTotal - widget.discount).clamp(0, double.infinity);
-    final double poinDidapat = PointConstants.hitungPoin(totalAfterDiscount);
 
-    print('=== EARN POIN GROOMING ===');
-    print('baseTotal: $baseTotal');
-    print('totalAfterDiscount: $totalAfterDiscount');
-    print('poinDidapat: $poinDidapat');
-    
-    if (poinDidapat > 0 && user != null) {
-      await auth.tambahPoin(
-        jumlahPoin: poinDidapat,
-        keterangan: 'Grooming (Rp${totalAfterDiscount.toInt()})',
-      );
-    }
   }
   
   Widget _buildSuccessView() {

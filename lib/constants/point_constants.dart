@@ -4,53 +4,68 @@ class PointConstants {
   static const double poinPerTransaksi   = 10.0;  // dapat 10 poin flat
 
   // ── Redeem ────────────────────────────────────────
-  static const double minPoinRedeem      = 100.0;  // min 100 poin
-  static const double poinPerRedeem      = 1.0;  // kelipatan 100 poin
+  static const double poinPerRedeem      = 100.0;  // kelipatan 100 poin
   static const double diskonPerRedeem    = 1000.0; // = Rp1.000
 
   // ── Tier ──────────────────────────────────────────
-  static const double tierSilver   = 300.0;
-  static const double tierGold     = 500.0;
-  static const double tierPlatinum = 1000.0;
+  static const double tierSilver   = 1000.0;
+  static const double tierGold     = 5000.0;
+  static const double tierPlatinum = 20000.0;
+  static const double tierDiamond  = 50000.0;
 
   static String getTier(double maxPoin) {             
-    if (maxPoin >= tierPlatinum) return '💎 Platinum Member';
+    if (maxPoin >= tierDiamond)  return '💎 Diamond Member';
+    if (maxPoin >= tierPlatinum) return '🛡️ Platinum Member';
     if (maxPoin >= tierGold)     return '🥇 Gold Member';
     if (maxPoin >= tierSilver)   return '🥈 Silver Member';
     return '🥉 Bronze Member';
   }
 
+  static double getMultiplier(double maxPoin) {
+    if (maxPoin >= tierDiamond)  return 2.0;
+    if (maxPoin >= tierPlatinum) return 1.8;
+    if (maxPoin >= tierGold)     return 1.5;
+    if (maxPoin >= tierSilver)   return 1.2;
+    return 1.0;
+  }
+
+  static double getMinPoinRedeem(double maxPoin) {
+    if (maxPoin >= tierPlatinum) return 100.0; // Platinum & Diamond
+    return 1000.0; // Bronze, Silver, Gold
+  }
+
   // ── Helper ────────────────────────────────────────
 
-  /// Hitung poin dari total belanja.
-  /// Return 10.0 jika >= Rp10.000, return 0 jika di bawah minimum.
-  static double hitungPoin(double totalHarga) {
+  /// Hitung poin dari total belanja berdasarkan tier multiplier.
+  static double hitungPoin(double totalHarga, double maxPoin) {
     if (totalHarga < minBelanjaEarnPoin) return 0;
-    return totalHarga / 1000;
+    final multiplier = getMultiplier(maxPoin);
+    return (totalHarga / 1000) * multiplier;
   }
 
   /// Hitung nominal diskon dari poin yang dimiliki.
-  /// Contoh: 250 poin → 2 × Rp1.000 = Rp2.000
-  static double hitungDiskon(double poin) {
-    if (poin < minPoinRedeem) return 0;
+  static double hitungDiskon(double poin, double maxPoin) {
+    final minRedeem = getMinPoinRedeem(maxPoin);
+    if (poin < minRedeem) return 0;
     final kelipatan = (poin / poinPerRedeem).floor();
     return kelipatan * diskonPerRedeem;
   }
 
   /// Hitung berapa poin yang akan terpakai.
-  static double hitungPoinTerpakai(double poin) {
-    if (poin < minPoinRedeem) return 0;
+  static double hitungPoinTerpakai(double poin, double maxPoin) {
+    final minRedeem = getMinPoinRedeem(maxPoin);
+    if (poin < minRedeem) return 0;
     final kelipatan = (poin / poinPerRedeem).floor();
     return kelipatan * poinPerRedeem;
   }
 
   /// Hitung sisa poin setelah redeem.
-  static double sisaPoin(double poin) {
-    return poin - hitungPoinTerpakai(poin);
+  static double sisaPoin(double poin, double maxPoin) {
+    return poin - hitungPoinTerpakai(poin, maxPoin);
   }
 
-  /// Tentukan apakah user boleh redeem.
-  static bool canRedeem(double poin) {
-    return poin >= minPoinRedeem;
+  /// Cek apakah poin cukup untuk ditukarkan
+  static bool canRedeem(double poin, double maxPoin) {
+    return poin >= getMinPoinRedeem(maxPoin);
   }
 }

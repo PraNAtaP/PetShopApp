@@ -12,6 +12,7 @@ class GroomingBookingModel {
   final String timeSlot;
   final int durationMinutes;
   final double totalPrice;
+  final double diskonPoin;
   final bool isHomeService;
   final String? alamatLengkap;
   final double? latitude;
@@ -36,6 +37,7 @@ class GroomingBookingModel {
     required this.timeSlot,
     required this.durationMinutes,
     required this.totalPrice,
+    this.diskonPoin = 0.0,
     required this.isHomeService,
     this.alamatLengkap,
     this.latitude,
@@ -71,6 +73,7 @@ class GroomingBookingModel {
       timeSlot: data['timeSlot']?.toString() ?? '',
       durationMinutes: data['durationMinutes'] as int? ?? 0,
       totalPrice: (data['totalPrice'] ?? 0).toDouble(),
+      diskonPoin: (data['diskonPoin'] ?? 0).toDouble(),
       isHomeService: data['isHomeService'] ?? false,
       alamatLengkap: data['alamatLengkap']?.toString(),
       latitude: (data['latitude'] as num?)?.toDouble(),
@@ -98,6 +101,7 @@ class GroomingBookingModel {
       'timeSlot': timeSlot,
       'durationMinutes': durationMinutes,
       'totalPrice': totalPrice,
+      'diskonPoin': diskonPoin,
       'isHomeService': isHomeService,
       if (alamatLengkap != null) 'alamatLengkap': alamatLengkap,
       if (latitude != null) 'latitude': latitude,
@@ -125,6 +129,7 @@ class GroomingBookingModel {
     String? timeSlot,
     int? durationMinutes,
     double? totalPrice,
+    double? diskonPoin,
     bool? isHomeService,
     String? alamatLengkap,
     double? latitude,
@@ -149,6 +154,7 @@ class GroomingBookingModel {
       timeSlot: timeSlot ?? this.timeSlot,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       totalPrice: totalPrice ?? this.totalPrice,
+      diskonPoin: diskonPoin ?? this.diskonPoin,
       isHomeService: isHomeService ?? this.isHomeService,
       alamatLengkap: alamatLengkap ?? this.alamatLengkap,
       latitude: latitude ?? this.latitude,

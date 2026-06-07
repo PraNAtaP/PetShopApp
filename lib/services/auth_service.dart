@@ -293,7 +293,7 @@ class AuthService extends ChangeNotifier {
         final double currentPoin = (snapshot.data()?['poin'] ?? 0).toDouble();
         final double currentMaxPoin = (snapshot.data()?['max_poin'] ?? 0).toDouble();
         final double newPoin = (currentPoin + jumlahPoin).clamp(0.0, 999999.0);
-        final double newMaxPoin = newPoin > currentMaxPoin ? newPoin : currentMaxPoin;
+        final double newMaxPoin = jumlahPoin > 0 ? currentMaxPoin + jumlahPoin : currentMaxPoin;
         
 
         transaction.update(userRef, {'poin': newPoin, 'max_poin': newMaxPoin});
@@ -311,6 +311,45 @@ class AuthService extends ChangeNotifier {
       });
 
       await refreshProfile();
+      return null;
+    } catch (e) {
+      return 'Gagal memperbarui poin: $e';
+    }
+  }
+
+  Future<String?> tambahPoinForUser({
+    required String uid,
+    required double jumlahPoin,
+    required String keterangan,
+    String? orderId,
+  }) async {
+    try {
+      final userRef = _firestore.collection('users').doc(uid);
+      final historyRef = _firestore.collection('point_history');
+
+      await _firestore.runTransaction((transaction) async {
+        final snapshot = await transaction.get(userRef);
+        if (!snapshot.exists) throw Exception('User tidak ditemukan');
+
+        final double currentPoin = (snapshot.data()?['poin'] ?? 0).toDouble();
+        final double currentMaxPoin = (snapshot.data()?['max_poin'] ?? 0).toDouble();
+        final double newPoin = (currentPoin + jumlahPoin).clamp(0.0, 999999.0);
+        final double newMaxPoin = jumlahPoin > 0 ? currentMaxPoin + jumlahPoin : currentMaxPoin;
+        
+        transaction.update(userRef, {'poin': newPoin, 'max_poin': newMaxPoin});
+
+        final history = PointHistoryModel(
+          id: '',
+          uid: uid,
+          poin: jumlahPoin,
+          type: jumlahPoin > 0 ? PointType.earn : PointType.redeem,
+          keterangan: keterangan,
+          orderId: orderId,
+        );
+
+        transaction.set(historyRef.doc(), history.toFirestore());
+      });
+
       return null;
     } catch (e) {
       return 'Gagal memperbarui poin: $e';
@@ -355,7 +394,7 @@ class AuthService extends ChangeNotifier {
   }
 
   double hitungPoinDariTransaksi(double totalHarga) {
-    return PointConstants.hitungPoin(totalHarga);
+    return PointConstants.hitungPoin(totalHarga, _currentUser?.maxPoin ?? 0.0);
   }
 
   Future<void> logout() async {
