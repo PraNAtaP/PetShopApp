@@ -61,6 +61,7 @@ dependencies:
   printing: ^5.14.3
   universal_html: ^2.3.0
   video_player: ^2.11.1
+  youtube_player_iframe: ^6.0.2
 
 
 
@@ -87,9 +88,9 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
   assets:
     - lib/assets/img/
+    - lib/assets/music/
     - lib/assets/img/1776076564947.png
     - lib/assets/img/qris_placeholder.png
     - lib/assets/img/google_logo.png

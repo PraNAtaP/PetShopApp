@@ -3,7 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart' hide PlayerState;
+import 'package:universal_html/html.dart' as html;
 import 'dart:math' as math;
+import 'dart:ui';
 
 class LandingPageScreen extends StatefulWidget {
   const LandingPageScreen({super.key});
@@ -15,10 +18,67 @@ class LandingPageScreen extends StatefulWidget {
 class _LandingPageScreenState extends State<LandingPageScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _isScrolled = false;
+  html.AudioElement? _webAudioPlayer;
+  bool _isPlaying = false;
 
   final GlobalKey _homeKey = GlobalKey();
   final GlobalKey _aboutKey = GlobalKey();
   final GlobalKey _teamKey = GlobalKey();
+
+  void _showDemoVideo() {
+    final controller = YoutubePlayerController.fromVideoId(
+      videoId: 'LMIS2PMqCL0', // Video ID asli dari iFrame Pet Point
+      autoPlay: true,
+      params: const YoutubePlayerParams(showFullscreenButton: true),
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(20),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 800, maxHeight: 500),
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.white24),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Title bar with close button
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF1E1E1E),
+                    border: Border(bottom: BorderSide(color: Colors.white12)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Video Demo Pet Point', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                        splashRadius: 24,
+                      ),
+                    ],
+                  ),
+                ),
+                // Video player
+                Flexible(
+                  child: YoutubePlayer(controller: controller),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   void _scrollToSection(GlobalKey key) {
     if (key.currentContext != null) {
@@ -33,6 +93,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
   @override
   void initState() {
     super.initState();
+    _playBackgroundMusic();
     _scrollController.addListener(() {
       if (_scrollController.offset > 50 && !_isScrolled) {
         setState(() => _isScrolled = true);
@@ -42,8 +103,36 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
     });
   }
 
+  void _playBackgroundMusic() {
+    // Pada Flutter Web, path file statis berada di dalam folder assets/
+    _webAudioPlayer = html.AudioElement('assets/lib/assets/music/music.mp3')
+      ..loop = true
+      ..autoplay = false;
+      
+    // Coba putar (auto-play)
+    _webAudioPlayer?.play().then((_) {
+      if (mounted) setState(() => _isPlaying = true);
+    }).catchError((e) {
+      debugPrint("Auto-play blocked by browser: $e");
+    });
+  }
+
+  void _toggleMusic() {
+    if (_isPlaying) {
+      _webAudioPlayer?.pause();
+    } else {
+      _webAudioPlayer?.play().catchError((e) {
+        debugPrint("Error playing music: $e");
+      });
+    }
+    if (mounted) setState(() => _isPlaying = !_isPlaying);
+  }
+
   @override
   void dispose() {
+    _webAudioPlayer?.pause();
+    _webAudioPlayer?.removeAttribute('src');
+    _webAudioPlayer?.load();
     _scrollController.dispose();
     super.dispose();
   }
@@ -79,6 +168,14 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
             child: _buildNavbar(context),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _toggleMusic,
+        backgroundColor: Colors.black87,
+        child: Icon(
+          _isPlaying ? Icons.music_note : Icons.music_off,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -145,7 +242,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
             onPressed: () => context.push('/login'),
             style: ElevatedButton.styleFrom(
               minimumSize: isMobile ? const Size(100, 40) : const Size(120, 50),
-              backgroundColor: const Color(0xFFC6FF00), // Lime green accent
+              backgroundColor: const Color(0xFF4FC3F7), 
               foregroundColor: Colors.black,
               padding: EdgeInsets.symmetric(horizontal: isMobile ? 16 : 24, vertical: isMobile ? 12 : 20),
               shape: RoundedRectangleBorder(
@@ -241,7 +338,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                   Column(
                     children: [
                       OutlinedButton(
-                        onPressed: () {},
+                        onPressed: _showDemoVideo,
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(200, 50),
                           foregroundColor: Colors.white,
@@ -262,7 +359,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                         },
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(200, 50),
-                          backgroundColor: const Color(0xFFC6FF00),
+                          backgroundColor: const Color(0xFF4FC3F7), // Light Sky Blue
                           foregroundColor: Colors.black,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
@@ -272,9 +369,9 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('UNDUH APLIKASI', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+                            Icon(Icons.android, size: 20),
                             SizedBox(width: 8),
-                            Icon(Icons.arrow_outward, size: 18),
+                            Text('UNDUH APLIKASI ANDROID', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1, fontSize: 13)),
                           ],
                         ),
                       ),
@@ -285,7 +382,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       OutlinedButton(
-                        onPressed: () {},
+                        onPressed: _showDemoVideo,
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size(150, 50),
                           foregroundColor: Colors.white,
@@ -307,7 +404,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                         },
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(150, 50),
-                          backgroundColor: const Color(0xFFC6FF00),
+                          backgroundColor: const Color(0xFF4FC3F7), // Light Sky Blue
                           foregroundColor: Colors.black,
                           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
                           shape: RoundedRectangleBorder(
@@ -318,9 +415,9 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('UNDUH APLIKASI', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+                            Icon(Icons.android, size: 20),
                             SizedBox(width: 8),
-                            Icon(Icons.arrow_outward, size: 18),
+                            Text('UNDUH APLIKASI ANDROID', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1, fontSize: 13)),
                           ],
                         ),
                       ),
@@ -352,13 +449,14 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                         ..rotateZ(-0.05),
                       alignment: Alignment.center,
                       child: _buildMockupCard(
-                        width: 135, height: 175, color: Colors.white.withOpacity(0.9),
+                        width: 135, height: 175, 
+                        bgImageUrl: 'https://images.unsplash.com/photo-1516734212186-a967f81ad0d7?q=80&w=300&auto=format&fit=crop',
                         child: const Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.healing, size: 36, color: Colors.blue),
+                            Icon(Icons.shower, size: 36, color: Colors.white),
                             SizedBox(height: 14),
-                            Text('Klinik & Grooming', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10)),
+                            Text('Layanan\nGrooming', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.white)),
                           ],
                         ),
                       ),
@@ -373,30 +471,16 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                         ..rotateY(-0.15),
                       alignment: Alignment.center,
                       child: _buildMockupCard(
-                        width: 148, height: 189, color: Colors.white,
+                        width: 148, height: 189, 
+                        bgImageUrl: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=300&auto=format&fit=crop',
                         child: const Padding(
                           padding: EdgeInsets.all(16.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Hewan Adopsi', style: TextStyle(color: Colors.grey, fontSize: 8)),
+                              Text('Hewan Adopsi', style: TextStyle(color: Colors.white70, fontSize: 8)),
                               SizedBox(height: 4),
-                              Text('500+', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
-                              Spacer(),
-                              Wrap(
-                                spacing: 5,
-                                runSpacing: 5,
-                                children: [
-                                  Chip(
-                                    label: Text('Kucing', style: TextStyle(fontSize: 8)),
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                                  Chip(
-                                    label: Text('Anjing', style: TextStyle(fontSize: 8)),
-                                    visualDensity: VisualDensity.compact,
-                                  ),
-                                ],
-                              )
+                              Text('15+', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
@@ -413,13 +497,14 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                         ..rotateZ(0.05),
                       alignment: Alignment.center,
                       child: _buildMockupCard(
-                        width: 135, height: 175, color: Colors.white.withOpacity(0.9),
+                        width: 135, height: 175,
+                        bgImageUrl: 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?q=80&w=300&auto=format&fit=crop',
                         child: const Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.support_agent, size: 27, color: Colors.blue),
-                            SizedBox(height: 10),
-                            Text('Tanya Dokter', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 9)),
+                            Icon(Icons.medical_services, size: 36, color: Colors.white),
+                            SizedBox(height: 14),
+                            Text('Konsultasi\nTerkait Anabul', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.white)),
                           ],
                         ),
                       ),
@@ -434,7 +519,8 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                         ..rotateY(0.15),
                       alignment: Alignment.center,
                       child: _buildMockupCard(
-                        width: 148, height: 189, color: const Color(0xFF1E1E1E),
+                        width: 148, height: 189, 
+                        bgImageUrl: 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?q=80&w=300&auto=format&fit=crop',
                         child: const Padding(
                           padding: EdgeInsets.all(16.0),
                           child: Column(
@@ -442,8 +528,8 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text('Belanja Pakan &', style: TextStyle(color: Colors.white70, fontSize: 9)),
-                              Text('Aksesoris Hewan', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
-                              Text('Terlengkap!', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                              Text('Aksesoris Hewan', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                              Text('Terlengkap!', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                             ],
                           ),
                         ),
@@ -455,18 +541,14 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                     offset: const Offset(0, 13),
                     child: _buildMockupCard(
                       width: 175, height: 216, 
-                      color: const Color(0xFF2196F3).withValues(alpha: 0.85), // Glassy blue
+                      isGlass: true,
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: const BoxDecoration(shape: BoxShape.circle, color: Colors.white24),
-                            child: Image.asset(
-                              'lib/assets/img/1776076564947.png',
-                              height: 40,
-                              width: 40,
-                            ),
+                          Image.asset(
+                            'lib/assets/img/1776076564947.png',
+                            height: 80,
+                            width: 80,
                           ),
                           const SizedBox(height: 16),
                           const Text('Pet Point', style: TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.bold)),
@@ -488,7 +570,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('Dipercaya oleh 4.900+ Pet Lovers', style: TextStyle(color: Colors.white.withValues(alpha: 0.9))),
+              Text('Dipercaya oleh Pet Lovers Malang', style: TextStyle(color: Colors.white.withValues(alpha: 0.9))),
               const SizedBox(width: 12),
               Row(
                 children: List.generate(5, (index) => const Icon(Icons.star, color: Color(0xFFC6FF00), size: 16)),
@@ -500,32 +582,47 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
     );
   }
 
-  Widget _buildMockupCard({required double width, required double height, required Color color, required Widget child}) {
-    return Container(
+  Widget _buildMockupCard({required double width, required double height, Color? color, Gradient? gradient, String? bgImageUrl, bool isGlass = false, required Widget child}) {
+    Widget cardContent = Container(
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: color,
+        color: isGlass ? Colors.white.withOpacity(0.05) : color,
+        gradient: isGlass ? null : gradient,
+        border: isGlass ? Border.all(color: Colors.white.withOpacity(0.2), width: 1.5) : null,
+        image: bgImageUrl != null ? DecorationImage(
+          image: NetworkImage(bgImageUrl),
+          fit: BoxFit.cover,
+          colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.5), BlendMode.darken),
+        ) : null,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(
+          if (!isGlass) BoxShadow(
             color: Colors.black.withValues(alpha: 0.15),
             blurRadius: 30,
             offset: const Offset(0, 15),
           ),
-          BoxShadow(
+          if (!isGlass) BoxShadow(
             color: Colors.white.withValues(alpha: 0.2),
             spreadRadius: 1,
           ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: child,
-      ),
+      child: child,
     );
-  }
 
+    if (isGlass) {
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: cardContent,
+        ),
+      );
+    }
+
+    return cardContent;
+  }
 
   Widget _buildAboutSection(BuildContext context) {
     bool isMobile = MediaQuery.of(context).size.width < 800;
@@ -629,31 +726,31 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
     final List<Map<String, dynamic>> teamMembers = [
       {
         'name': 'Pranata Putrandana',
-        'role': 'Chief Executive Officer',
+        'role': 'Lead Developer',
         'color': const Color(0xFF1E88E5), // Blue
         'textColor': Colors.white,
         'image': 'lib/assets/img/team_1.jpg',
       },
       {
         'name': 'Muh. Zaky Dawamul B.',
-        'role': 'Chief Technology Officer',
+        'role': 'Developer',
         'color': const Color(0xFFF5F5F5), // Light Grey
         'textColor': Colors.black,
         'image': 'lib/assets/img/team_2.png',
       },
       {
         'name': 'Bunga Aulia Sari',
-        'role': 'Chief Marketing Officer',
+        'role': 'Developer',
         'color': const Color(0xFFC6FF00), // Lime Green
         'textColor': Colors.black,
         'image': 'lib/assets/img/team_3.png',
       },
       {
         'name': 'Khoirun Nisa Fitriani',
-        'role': 'Chief Operating Officer',
+        'role': 'Developer',
         'color': const Color(0xFF1E1E1E), // Dark
         'textColor': Colors.white,
-        'image': 'lib/assets/img/team_4.png',
+        'image': 'lib/assets/img/team_4.jpeg',
       },
     ];
 
@@ -671,9 +768,9 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                 child: Text('MEET THE TEAM', style: TextStyle(letterSpacing: 2, fontWeight: FontWeight.bold, color: Colors.grey)),
               ),
               Wrap(
-                spacing: 24,
-                runSpacing: 24,
-                children: teamMembers.map((member) => _buildTeamCard(member)).toList(),
+                spacing: isMobile ? 16 : 24,
+                runSpacing: isMobile ? 16 : 24,
+                children: teamMembers.map((member) => _buildTeamCard(member, context)).toList(),
               ),
             ],
           ),
@@ -682,50 +779,76 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
     );
   }
 
-  Widget _buildTeamCard(Map<String, dynamic> data) {
+  Widget _buildTeamCard(Map<String, dynamic> data, BuildContext context) {
+    bool isMobile = MediaQuery.of(context).size.width < 800;
+    double spacing = isMobile ? 16 : 24;
+    double horizontalPadding = isMobile ? 40 : 100; // 20 * 2 for mobile grid padding
+    double cardWidth = isMobile ? (MediaQuery.of(context).size.width - horizontalPadding - spacing) / 2 : 275;
+
     return Container(
-      width: 275,
-      height: 350,
+      width: cardWidth,
+      height: isMobile ? 240 : 350,
       decoration: BoxDecoration(
         color: data['color'],
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(isMobile ? 20 : 32),
       ),
-      padding: const EdgeInsets.all(32),
+      padding: EdgeInsets.all(isMobile ? 16 : 32),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('TIM DEVELOPER', style: TextStyle(color: data['textColor'].withValues(alpha: 0.5), fontWeight: FontWeight.bold, letterSpacing: 1)),
-              Icon(Icons.bar_chart, color: data['textColor']),
+              if (!isMobile)
+                Text('TIM DEVELOPER', style: TextStyle(color: data['textColor'].withValues(alpha: 0.5), fontWeight: FontWeight.bold, letterSpacing: 1)),
+              if (isMobile)
+                Expanded(child: Text('TIM DEV', style: TextStyle(color: data['textColor'].withValues(alpha: 0.5), fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1))),
+              Icon(Icons.bar_chart, color: data['textColor'], size: isMobile ? 18 : 24),
             ],
           ),
           const Spacer(),
           // Placeholder for the team member image
           Center(
             child: CircleAvatar(
-              radius: 50,
+              radius: isMobile ? 35 : 50,
               backgroundColor: data['textColor'].withValues(alpha: 0.1),
               backgroundImage: AssetImage(data['image']),
             ),
           ),
-          const SizedBox(height: 24),
-          Text(
-            data['name'],
-            style: TextStyle(
-              color: data['textColor'],
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              letterSpacing: -0.5,
+          SizedBox(height: isMobile ? 16 : 24),
+          SizedBox(
+            height: isMobile ? 36 : 56, // Fixed height to enforce 2 lines exactly
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                data['name'],
+                style: TextStyle(
+                  color: data['textColor'],
+                  fontSize: isMobile ? 16 : 24,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: -0.5,
+                  height: 1.1,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            data['role'],
-            style: TextStyle(
-              color: data['textColor'].withValues(alpha: 0.7),
-              fontSize: 14,
+          SizedBox(height: isMobile ? 4 : 8),
+          SizedBox(
+            height: isMobile ? 28 : 36, // Fixed height to enforce 2 lines exactly
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Text(
+                data['role'],
+                style: TextStyle(
+                  color: data['textColor'].withValues(alpha: 0.7),
+                  fontSize: isMobile ? 11 : 14,
+                  height: 1.2,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ),
         ],
