@@ -139,12 +139,12 @@ class _CashHistoryScreenState extends State<CashHistoryScreen> {
           final dateStr = item.createdAt != null ? DateFormat('yyyy-MM-dd HH:mm').format(item.createdAt!) : '-';
           final jenis = item.metodePengambilan == 'Offline' && item.customerId == 'OFFLINE_CUSTOMER' ? 'Order Offline' : 'Order Online';
           final desc = "Order #${item.orderId.substring(0, 8)} - ${item.items.length} item";
-          final nominal = item.totalHarga.toStringAsFixed(0);
+          final nominal = (item.totalHarga - item.diskonPoin).clamp(0, double.infinity).toStringAsFixed(0);
           csvData.writeln("$dateStr,$jenis,\"$desc\",$nominal,${item.statusBayar}");
         } else if (item is GroomingBookingModel) {
           final dateStr = DateFormat('yyyy-MM-dd HH:mm').format(item.createdAt);
           final desc = "Grooming ${item.petName} - Paket ${item.serviceType}";
-          final nominal = item.totalPrice.toStringAsFixed(0);
+          final nominal = (item.totalPrice - item.diskonPoin).clamp(0, double.infinity).toStringAsFixed(0);
           csvData.writeln("$dateStr,Grooming,\"$desc\",$nominal,${item.status}");
         }
       }
@@ -384,7 +384,7 @@ class _CashHistoryScreenState extends State<CashHistoryScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
-                                        currencyFormatter.format(order.totalHarga - order.diskonPoin),
+                                        currencyFormatter.format((order.totalHarga - order.diskonPoin).clamp(0, double.infinity)),
                                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                       ),
                                       Text(
@@ -417,7 +417,7 @@ class _CashHistoryScreenState extends State<CashHistoryScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
-                                        currencyFormatter.format(grooming.totalPrice - grooming.diskonPoin),
+                                        currencyFormatter.format((grooming.totalPrice - grooming.diskonPoin).clamp(0, double.infinity)),
                                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                       ),
                                       Text(

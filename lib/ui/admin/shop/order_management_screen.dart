@@ -9,7 +9,7 @@ import 'package:petshopapp/services/pdf_invoice_service.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:petshopapp/core/constants/point_constants.dart';
+import 'package:petshopapp/constants/point_constants.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:provider/provider.dart';
 
