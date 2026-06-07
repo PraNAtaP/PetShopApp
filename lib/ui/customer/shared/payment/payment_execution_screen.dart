@@ -664,7 +664,7 @@ class _UniversalPaymentExecutionScreenState
       longitude: cart.isDelivery ? cart.longitude : null,
     );
 
-    final String realOrderId = await FirestoreService.instance.createOrder(order);
+    await FirestoreService.instance.createOrder(order);
 
     if (widget.usePoints && widget.discount > 0) {
       final double poinTerpakai = (widget.discount / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem;
