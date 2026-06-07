@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:universal_html/html.dart' as html;
+import 'dart:convert';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/order_model.dart';
 import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
+import 'package:petshopapp/services/grooming_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/services/grooming_service.dart';
 
 class CashHistoryScreen extends StatefulWidget {
@@ -18,7 +22,17 @@ class _CashHistoryScreenState extends State<CashHistoryScreen> {
 
   String _selectedDateFilter = 'Hari Ini'; // Semua Waktu, Hari Ini, Minggu Ini, Bulan Ini, Rentang Tanggal
   DateTimeRange? _customDateRange;
-  String _selectedTypeFilter = 'Semua'; // Semua, Grooming, Pesanan
+  String _selectedTypeFilter = 'Semua'; // Semua, Pesanan, Grooming
+
+  Stream<List<OrderModel>>? _ordersStream;
+  Stream<List<GroomingBookingModel>>? _groomingStream;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ordersStream ??= FirestoreService.instance.getAllOrdersStream();
+    _groomingStream ??= GroomingService.instance.getAdminBookingsStream();
+  }
 
   Future<void> _pickDateRange() async {
     final DateTimeRange? picked = await showDateRangePicker(
@@ -47,6 +61,112 @@ class _CashHistoryScreenState extends State<CashHistoryScreen> {
         _customDateRange = picked;
         _selectedDateFilter = 'Rentang Tanggal';
       });
+    }
+  }
+
+  Future<void> _exportToCsv() async {
+    final now = DateTime.now();
+    final defaultStart = now.subtract(const Duration(days: 30));
+    
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      initialDateRange: DateTimeRange(start: defaultStart, end: now),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      helpText: 'PILIH RENTANG TANGGAL EXPORT',
+      cancelText: 'Batal',
+      confirmText: 'Export CSV',
+      builder: (context, child) {
+        return Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 450.0, maxHeight: 600.0),
+            child: ClipRRect(borderRadius: BorderRadius.circular(16), child: child),
+          ),
+        );
+      },
+    );
+
+    if (picked == null) return;
+
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final start = DateTime(picked.start.year, picked.start.month, picked.start.day);
+      final end = DateTime(picked.end.year, picked.end.month, picked.end.day, 23, 59, 59);
+
+      final firestore = FirebaseFirestore.instance;
+      final ordersSnap = await firestore.collection('orders').get();
+      final groomingsSnap = await firestore.collection('grooming_bookings').get();
+
+      List<OrderModel> orders = ordersSnap.docs.map((d) => OrderModel.fromFirestore(d)).toList();
+      List<GroomingBookingModel> groomings = groomingsSnap.docs.map((d) => GroomingBookingModel.fromFirestore(d)).toList();
+
+      List<dynamic> allTransactions = [];
+      
+      for (var o in orders) {
+        if (o.statusBayar.toLowerCase() == 'lunas') {
+          final date = o.createdAt ?? DateTime(0);
+          if ((date.isAfter(start) || date.isAtSameMomentAs(start)) && date.isBefore(end)) {
+            allTransactions.add(o);
+          }
+        }
+      }
+      for (var g in groomings) {
+        if (g.status.toLowerCase() == 'completed' || g.status.toLowerCase() == 'selesai') {
+          final date = g.createdAt;
+          if ((date.isAfter(start) || date.isAtSameMomentAs(start)) && date.isBefore(end)) {
+            allTransactions.add(g);
+          }
+        }
+      }
+
+      allTransactions.sort((a, b) {
+        final aDate = a is OrderModel ? (a.createdAt ?? DateTime(0)) : a.createdAt;
+        final bDate = b is OrderModel ? (b.createdAt ?? DateTime(0)) : b.createdAt;
+        return bDate.compareTo(aDate);
+      });
+
+      StringBuffer csvData = StringBuffer();
+      csvData.writeln("Tanggal,Jenis Transaksi,Deskripsi,Nominal,Status");
+
+      for (var item in allTransactions) {
+        if (item is OrderModel) {
+          final dateStr = item.createdAt != null ? DateFormat('yyyy-MM-dd HH:mm').format(item.createdAt!) : '-';
+          final jenis = item.metodePengambilan == 'Offline' && item.customerId == 'OFFLINE_CUSTOMER' ? 'Order Offline' : 'Order Online';
+          final desc = "Order #${item.orderId.substring(0, 8)} - ${item.items.length} item";
+          final nominal = item.totalHarga.toStringAsFixed(0);
+          csvData.writeln("$dateStr,$jenis,\"$desc\",$nominal,${item.statusBayar}");
+        } else if (item is GroomingBookingModel) {
+          final dateStr = DateFormat('yyyy-MM-dd HH:mm').format(item.createdAt);
+          final desc = "Grooming ${item.petName} - Paket ${item.serviceType}";
+          final nominal = item.totalPrice.toStringAsFixed(0);
+          csvData.writeln("$dateStr,Grooming,\"$desc\",$nominal,${item.status}");
+        }
+      }
+
+      final bytes = utf8.encode(csvData.toString());
+      final blob = html.Blob([bytes]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      final anchor = html.AnchorElement(href: url)
+        ..setAttribute("download", "Riwayat_Transaksi_PetPoint_${DateFormat('yyyyMMdd').format(now)}.csv")
+        ..click();
+      html.Url.revokeObjectUrl(url);
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Berhasil mengunduh CSV')));
+      }
+
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Gagal export CSV: $e')));
+      }
     }
   }
 
@@ -80,13 +200,13 @@ class _CashHistoryScreenState extends State<CashHistoryScreen> {
         foregroundColor: Colors.white,
       ),
       body: StreamBuilder<List<OrderModel>>(
-        stream: FirestoreService.instance.getAllOrdersStream(),
+        stream: _ordersStream,
         builder: (context, orderSnapshot) {
           if (orderSnapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
           return StreamBuilder<List<GroomingBookingModel>>(
-            stream: GroomingService.instance.getAdminBookingsStream(),
+            stream: _groomingStream,
             builder: (context, groomingSnapshot) {
               if (groomingSnapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
@@ -136,6 +256,7 @@ class _CashHistoryScreenState extends State<CashHistoryScreen> {
                 children: [
                   // Filter Section
                   Container(
+                    width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     color: Colors.white,
                     child: Column(
@@ -197,6 +318,20 @@ class _CashHistoryScreenState extends State<CashHistoryScreen> {
                                     _selectedTypeFilter = val!;
                                   });
                                 },
+                              ),
+                              const SizedBox(width: 16),
+                              ElevatedButton.icon(
+                                onPressed: _exportToCsv,
+                                icon: const Icon(Icons.download, size: 16),
+                                label: const Text('Export CSV', style: TextStyle(fontSize: 12)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                ),
                               ),
                             ],
                           ),
