@@ -672,7 +672,8 @@ class _UniversalPaymentExecutionScreenState
 
     final double totalAfterDiscount =
         (cart.totalPrice - widget.discount).clamp(0, double.infinity);
-    final double poinDidapat = PointConstants.hitungPoin(totalAfterDiscount);
+    final double maxPoin = auth.currentUser?.maxPoin ?? 0.0;
+    final double poinDidapat = PointConstants.hitungPoin(totalAfterDiscount, maxPoin);
     if (poinDidapat > 0) {
       final error = await auth.tambahPoin(
         jumlahPoin: poinDidapat,
@@ -718,7 +719,8 @@ class _UniversalPaymentExecutionScreenState
           provider.shippingFee;
     final double totalAfterDiscount =
           (baseTotal - widget.discount).clamp(0, double.infinity);
-    final double poinDidapat = PointConstants.hitungPoin(totalAfterDiscount);
+    final double maxPoin = user?.maxPoin ?? 0.0;
+    final double poinDidapat = PointConstants.hitungPoin(totalAfterDiscount, maxPoin);
 
     print('=== EARN POIN GROOMING ===');
     print('baseTotal: $baseTotal');

@@ -468,11 +468,11 @@ class ProfileScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.grey, fontSize: 13),
               ),
               const SizedBox(height: 20),
-              _buildTierItem('💎 Diamond Member', '50.000+ Poin'),
-              _buildTierItem('🛡️ Platinum Member', '20.000 - 49.999 Poin'),
-              _buildTierItem('🥇 Gold Member', '5.000 - 19.999 Poin'),
-              _buildTierItem('🥈 Silver Member', '1.000 - 4.999 Poin'),
-              _buildTierItem('🥉 Bronze Member', '0 - 999 Poin'),
+              _buildTierItem('💎 Diamond Member', '50.000+ Poin', '2x Poin Belanja, Min Tukar 100 poin'),
+              _buildTierItem('🛡️ Platinum Member', '20.000 - 49.999 Poin', '1.8x Poin Belanja, Min Tukar 100 poin'),
+              _buildTierItem('🥇 Gold Member', '5.000 - 19.999 Poin', '1.5x Poin Belanja, Min Tukar 1.000 poin'),
+              _buildTierItem('🥈 Silver Member', '1.000 - 4.999 Poin', '1.2x Poin Belanja, Min Tukar 1.000 poin'),
+              _buildTierItem('🥉 Bronze Member', '0 - 999 Poin', '1x Poin Belanja, Min Tukar 1.000 poin'),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
@@ -492,14 +492,24 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTierItem(String title, String poin) {
+  Widget _buildTierItem(String title, String poin, String benefit) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-          Text(poin, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text(poin, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '🎁 Benefit: $benefit',
+            style: const TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.w500),
+          ),
         ],
       ),
     );

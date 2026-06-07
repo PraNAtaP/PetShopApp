@@ -23,6 +23,7 @@ class _UniversalPaymentMethodScreenState
   String? _selectedMethod;
   bool _usePoints = false;
   double _currentPoints = 0;
+  double _maxPoints = 0;
   double _totalHarga = 0;
 
   final currencyFormatter = NumberFormat.currency(
@@ -38,6 +39,7 @@ class _UniversalPaymentMethodScreenState
     final auth = context.read<AuthService>();
     setState(() {
       _currentPoints = auth.currentUser?.poin ?? 0.0;
+      _maxPoints = auth.currentUser?.maxPoin ?? 0.0;
 
       if (widget.category == 'shop') {
       _totalHarga = context.read<CartProvider>().totalPrice;
@@ -51,7 +53,7 @@ class _UniversalPaymentMethodScreenState
 
   double get _discount {
     if (!_usePoints) return 0;
-    final rawDiskon = PointConstants.hitungDiskon(_currentPoints);
+    final rawDiskon = PointConstants.hitungDiskon(_currentPoints, _maxPoints);
     return rawDiskon.clamp(0, _totalHarga);
   }
 
@@ -294,20 +296,20 @@ class _UniversalPaymentMethodScreenState
                           ),
                           subtitle: Padding(
                             padding: const EdgeInsets.only(top: 4),
-                            child: PointConstants.canRedeem(_currentPoints)
+                            child: PointConstants.canRedeem(_currentPoints, _maxPoints)
                                 ? RichText(
                                     text: TextSpan(
                                       style: const TextStyle(fontSize: 12),
                                       children: [
                                         TextSpan(
                                           text:
-                                              'Pakai ${PointConstants.hitungPoinTerpakai(_currentPoints).toStringAsFixed(0)} poin ',
+                                              'Pakai ${PointConstants.hitungPoinTerpakai(_currentPoints, _maxPoints).toStringAsFixed(0)} poin ',
                                           style: const TextStyle(
                                               color: Colors.grey),
                                         ),
                                         TextSpan(
                                           text:
-                                              '→ hemat ${currencyFormatter.format(PointConstants.hitungDiskon(_currentPoints))}',
+                                              '→ hemat ${currencyFormatter.format(PointConstants.hitungDiskon(_currentPoints, _maxPoints))}',
                                           style: const TextStyle(
                                               color: Colors.green,
                                               fontWeight: FontWeight.bold),
@@ -316,14 +318,14 @@ class _UniversalPaymentMethodScreenState
                                     ),
                                   )
                                 : Text(
-                                    'Poin belum cukup (${_currentPoints.toStringAsFixed(0)} / ${PointConstants.minPoinRedeem.toInt()} poin)',
+                                    'Poin belum cukup (${_currentPoints.toStringAsFixed(0)} / ${PointConstants.getMinPoinRedeem(_maxPoints).toInt()} poin)',
                                     style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.grey.shade500),
                                   ),
                           ),
                           value: _usePoints,
-                          onChanged: PointConstants.canRedeem(_currentPoints)
+                          onChanged: PointConstants.canRedeem(_currentPoints, _maxPoints)
                           ? (val) {
                               setState(() => _usePoints = val);
                               if (val && _totalAfterDiscount == 0) {

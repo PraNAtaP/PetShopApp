@@ -355,7 +355,7 @@ class AuthService extends ChangeNotifier {
   }
 
   double hitungPoinDariTransaksi(double totalHarga) {
-    return PointConstants.hitungPoin(totalHarga);
+    return PointConstants.hitungPoin(totalHarga, _currentUser?.maxPoin ?? 0.0);
   }
 
   Future<void> logout() async {
