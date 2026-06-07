@@ -104,8 +104,12 @@ class AdminDashboardScreen extends StatelessWidget {
                         horizontal: 24,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color.fromARGB(255, 111, 164, 255).withOpacity(0.1),
+                        color: AppColors.primary.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.primary.withOpacity(0.3),
+                          width: 2.0,
+                        ),
                       ),
                       child: Column(
                         children: [
