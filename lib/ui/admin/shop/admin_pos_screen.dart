@@ -1054,6 +1054,42 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
             ],
           ),
           const SizedBox(height: 12),
+          Builder(
+            builder: (context) {
+              int estimatedDuration = 0;
+              if (_groomingCart.isNotEmpty) {
+                for (var item in _groomingCart) {
+                  estimatedDuration += item['duration'] as int;
+                }
+              }
+              if (estimatedDuration > 0) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline, color: Colors.blue),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Estimasi Waktu Pengerjaan: ${estimatedDuration ~/ 60} Jam ${estimatedDuration % 60} Menit',
+                            style: TextStyle(color: Colors.blue.shade900, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            }
+          ),
           _isLoadingSlots 
             ? const Center(child: CircularProgressIndicator())
             : Builder(

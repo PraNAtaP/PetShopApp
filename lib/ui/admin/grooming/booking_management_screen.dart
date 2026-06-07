@@ -44,19 +44,6 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
         foregroundColor: AppColors.primary,
         elevation: 0,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (_) => const AdminAddGroomingDialog(),
-          );
-        },
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Booking Manual'),
-      ),
       body: Column(
         children: [
           Padding(
