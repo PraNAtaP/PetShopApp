@@ -7,7 +7,9 @@ class ChatRoomModel {
   final String? lastMessage;
   final DateTime? lastTime;
   final String? receiverName;
-  final String? customerName; // Added to store the customer's real name
+  final String? customerName; 
+  final bool isPinned;
+  final bool isDeleted; // Tambahkan field isDeleted untuk Soft Delete
 
   const ChatRoomModel({
     required this.id,
@@ -16,6 +18,8 @@ class ChatRoomModel {
     this.lastTime,
     this.receiverName,
     this.customerName,
+    this.isPinned = false,
+    this.isDeleted = false, // Secara default bernilai false (aktif)
   });
 
   /// Maps a Firestore document to [ChatRoomModel].
@@ -28,6 +32,8 @@ class ChatRoomModel {
       lastTime: (data['lastTime'] as Timestamp?)?.toDate(),
       receiverName: data['receiverName'] as String?,
       customerName: data['customerName'] as String?,
+      isPinned: data['isPinned'] as bool? ?? false,
+      isDeleted: data['isDeleted'] as bool? ?? false, // Parsing field isDeleted
     );
   }
 
@@ -39,6 +45,8 @@ class ChatRoomModel {
       'lastTime': lastTime != null ? Timestamp.fromDate(lastTime!) : FieldValue.serverTimestamp(),
       'receiverName': receiverName,
       'customerName': customerName,
+      'isPinned': isPinned,
+      'isDeleted': isDeleted, // Simpan status isDeleted ke Firestore
     };
   }
 
@@ -49,6 +57,8 @@ class ChatRoomModel {
     DateTime? lastTime,
     String? receiverName,
     String? customerName,
+    bool? isPinned,
+    bool? isDeleted,
   }) {
     return ChatRoomModel(
       id: id ?? this.id,
@@ -57,6 +67,8 @@ class ChatRoomModel {
       lastTime: lastTime ?? this.lastTime,
       receiverName: receiverName ?? this.receiverName,
       customerName: customerName ?? this.customerName,
+      isPinned: isPinned ?? this.isPinned,
+      isDeleted: isDeleted ?? this.isDeleted,
     );
   }
 }
