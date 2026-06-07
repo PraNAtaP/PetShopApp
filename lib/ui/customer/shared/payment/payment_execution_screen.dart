@@ -642,10 +642,13 @@ class _UniversalPaymentExecutionScreenState
           )
           .toList(),
       totalHarga: cart.totalPrice,
+      diskonPoin: widget.usePoints ? widget.discount : 0.0,
       buktiBayarUrl: imageUrl,
-      statusBayar: widget.paymentMethod == 'COD'
-          ? 'Pending'
-          : (imageUrl != null ? 'Pending' : 'Unpaid'),
+      statusBayar: (cart.totalPrice - (widget.usePoints ? widget.discount : 0.0)) <= 0
+          ? 'Lunas'
+          : (widget.paymentMethod == 'COD'
+              ? 'Pending'
+              : (imageUrl != null ? 'Pending' : 'Unpaid')),
       statusPengiriman: 'Menunggu',
       metodePengambilan: cart.isDelivery ? 'Kirim ke Alamat' : 'Ambil di Toko',
       metodePembayaran: widget.paymentMethod,
@@ -706,6 +709,7 @@ class _UniversalPaymentExecutionScreenState
         user.nama,
         buktiBayarUrl: imageUrl,
         metodePembayaran: widget.paymentMethod,
+        diskonPoin: widget.usePoints ? widget.discount : 0.0,
       );
     }
 

@@ -148,12 +148,13 @@ class GroomingProvider with ChangeNotifier {
   }
 
   /// Finalize booking and save to Firestore
-  Future<void> confirmBooking(String userId, String customerName, {String? buktiBayarUrl, required String metodePembayaran}) async {
+  Future<void> confirmBooking(String userId, String customerName, {String? buktiBayarUrl, required String metodePembayaran, double diskonPoin = 0.0}) async {
     if (_petPackages.isEmpty || _selectedDate == null || _selectedTimeSlot == null || _selectedPets.isEmpty) {
       throw Exception('Harap lengkapi data booking');
     }
 
     final double feePerPet = shippingFee / _selectedPets.length;
+    final double discountPerPet = diskonPoin / _selectedPets.length;
 
     // Create a separate booking for each pet
     for (var pet in _selectedPets) {
@@ -179,11 +180,12 @@ class GroomingProvider with ChangeNotifier {
         timeSlot: _selectedTimeSlot!,
         durationMinutes: petDuration,
         totalPrice: petServicesPrice + feePerPet, // Price for THIS pet + distributed shipping fee
+        diskonPoin: discountPerPet,
         isHomeService: _isHomeService,
         alamatLengkap: _isHomeService ? _alamatLengkap : null,
         latitude: _isHomeService ? _latitude : null,
         longitude: _isHomeService ? _longitude : null,
-        status: 'Pending',
+        status: ((petServicesPrice + feePerPet) - discountPerPet) <= 0 ? 'Lunas & Confirmed' : 'Pending',
         buktiBayarUrl: buktiBayarUrl,
         metodePembayaran: metodePembayaran,
         createdAt: DateTime.now(),

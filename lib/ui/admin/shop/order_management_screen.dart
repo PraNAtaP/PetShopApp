@@ -291,7 +291,20 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
             builder: (context, snapshot) => Text(snapshot.data ?? '...'),
           ),
         ),
-        DataCell(Text(NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0).format(order.totalHarga))),
+        DataCell(
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(NumberFormat.currency(locale: 'id_ID', symbol: 'Rp', decimalDigits: 0).format(order.totalHarga)),
+              if (order.diskonPoin > 0)
+                Text(
+                  '(Poin: -Rp${NumberFormat.currency(locale: 'id_ID', symbol: '', decimalDigits: 0).format(order.diskonPoin)})',
+                  style: const TextStyle(fontSize: 10, color: Colors.red),
+                ),
+            ],
+          ),
+        ),
         DataCell(_buildDeliveryTypeChip(order.metodePengambilan.toLowerCase().contains('kirim'))),
         DataCell(_buildStatusChip(order.statusBayar, isPayment: true)),
         DataCell(_buildStatusChip(order.statusPengiriman, isPayment: false)),
@@ -492,12 +505,25 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                       ),
                     )),
                     const Divider(height: 32),
+                    if (order.diskonPoin > 0) ...[
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Potongan Poin', style: TextStyle(fontSize: 14, color: AppColors.textLight)),
+                          Text(
+                            '- ${NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(order.diskonPoin)}',
+                            style: const TextStyle(fontSize: 14, color: Colors.red),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('Total Pembayaran', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const Text('Total Pendapatan Bersih', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         Text(
-                          NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(order.totalHarga),
+                          NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(order.totalHarga - order.diskonPoin),
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
                         ),
                       ],

@@ -245,10 +245,10 @@ class _CashHistoryScreenState extends State<CashHistoryScreen> {
               double totalFilteredRevenue = 0;
               for (var item in allTransactions) {
                 if (item is OrderModel && item.statusBayar.toLowerCase() == 'lunas') {
-                  totalFilteredRevenue += item.totalHarga;
+                  totalFilteredRevenue += (item.totalHarga - item.diskonPoin);
                 }
                 if (item is GroomingBookingModel && (item.status.toLowerCase() == 'completed' || item.status.toLowerCase() == 'selesai')) {
-                  totalFilteredRevenue += item.totalPrice;
+                  totalFilteredRevenue += (item.totalPrice - item.diskonPoin);
                 }
               }
 
@@ -384,7 +384,7 @@ class _CashHistoryScreenState extends State<CashHistoryScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
-                                        currencyFormatter.format(order.totalHarga),
+                                        currencyFormatter.format(order.totalHarga - order.diskonPoin),
                                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                       ),
                                       Text(
@@ -417,7 +417,7 @@ class _CashHistoryScreenState extends State<CashHistoryScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
-                                        currencyFormatter.format(grooming.totalPrice),
+                                        currencyFormatter.format(grooming.totalPrice - grooming.diskonPoin),
                                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                                       ),
                                       Text(

@@ -41,6 +41,7 @@ class OrderModel {
   final String customerId;
   final List<OrderItemModel> items;
   final double totalHarga;
+  final double diskonPoin;
   final String? buktiBayarUrl;
   final String statusBayar;
   final String statusPengiriman;
@@ -61,6 +62,7 @@ class OrderModel {
     required this.customerId,
     required this.items,
     required this.totalHarga,
+    this.diskonPoin = 0.0,
     this.buktiBayarUrl,
     required this.statusBayar,
     required this.statusPengiriman,
@@ -88,6 +90,7 @@ class OrderModel {
       customerId: data['customer_id'] ?? '',
       items: parsedItems,
       totalHarga: (data['total_harga'] ?? 0).toDouble(),
+      diskonPoin: (data['diskon_poin'] ?? 0).toDouble(),
       buktiBayarUrl: data['bukti_bayar_url'] as String?,
       statusBayar: data['status_bayar'] ?? '',
       statusPengiriman: data['status_pengiriman'] ?? '',
@@ -110,6 +113,7 @@ class OrderModel {
       'customer_id': customerId,
       'items': items.map((i) => i.toMap()).toList(),
       'total_harga': totalHarga,
+      'diskon_poin': diskonPoin,
       'bukti_bayar_url': buktiBayarUrl,
       'status_bayar': statusBayar,
       'status_pengiriman': statusPengiriman,
@@ -132,6 +136,7 @@ class OrderModel {
     String? customerId,
     List<OrderItemModel>? items,
     double? totalHarga,
+    double? diskonPoin,
     String? buktiBayarUrl,
     String? statusBayar,
     String? statusPengiriman,
@@ -148,6 +153,7 @@ class OrderModel {
       customerId: customerId ?? this.customerId,
       items: items ?? this.items,
       totalHarga: totalHarga ?? this.totalHarga,
+      diskonPoin: diskonPoin ?? this.diskonPoin,
       buktiBayarUrl: buktiBayarUrl ?? this.buktiBayarUrl,
       statusBayar: statusBayar ?? this.statusBayar,
       statusPengiriman: statusPengiriman ?? this.statusPengiriman,
