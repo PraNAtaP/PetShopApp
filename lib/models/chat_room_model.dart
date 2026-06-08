@@ -9,7 +9,11 @@ class ChatRoomModel {
   final String? receiverName;
   final String? customerName; 
   final bool isPinned;
+  final DateTime? pinnedAt;
+  final String? pinnedBy;
   final bool isDeleted; // Tambahkan field isDeleted untuk Soft Delete
+  final DateTime? deletedAt;
+  final String? deletedBy;
 
   const ChatRoomModel({
     required this.id,
@@ -19,7 +23,11 @@ class ChatRoomModel {
     this.receiverName,
     this.customerName,
     this.isPinned = false,
+    this.pinnedAt,
+    this.pinnedBy,
     this.isDeleted = false, // Secara default bernilai false (aktif)
+    this.deletedAt,
+    this.deletedBy,
   });
 
   /// Maps a Firestore document to [ChatRoomModel].
@@ -33,21 +41,32 @@ class ChatRoomModel {
       receiverName: data['receiverName'] as String?,
       customerName: data['customerName'] as String?,
       isPinned: data['isPinned'] as bool? ?? false,
-      isDeleted: data['isDeleted'] as bool? ?? false, // Parsing field isDeleted
+      pinnedAt: (data['pinnedAt'] as Timestamp?)?.toDate(),
+      pinnedBy: data['pinnedBy'] as String?,
+      isDeleted: data['isDeleted'] as bool? ?? false,
+      deletedAt: (data['deletedAt'] as Timestamp?)?.toDate(),
+      deletedBy: data['deletedBy'] as String?,
     );
   }
 
   /// Converts this instance to a Firestore-compatible map.
   Map<String, dynamic> toMap() {
-    return {
+    final map = <String, dynamic>{
       'participants': participants,
       'lastMessage': lastMessage,
       'lastTime': lastTime != null ? Timestamp.fromDate(lastTime!) : FieldValue.serverTimestamp(),
       'receiverName': receiverName,
       'customerName': customerName,
       'isPinned': isPinned,
-      'isDeleted': isDeleted, // Simpan status isDeleted ke Firestore
+      'isDeleted': isDeleted,
     };
+
+    if (pinnedAt != null) map['pinnedAt'] = Timestamp.fromDate(pinnedAt!);
+    if (pinnedBy != null) map['pinnedBy'] = pinnedBy;
+    if (deletedAt != null) map['deletedAt'] = Timestamp.fromDate(deletedAt!);
+    if (deletedBy != null) map['deletedBy'] = deletedBy;
+
+    return map;
   }
 
   ChatRoomModel copyWith({
@@ -58,7 +77,11 @@ class ChatRoomModel {
     String? receiverName,
     String? customerName,
     bool? isPinned,
+    DateTime? pinnedAt,
+    String? pinnedBy,
     bool? isDeleted,
+    DateTime? deletedAt,
+    String? deletedBy,
   }) {
     return ChatRoomModel(
       id: id ?? this.id,
@@ -68,7 +91,11 @@ class ChatRoomModel {
       receiverName: receiverName ?? this.receiverName,
       customerName: customerName ?? this.customerName,
       isPinned: isPinned ?? this.isPinned,
+      pinnedAt: pinnedAt ?? this.pinnedAt,
+      pinnedBy: pinnedBy ?? this.pinnedBy,
       isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
     );
   }
 }

@@ -23,6 +23,32 @@ class AdminLogService {
     }
   }
 
+  /// Returns a new DocumentReference for admin_logs. Useful for including logs in a batched write.
+  DocumentReference getNewLogRef() {
+    return _db.collection('admin_logs').doc();
+  }
+
+  /// Builds a serializable map for an admin log using server timestamp.
+  Map<String, dynamic> buildLogMap({
+    required String adminName,
+    required String actionType,
+    required String description,
+    String? adminId,
+    String? targetId,
+    String? targetType,
+  }) {
+    final map = {
+      'adminName': adminName,
+      'actionType': actionType,
+      'description': description,
+      'timestamp': FieldValue.serverTimestamp(),
+    };
+    if (adminId != null) map['adminId'] = adminId;
+    if (targetId != null) map['targetId'] = targetId;
+    if (targetType != null) map['targetType'] = targetType;
+    return map;
+  }
+
   /// Helper to quickly log an action.
   Future<void> logAction({
     required String adminName,

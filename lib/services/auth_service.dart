@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/models/user_model.dart';
+import 'package:petshopapp/services/admin_log_service.dart';
 import 'package:petshopapp/models/point_history_model.dart';
 import 'package:petshopapp/services/fcm_service.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -95,6 +96,15 @@ class AuthService extends ChangeNotifier {
       }
 
       await _fetchUserProfile(credential.user!.uid);
+      // If logged-in user is admin, log the admin login action
+      if (_currentUser?.role == UserRole.admin) {
+        final adminName = _currentUser?.nama ?? _auth.currentUser?.displayName ?? 'Admin';
+        await AdminLogService.instance.logAction(
+          adminName: adminName,
+          actionType: 'LOGIN_ADMIN',
+          description: 'Admin logged in: ${_currentUser?.uid ?? ''}',
+        );
+      }
       _setLoading(false);
       return null;
     } on FirebaseAuthException catch (e) {
@@ -153,6 +163,15 @@ class AuthService extends ChangeNotifier {
       }
 
       await _fetchUserProfile(uid);
+      // If user is admin, log admin login (Google)
+      if (_currentUser?.role == UserRole.admin) {
+        final adminName = _currentUser?.nama ?? _auth.currentUser?.displayName ?? 'Admin';
+        await AdminLogService.instance.logAction(
+          adminName: adminName,
+          actionType: 'LOGIN_ADMIN',
+          description: 'Admin logged in with Google: ${_currentUser?.uid ?? ''}',
+        );
+      }
       _setLoading(false);
       return null;
     } on FirebaseAuthException catch (e) {
@@ -410,9 +429,21 @@ class AuthService extends ChangeNotifier {
     } catch (_) {
       // Google Sign-In not configured or failed — continue logout anyway
     }
+    final wasAdmin = _currentUser?.role == UserRole.admin;
+    final adminName = _currentUser?.nama ?? _auth.currentUser?.displayName ?? 'Admin';
+
     await _auth.signOut();
     _currentUser = null;
     notifyListeners();
+
+    // Log logout if previous user was admin
+    if (wasAdmin) {
+      await AdminLogService.instance.logAction(
+        adminName: adminName,
+        actionType: 'LOGOUT_ADMIN',
+        description: 'Admin logged out',
+      );
+    }
   }
 
   Future<void> _fetchUserProfile(String uid) async {
