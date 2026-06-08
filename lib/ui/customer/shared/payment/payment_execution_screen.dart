@@ -639,6 +639,14 @@ class _UniversalPaymentExecutionScreenState
     final auth = context.read<AuthService>();
     final uid = auth.currentUser?.uid ?? '';
 
+    double poinTerpakai = 0.0;
+    if (widget.usePoints && widget.discount > 0) {
+      poinTerpakai = (widget.discount / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem;
+      if ((auth.currentUser?.poin ?? 0) < poinTerpakai) {
+        throw Exception('Poin tidak mencukupi atau tidak valid!');
+      }
+    }
+
     final order = OrderModel(
       orderId: '',
       customerId: uid,
@@ -670,15 +678,12 @@ class _UniversalPaymentExecutionScreenState
 
     await FirestoreService.instance.createOrder(order);
 
-    if (widget.usePoints && widget.discount > 0) {
-      final double poinTerpakai = (widget.discount / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem;
-      if (poinTerpakai > 0) {
-        final error = await auth.kurangiPoin(
-          jumlahPoin: poinTerpakai,
-          keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
-        );
-        if (error != null) debugPrint('Gagal mengurangi poin: $error');
-      }
+    if (poinTerpakai > 0) {
+      final error = await auth.kurangiPoin(
+        jumlahPoin: poinTerpakai,
+        keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
+      );
+      if (error != null) throw Exception(error);
     }
 
 
@@ -692,15 +697,11 @@ class _UniversalPaymentExecutionScreenState
     final auth = context.read<AuthService>();
     final user = auth.currentUser;
 
+    double poinTerpakai = 0.0;
     if (widget.usePoints && widget.discount > 0) {
-      final double poinTerpakai = (widget.discount /
-              PointConstants.diskonPerRedeem) *
-          PointConstants.poinPerRedeem;
-      if (poinTerpakai > 0) {
-        await auth.kurangiPoin(
-          jumlahPoin: poinTerpakai,
-          keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
-        );
+      poinTerpakai = (widget.discount / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem;
+      if ((user?.poin ?? 0) < poinTerpakai) {
+        throw Exception('Poin tidak mencukupi atau tidak valid!');
       }
     }
 
@@ -712,6 +713,14 @@ class _UniversalPaymentExecutionScreenState
         metodePembayaran: widget.paymentMethod,
         diskonPoin: widget.usePoints ? widget.discount : 0.0,
       );
+    }
+
+    if (poinTerpakai > 0) {
+      final error = await auth.kurangiPoin(
+        jumlahPoin: poinTerpakai,
+        keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
+      );
+      if (error != null) throw Exception(error);
     }
 
 

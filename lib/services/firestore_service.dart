@@ -319,6 +319,9 @@ class FirestoreService {
 
         for (int i = 0; i < newOrder.items.length; i++) {
           final item = newOrder.items[i];
+          if (item.jumlah <= 0) {
+            throw Exception('Jumlah item ${item.nama} tidak valid!');
+          }
           final product = snapshots[i].data()!;
           if (product.stok < item.jumlah) {
             throw Exception('Stok tidak mencukupi untuk ${product.namaProduk} (Sisa: ${product.stok})');

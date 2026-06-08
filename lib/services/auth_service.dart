@@ -373,6 +373,8 @@ class AuthService extends ChangeNotifier {
         if (!snapshot.exists) throw Exception('User tidak ditemukan');
 
         final double currentPoin = (snapshot.data()?['poin'] ?? 0).toDouble();
+        if (currentPoin < jumlahPoin) throw Exception('Poin tidak mencukupi untuk ditukarkan!');
+        
         final double newPoin = (currentPoin - jumlahPoin).clamp(0.0, 999999.0);
 
         transaction.update(userRef, {'poin': newPoin});
