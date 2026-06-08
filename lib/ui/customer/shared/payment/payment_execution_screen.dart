@@ -234,7 +234,11 @@ class _UniversalPaymentExecutionScreenState
           ),
           const SizedBox(height: 12),
           const Text(
-            'NMID: ID882910291',
+            'Bunga Aulia Sari',
+            style: TextStyle(color: Colors.grey, fontSize: 12),
+          ),
+          const Text(
+            'NMID: ID1026492250984',
             style: TextStyle(color: Colors.grey, fontSize: 12),
           ),
         ],
@@ -260,11 +264,11 @@ class _UniversalPaymentExecutionScreenState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildInfoRow('Bank', 'BCA'),
+          _buildInfoRow('Bank', 'SeaBank'),
           const Divider(height: 24),
-          _buildInfoRow('No. Rekening', '12345678'),
+          _buildInfoRow('No. Rekening', '901309379460'),
           const Divider(height: 24),
-          _buildInfoRow('Atas Nama', 'Pet Point App'),
+          _buildInfoRow('Atas Nama', 'Pranata Putrandana'),
         ],
       ),
     );

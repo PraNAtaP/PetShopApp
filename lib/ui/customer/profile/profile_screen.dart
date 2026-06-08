@@ -502,7 +502,7 @@ class ProfileScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '🎁 Benefit: $benefit',
+            'Benefit: $benefit',
             style: const TextStyle(color: Colors.green, fontSize: 12, fontWeight: FontWeight.w500),
           ),
         ],

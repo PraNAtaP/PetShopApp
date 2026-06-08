@@ -293,7 +293,8 @@ class AuthService extends ChangeNotifier {
         final double currentPoin = (snapshot.data()?['poin'] ?? 0).toDouble();
         final double currentMaxPoin = (snapshot.data()?['max_poin'] ?? 0).toDouble();
         final double newPoin = (currentPoin + jumlahPoin).clamp(0.0, 999999.0);
-        final double newMaxPoin = jumlahPoin > 0 ? currentMaxPoin + jumlahPoin : currentMaxPoin;
+        final bool isRefund = keterangan.toLowerCase().contains('refund');
+        final double newMaxPoin = (jumlahPoin > 0 && !isRefund) ? currentMaxPoin + jumlahPoin : currentMaxPoin;
         
 
         transaction.update(userRef, {'poin': newPoin, 'max_poin': newMaxPoin});
@@ -334,7 +335,8 @@ class AuthService extends ChangeNotifier {
         final double currentPoin = (snapshot.data()?['poin'] ?? 0).toDouble();
         final double currentMaxPoin = (snapshot.data()?['max_poin'] ?? 0).toDouble();
         final double newPoin = (currentPoin + jumlahPoin).clamp(0.0, 999999.0);
-        final double newMaxPoin = jumlahPoin > 0 ? currentMaxPoin + jumlahPoin : currentMaxPoin;
+        final bool isRefund = keterangan.toLowerCase().contains('refund');
+        final double newMaxPoin = (jumlahPoin > 0 && !isRefund) ? currentMaxPoin + jumlahPoin : currentMaxPoin;
         
         transaction.update(userRef, {'poin': newPoin, 'max_poin': newMaxPoin});
 

@@ -155,8 +155,12 @@ class _PaymentExecutionScreenState extends State<PaymentExecutionScreen>
                         ),
                       ),
                       const SizedBox(height: 16),
+                      const Text(
+                        'Bunga Aulia Sari',
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                      ), 
                       Text(
-                        'NMID: ID1234567890',
+                        'NMID: ID1026492250984',
                         style: TextStyle(
                           color: Colors.grey.shade400,
                           fontSize: 12,
@@ -322,11 +326,11 @@ class _PaymentExecutionScreenState extends State<PaymentExecutionScreen>
                         ),
                       ),
                       const SizedBox(height: 16),
-                      _buildBankInfoRow('Bank', 'BCA'),
+                      _buildBankInfoRow('Bank', 'SeaBank'),
                       const Divider(height: 24),
-                      _buildBankInfoRow('No. Rekening', '12345678'),
+                      _buildBankInfoRow('No. Rekening', '901309379460'),
                       const Divider(height: 24),
-                      _buildBankInfoRow('Atas Nama', 'Pet Point'),
+                      _buildBankInfoRow('Atas Nama', 'Pranata Putrandana'),
                     ],
                   ),
                 ),
