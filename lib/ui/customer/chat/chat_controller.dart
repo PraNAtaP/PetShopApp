@@ -87,11 +87,11 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  /// Sends a text message (Balasan otomatis aktif SETIAP kali pelanggan mengirim chat).
+  /// Sends a text message (Murni mengirim pesan customer tanpa ada balasan otomatis).
   void sendMessage(String text) async {
     if (text.trim().isEmpty || _chatId == null || _currentUid == null || _receiverId == null) return;
 
-    // 1. Kirim pesan asli milik Customer ke Firestore
+    // Kirim pesan asli milik Customer ke Firestore via ChatService
     await _chatService.sendMessage(
       chatId: _chatId!,
       senderId: _currentUid!,
@@ -100,50 +100,6 @@ class ChatController extends ChangeNotifier {
       receiverName: _receiverName,
       customerName: _currentUserName,
     );
-
-    // 2. SELALU PICU BALASAN OTOMATIS SETIAP KALI CHAT MASUK
-    // Berikan jeda 1 detik agar efek chat masuk terasa natural
-    await Future.delayed(const Duration(milliseconds: 1000));
-
-    const String autoReplyText = 
-        "Halo! Terima kasih telah menghubungi Pet Point Admin. 🐾\n\n"
-        "Pesan Anda telah kami terima. Admin kami akan segera membalas pesan Anda dalam beberapa saat. "
-        "Silakan tuliskan detail keperluan Anda terlebih dahulu ya!";
-
-    try {
-      // Coba simpan pesan otomatis admin langsung ke sub-koleksi messages di Firestore
-      await FirebaseFirestore.instance
-          .collection('chats')
-          .doc(_chatId)
-          .collection('messages')
-          .add({
-        'senderId': _receiverId!, // Menggunakan ID Admin tujuan agar posisi bubble di sebelah kiri
-        'text': autoReplyText,
-        'timestamp': FieldValue.serverTimestamp(),
-        'isRead': false,
-      });
-
-      // Sinkronisasi teks pesan terakhir ke room utama
-      await FirebaseFirestore.instance.collection('chats').doc(_chatId).set({
-        'lastMessage': autoReplyText,
-        'lastTime': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-
-    } catch (e) {
-      // BYPASS LOCAL STATE (Jika aturan Firebase Security Rules menolak penulisan silang ID)
-      // Menambahkan pesan tiruan ke dalam array lokal agar langsung tampil di kiri layar Customer secara instan
-      final localBotMessage = ChatMessageModel(
-        senderId: ChatService.adminUid, // Mengunci senderId sebagai Admin agar posisi bubble di kiri
-        text: autoReplyText,
-        timestamp: DateTime.now(),
-      );
-      
-      // Sisipkan pesan tiruan ke list teratas layar chat aktif
-      messages.insert(0, localBotMessage); 
-      notifyListeners(); // Paksa UI untuk menggambar ulang bubble chat masuk
-      
-      debugPrint("Bypass Auto-Reply via Local State karena aturan Firebase: $e");
-    }
   }
 
   /// Picks and sends an image.
