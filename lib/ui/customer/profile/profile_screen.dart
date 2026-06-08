@@ -49,6 +49,7 @@ class ProfileScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       Stack(
+                        alignment: Alignment.center,
                         children: [
                           CircleAvatar(
                             radius: 50,
@@ -60,19 +61,13 @@ class ProfileScreen extends StatelessWidget {
                                 ? const Icon(Icons.person, size: 50, color: Colors.grey)
                                 : null,
                           ),
-                          Positioned(
-                            bottom: 0,
-                            right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(
-                                color: AppColors.secondary,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.edit,
-                                color: Colors.white,
-                                size: 16,
+                          IgnorePointer(
+                            child: SizedBox(
+                              width: 160,
+                              height: 160,
+                              child: Image.asset(
+                                'lib/assets/img/cute_cat_frame.png',
+                                fit: BoxFit.contain,
                               ),
                             ),
                           ),
@@ -123,7 +118,7 @@ class ProfileScreen extends StatelessWidget {
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.secondary,
+                          backgroundColor: AppColors.accent,
                           foregroundColor: AppColors.textDark,
                           minimumSize: const Size(140, 40),
                           padding: const EdgeInsets.symmetric(horizontal: 24),

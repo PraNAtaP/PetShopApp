@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  static const Color primary = Color(0xFF2E5AA7); // Amalfi Tile
+  static const Color primary = Color(0xFF436bb0); // Amalfi Tile
   static const Color secondary = Color(0xFF86C5FF); // Sea Breeze
   static const Color accent = Color(0xFFFFA62B); // Citrus Zest
   static const Color error = Color(0xFFE53935); // Standard Red
