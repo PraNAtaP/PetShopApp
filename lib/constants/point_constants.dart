@@ -8,10 +8,10 @@ class PointConstants {
   static const double diskonPerRedeem    = 1000.0; // = Rp1.000
 
   // ── Tier ──────────────────────────────────────────
-  static const double tierSilver   = 1000.0;
-  static const double tierGold     = 5000.0;
-  static const double tierPlatinum = 20000.0;
-  static const double tierDiamond  = 50000.0;
+  static const double tierSilver   = 300.0;
+  static const double tierGold     = 1000.0;
+  static const double tierPlatinum = 2500.0;
+  static const double tierDiamond  = 5000.0;
 
   static String getTier(double maxPoin) {             
     if (maxPoin >= tierDiamond)  return '💎 Diamond Member';
@@ -31,7 +31,8 @@ class PointConstants {
 
   static double getMinPoinRedeem(double maxPoin) {
     if (maxPoin >= tierPlatinum) return 100.0; // Platinum & Diamond
-    return 1000.0; // Bronze, Silver, Gold
+    if (maxPoin >= tierSilver) return 200.0; // Silver, Gold
+    return 300.0; // Bronze
   }
 
   // ── Helper ────────────────────────────────────────
