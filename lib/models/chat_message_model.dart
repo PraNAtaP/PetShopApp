@@ -4,51 +4,89 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ChatMessageModel {
   final String? id;
   final String senderId;
-  final String text;
+  final String text; // canonical for customer messages
   final String? imageUrl;
   final DateTime? timestamp;
   final bool isRead;
 
-  const ChatMessageModel({
+n  // Admin-related optional fields (backward-compatible)
+  final bool isPinned;
+  final DateTime? pinnedAt;
+  final String? pinnedBy;
+
+n  final bool isDeleted;
+  final DateTime? deletedAt;
+  final String? deletedBy;
+
+n  const ChatMessageModel({
     this.id,
     required this.senderId,
     this.text = '',
     this.imageUrl,
     this.timestamp,
     this.isRead = false,
+    this.isPinned = false,
+    this.pinnedAt,
+    this.pinnedBy,
+    this.isDeleted = false,
+    this.deletedAt,
+    this.deletedBy,
   });
 
   /// Maps a Firestore document to [ChatMessageModel].
+  /// Supports legacy admin field 'message' as fallback for text.
   factory ChatMessageModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     return ChatMessageModel(
       id: doc.id,
       senderId: data['senderId'] ?? '',
-      text: data['text'] ?? '',
+      text: data['text'] ?? data['message'] ?? '',
       imageUrl: data['imageUrl'] as String?,
       timestamp: (data['timestamp'] as Timestamp?)?.toDate(),
       isRead: data['isRead'] ?? false,
+      isPinned: data['isPinned'] as bool? ?? false,
+      pinnedAt: (data['pinnedAt'] as Timestamp?)?.toDate(),
+      pinnedBy: data['pinnedBy'] as String?,
+      isDeleted: data['isDeleted'] as bool? ?? false,
+      deletedAt: (data['deletedAt'] as Timestamp?)?.toDate(),
+      deletedBy: data['deletedBy'] as String?,
     );
   }
 
   /// Converts this instance to a Firestore-compatible map.
   Map<String, dynamic> toMap() {
-    return {
+    final map = <String, dynamic>{
       'senderId': senderId,
       'text': text,
       if (imageUrl != null) 'imageUrl': imageUrl,
       'timestamp': FieldValue.serverTimestamp(),
       'isRead': isRead,
     };
+
+n    if (isPinned) map['isPinned'] = true;
+    if (pinnedAt != null) map['pinnedAt'] = Timestamp.fromDate(pinnedAt!);
+    if (pinnedBy != null) map['pinnedBy'] = pinnedBy;
+
+n    if (isDeleted) map['isDeleted'] = true;
+    if (deletedAt != null) map['deletedAt'] = Timestamp.fromDate(deletedAt!);
+    if (deletedBy != null) map['deletedBy'] = deletedBy;
+
+n    return map;
   }
 
-  ChatMessageModel copyWith({
+n  ChatMessageModel copyWith({
     String? id,
     String? senderId,
     String? text,
     String? imageUrl,
     DateTime? timestamp,
     bool? isRead,
+    bool? isPinned,
+    DateTime? pinnedAt,
+    String? pinnedBy,
+    bool? isDeleted,
+    DateTime? deletedAt,
+    String? deletedBy,
   }) {
     return ChatMessageModel(
       id: id ?? this.id,
@@ -57,6 +95,12 @@ class ChatMessageModel {
       imageUrl: imageUrl ?? this.imageUrl,
       timestamp: timestamp ?? this.timestamp,
       isRead: isRead ?? this.isRead,
+      isPinned: isPinned ?? this.isPinned,
+      pinnedAt: pinnedAt ?? this.pinnedAt,
+      pinnedBy: pinnedBy ?? this.pinnedBy,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
+      deletedBy: deletedBy ?? this.deletedBy,
     );
   }
 }

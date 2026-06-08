@@ -5,6 +5,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/chat_room_model.dart';
+import 'package:petshopapp/services/chat_service.dart';
+import 'package:petshopapp/services/admin_chat_service.dart';
 
 class AdminChatListScreen extends StatelessWidget {
   const AdminChatListScreen({super.key});
@@ -23,6 +25,24 @@ class AdminChatListScreen extends StatelessWidget {
     } catch (_) {
       return {'nama': 'Pelanggan', 'fotoUrl': ''};
     }
+  }
+
+  /// Fetch admin-side metadata for a list of room IDs (chat_rooms collection).
+  /// Returns a map: roomId -> document data map (may include isPinned, pinnedAt, pinnedBy, isDeleted, deletedAt, deletedBy).
+  Future<Map<String, Map<String, dynamic>>> _fetchPinnedMap(List<String> roomIds) async {
+    final db = FirebaseFirestore.instance;
+    final Map<String, Map<String, dynamic>> result = {};
+    for (final id in roomIds) {
+      try {
+        final doc = await db.collection('chat_rooms').doc(id).get();
+        if (doc.exists && doc.data() != null) {
+          result[id] = doc.data()!;
+        }
+      } catch (_) {
+        // ignore individual read errors for robustness
+      }
+    }
+    return result;
   }
 
   @override
@@ -121,6 +141,83 @@ class AdminChatListScreen extends StatelessWidget {
                     );
                   }
 
+                  // Fetch admin-side metadata (pinned/deleted) for these rooms and merge/sort.
+                  return FutureBuilder<Map<String, Map<String, dynamic>>>(
+                    future: _fetchPinnedMap(rooms.map((r) => r.id).toList()),
+                    builder: (context, pinnedSnapshot) {
+                      final pinnedMap = pinnedSnapshot.data ?? {};
+                      // create a local copy to sort
+                      final sortedRooms = List<ChatRoomModel>.from(rooms);
+                      sortedRooms.sort((a, b) {
+                        final aPinned = pinnedMap[a.id]?['isPinned'] as bool? ?? false;
+                        final bPinned = pinnedMap[b.id]?['isPinned'] as bool? ?? false;
+                        if (aPinned != bPinned) return aPinned ? -1 : 1;
+                        final aPinnedAt = (pinnedMap[a.id]?['pinnedAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+                        final bPinnedAt = (pinnedMap[b.id]?['pinnedAt'] as Timestamp?)?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0);
+                        if (aPinnedAt != bPinnedAt) return bPinnedAt.compareTo(aPinnedAt);
+                        return (b.lastTime ?? DateTime(0)).compareTo(a.lastTime ?? DateTime(0));
+                      });
+
+                      return ListView.separated(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: sortedRooms.length,
+                        separatorBuilder: (context, index) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final room = sortedRooms[index];
+                          final otherUid = room.participants.firstWhere(
+                            (id) => id != currentUid, 
+                            orElse: () => room.participants.isNotEmpty ? room.participants.first : 'User'
+                          );
+                          
+                          return FutureBuilder<Map<String, String>>(
+                            future: _fetchUserInfo(otherUid),
+                            builder: (context, infoSnapshot) {
+                              final info = infoSnapshot.data;
+                              final displayName = info?['nama'] ?? room.customerName ?? 'Loading...';
+                              final photoUrl = info?['fotoUrl'] ?? '';
+                              final isPinned = pinnedMap[room.id]?['isPinned'] as bool? ?? false;
+
+                              return HoverableChatTile(
+                                displayName: displayName,
+                                photoUrl: photoUrl,
+                                room: room,
+                                onTap: () {
+                                  context.push('/chat', extra: {
+                                    'receiverId': otherUid,
+                                    'receiverName': displayName,
+                                  });
+                                },
+                                onPin: () async {
+                                  // Pin chat via AdminChatService (soft, with admin log)
+                                  final adminId = FirebaseAuth.instance.currentUser?.uid ?? ChatService.adminUid;
+                                  final adminName = FirebaseAuth.instance.currentUser?.displayName ?? ChatService.adminName;
+                                  try {
+                                    await AdminChatService.instance.pinChat(roomId: room.id, adminId: adminId, adminName: adminName);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Chat dengan $displayName telah disematkan')),
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Gagal sematkan chat: $e')),
+                                    );
+                                  }
+                                },
+                                onDelete: () async {
+                                  final adminId = FirebaseAuth.instance.currentUser?.uid ?? ChatService.adminUid;
+                                  final adminName = FirebaseAuth.instance.currentUser?.displayName ?? ChatService.adminName;
+                                  try {
+                                    await AdminChatService.instance.deleteChat(roomId: room.id, adminId: adminId, adminName: adminName);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Chat dengan $displayName telah dihapus')),
+                                    );
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text('Gagal menghapus chat: $e')),
+                                    );
+                                  }
+                                },
+
+                              );
                   return ListView.separated(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     itemCount: rooms.length,

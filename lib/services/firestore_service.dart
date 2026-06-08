@@ -8,6 +8,8 @@ import 'package:petshopapp/models/cart_model.dart';
 import 'package:petshopapp/models/order_model.dart';
 import 'package:petshopapp/models/funfact_banner_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:petshopapp/services/admin_log_service.dart';
 import 'package:petshopapp/services/fcm_service.dart';
 
 
@@ -191,6 +193,13 @@ class FirestoreService {
       } else {
         await _productsRef.doc(product.productId).set(product);
       }
+      // Log admin action (if admin user is performing)
+      final adminName = FirebaseAuth.instance.currentUser?.displayName ?? 'Admin';
+      await AdminLogService.instance.logAction(
+        adminName: adminName,
+        actionType: 'produk',
+        description: 'CREATE/UPDATE_PRODUCT: ${product.productId} ${product.namaProduk ?? ''}',
+      );
     } catch (e) {
       throw Exception('Gagal menambahkan produk: $e');
     }
@@ -200,6 +209,12 @@ class FirestoreService {
   Future<void> deleteProduct(String productId) async {
     try {
       await _productsRef.doc(productId).delete();
+      final adminName = FirebaseAuth.instance.currentUser?.displayName ?? 'Admin';
+      await AdminLogService.instance.logAction(
+        adminName: adminName,
+        actionType: 'produk',
+        description: 'DELETE_PRODUCT: $productId',
+      );
     } catch (e) {
       throw Exception('Gagal menghapus produk: $e');
     }
@@ -372,6 +387,14 @@ class FirestoreService {
       
       if (updates.isNotEmpty) {
         await _db.collection('orders').doc(orderId).update(updates);
+
+        // Log admin action for order update
+        final adminName = FirebaseAuth.instance.currentUser?.displayName ?? 'Admin';
+        await AdminLogService.instance.logAction(
+          adminName: adminName,
+          actionType: 'pesanan',
+          description: 'UPDATE_ORDER_STATUS: $orderId | statusBayar=$statusBayar statusPengiriman=$statusPengiriman',
+        );
 
         // -- Trigger FCM Notification ke Customer --
         if (statusPengiriman != null) {

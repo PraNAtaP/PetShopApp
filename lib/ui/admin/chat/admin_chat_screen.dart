@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:petshopapp/services/admin_chat_service.dart';
 import 'package:petshopapp/services/chat_service.dart';
 
 class AdminChatScreen extends StatefulWidget {
@@ -155,8 +156,27 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
                         : '';
                     final String content = data['text'] ?? data['message'] ?? '';
 
+                    final String messageId = docs[index].id;
+                    final String content = data['text'] ?? data['message'] ?? '';
+                    final bool msgIsPinned = data['isPinned'] as bool? ?? false;
+                    final bool msgIsDeleted = data['isDeleted'] as bool? ?? false;
+
                     return Align(
                       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isMe ? AppColors.primary : Colors.white,
+                              borderRadius: BorderRadius.only(
+                                topLeft: const Radius.circular(12),
+                                topRight: const Radius.circular(12),
+                                bottomLeft: isMe ? const Radius.circular(12) : const Radius.circular(0),
+                                bottomRight: isMe ? const Radius.circular(0) : const Radius.circular(12),
+
                       child: Container(
                         margin: const EdgeInsets.symmetric(vertical: 4),
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -189,18 +209,118 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
                               style: TextStyle(
                                 color: isMe ? Colors.white : Colors.black87,
                                 fontSize: 14,
+
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.03),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              timeString,
-                              style: TextStyle(
-                                color: isMe ? Colors.white70 : Colors.black38,
-                                fontSize: 10,
-                              ),
+                            constraints: BoxConstraints(
+                              maxWidth: MediaQuery.of(context).size.width * 0.6,
                             ),
-                          ],
-                        ),
+                            child: Column(
+                              crossAxisAlignment:
+                                  isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (msgIsDeleted) ...[
+                                  Text(
+                                    'Pesan dihapus',
+                                    style: TextStyle(
+                                      fontStyle: FontStyle.italic,
+                                      color: isMe ? Colors.white70 : Colors.black54,
+                                    ),
+                                  ),
+                                ] else ...[
+                                  if (msgIsPinned)
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Icon(Icons.push_pin, size: 14, color: Colors.orange),
+                                        const SizedBox(width: 6),
+                                        Flexible(
+                                          child: Text(
+                                            content,
+                                            style: TextStyle(
+                                              color: isMe ? Colors.white : Colors.black87,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  else
+                                    Text(
+                                      content,
+                                      style: TextStyle(
+                                        color: isMe ? Colors.white : Colors.black87,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                ],
+                                const SizedBox(height: 4),
+                                Text(
+                                  timeString,
+                                  style: TextStyle(
+                                    color: isMe ? Colors.white70 : Colors.black38,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          // Three-dot menu for admin actions on each message
+                          Positioned(
+                            right: -8,
+                            top: -6,
+                            child: PopupMenuButton<String>(
+                              tooltip: 'Message options',
+                              icon: const Icon(Icons.more_vert, size: 18, color: Colors.grey),
+                              onSelected: (value) async {
+                                final adminId = FirebaseAuth.instance.currentUser?.uid ?? ChatService.adminUid;
+                                final adminName = FirebaseAuth.instance.currentUser?.displayName ?? ChatService.adminName;
+                                try {
+                                  if (value == 'pin') {
+                                    await AdminChatService.instance.pinMessage(
+                                      roomId: _chatRoomId,
+                                      messageId: messageId,
+                                      adminId: adminId,
+                                      adminName: adminName,
+                                    );
+                                  } else if (value == 'unpin') {
+                                    await AdminChatService.instance.unpinMessage(
+                                      roomId: _chatRoomId,
+                                      messageId: messageId,
+                                      adminId: adminId,
+                                      adminName: adminName,
+                                    );
+                                  } else if (value == 'delete') {
+                                    await AdminChatService.instance.deleteMessage(
+                                      roomId: _chatRoomId,
+                                      messageId: messageId,
+                                      adminId: adminId,
+                                      adminName: adminName,
+                                    );
+                                  }
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Action failed: $e')));
+                                }
+                              },
+                              itemBuilder: (BuildContext context) => [
+                                if (!msgIsPinned)
+                                  const PopupMenuItem<String>(value: 'pin', child: Text('Sematkan pesan')),
+                                if (msgIsPinned)
+                                  const PopupMenuItem<String>(value: 'unpin', child: Text('Lepaskan sematan')),
+                                const PopupMenuItem<String>(value: 'delete', child: Text('Hapus pesan', style: TextStyle(color: Colors.red))),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     );
                   },
