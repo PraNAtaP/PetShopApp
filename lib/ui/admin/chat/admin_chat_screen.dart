@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:petshopapp/services/chat_service.dart';
 
 class AdminChatScreen extends StatefulWidget {
   final String receiverId;
@@ -27,10 +28,9 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
   @override
   void initState() {
     super.initState();
-    // Membuat ID Room Chat yang unik berdasarkan gabungan UID Admin & UID User
-    List<String> ids = [_currentUid, widget.receiverId];
-    ids.sort();
-    _chatRoomId = ids.join('_');
+    // Membuat ID Room Chat yang konsisten: customerUID_adminUID
+    // Di mana widget.receiverId adalah customerUID, dan _currentUid adalah adminUID
+    _chatRoomId = '${widget.receiverId}_$_currentUid';
   }
 
   void _sendMessage() async {
@@ -41,22 +41,23 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
 
     final now = DateTime.now();
 
-    // 1. Tambah Pesan ke Sub-Koleksi 'messages'
+    // 1. Tambah Pesan ke Sub-Koleksi 'messages' di dalam koleksi 'chats'
     await FirebaseFirestore.instance
-        .collection('chat_rooms')
+        .collection('chats')
         .doc(_chatRoomId)
         .collection('messages')
         .add({
       'senderId': _currentUid,
       'receiverId': widget.receiverId,
-      'message': messageText,
+      'text': messageText,
+      'message': messageText, // Kompatibilitas mundur
       'timestamp': Timestamp.fromDate(now),
+      'isRead': false,
     });
 
     // 2. Update Informasi Terakhir di Dokumen Utama Chat Room
-    // BAGIAN PENTING: Mengubah 'userUnreadCount' agar di HP pelanggan muncul notifikasi pesan masuk
     await FirebaseFirestore.instance
-        .collection('chat_rooms')
+        .collection('chats')
         .doc(_chatRoomId)
         .set({
       'id': _chatRoomId,
@@ -64,10 +65,10 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
       'lastMessage': messageText,
       'lastTime': Timestamp.fromDate(now),
       'receiverName': widget.receiverName, 
-      'userUnreadCount': FieldValue.increment(1), // Menambah notifikasi di HP Customer
+      'isDeleted': false, // Mengaktifkan kembali chat room jika sebelumnya di-soft delete
+      'userUnreadCount': FieldValue.increment(1),
     }, SetOptions(merge: true));
 
-    // Scroll otomatis ke bawah setelah mengirim pesan
     _scrollToBottom();
   }
 
@@ -116,7 +117,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
-                  .collection('chat_rooms')
+                  .collection('chats')
                   .doc(_chatRoomId)
                   .collection('messages')
                   .orderBy('timestamp', descending: false)
@@ -139,7 +140,6 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
 
                 final docs = snapshot.data!.docs;
                 
-                // Memicu scroll otomatis ke bawah setelah data chat masuk
                 WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
 
                 return ListView.builder(
@@ -153,6 +153,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
                     final String timeString = timestamp != null
                         ? DateFormat('HH:mm').format(timestamp.toDate())
                         : '';
+                    final String content = data['text'] ?? data['message'] ?? '';
 
                     return Align(
                       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -184,7 +185,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              data['message'] ?? '',
+                              content,
                               style: TextStyle(
                                 color: isMe ? Colors.white : Colors.black87,
                                 fontSize: 14,
