@@ -218,45 +218,6 @@ class AdminChatListScreen extends StatelessWidget {
                                 },
 
                               );
-                  return ListView.separated(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: rooms.length,
-                    separatorBuilder: (context, index) => const Divider(height: 1),
-                    itemBuilder: (context, index) {
-                      final room = rooms[index];
-                      final otherUid = room.participants.firstWhere(
-                        (id) => id != currentUid, 
-                        orElse: () => room.participants.isNotEmpty ? room.participants.first : 'User',
-                      );
-                      
-                      return FutureBuilder<Map<String, String>>(
-                        future: _fetchUserInfo(otherUid),
-                        builder: (context, infoSnapshot) {
-                          final info = infoSnapshot.data;
-                          final displayName = info?['nama'] ?? room.customerName ?? 'Loading...';
-                          final photoUrl = info?['fotoUrl'] ?? '';
-
-                          return HoverableChatTile(
-                            displayName: displayName,
-                            photoUrl: photoUrl,
-                            room: room,
-                            onTap: () {
-                              context.push('/chat', extra: {
-                                'receiverId': otherUid,
-                                'receiverName': displayName,
-                              });
-                            },
-                            onDelete: () async {
-                              await FirebaseFirestore.instance
-                                  .collection('chats')
-                                  .doc(room.id)
-                                  .update({'isDeleted': true});
-                              
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text('Chat dengan $displayName telah dihapus')),
-                                );
-                              }
                             },
                           );
                         },
@@ -279,6 +240,7 @@ class HoverableChatTile extends StatefulWidget {
   final ChatRoomModel room;
   final VoidCallback onTap;
   final VoidCallback onDelete;
+  final VoidCallback? onPin;
 
   const HoverableChatTile({
     super.key,
@@ -287,6 +249,7 @@ class HoverableChatTile extends StatefulWidget {
     required this.room,
     required this.onTap,
     required this.onDelete,
+    this.onPin,
   });
 
   @override
@@ -341,6 +304,12 @@ class _HoverableChatTileState extends State<HoverableChatTile> {
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (widget.onPin != null)
+                        IconButton(
+                          tooltip: 'Sematkan Chat',
+                          icon: const Icon(Icons.push_pin_outlined, color: Colors.blue),
+                          onPressed: widget.onPin,
+                        ),
                       IconButton(
                         tooltip: 'Hapus Chat',
                         icon: const Icon(Icons.delete_outline, color: Colors.red),

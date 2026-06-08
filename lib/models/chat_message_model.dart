@@ -9,16 +9,16 @@ class ChatMessageModel {
   final DateTime? timestamp;
   final bool isRead;
 
-n  // Admin-related optional fields (backward-compatible)
+  // Admin-related optional fields (backward-compatible)
   final bool isPinned;
   final DateTime? pinnedAt;
   final String? pinnedBy;
 
-n  final bool isDeleted;
+  final bool isDeleted;
   final DateTime? deletedAt;
   final String? deletedBy;
 
-n  const ChatMessageModel({
+  const ChatMessageModel({
     this.id,
     required this.senderId,
     this.text = '',
@@ -63,18 +63,18 @@ n  const ChatMessageModel({
       'isRead': isRead,
     };
 
-n    if (isPinned) map['isPinned'] = true;
+    if (isPinned) map['isPinned'] = true;
     if (pinnedAt != null) map['pinnedAt'] = Timestamp.fromDate(pinnedAt!);
     if (pinnedBy != null) map['pinnedBy'] = pinnedBy;
 
-n    if (isDeleted) map['isDeleted'] = true;
+    if (isDeleted) map['isDeleted'] = true;
     if (deletedAt != null) map['deletedAt'] = Timestamp.fromDate(deletedAt!);
     if (deletedBy != null) map['deletedBy'] = deletedBy;
 
-n    return map;
+    return map;
   }
 
-n  ChatMessageModel copyWith({
+  ChatMessageModel copyWith({
     String? id,
     String? senderId,
     String? text,
