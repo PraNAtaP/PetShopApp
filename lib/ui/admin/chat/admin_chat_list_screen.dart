@@ -47,7 +47,6 @@ class AdminChatListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ChatService chatService = ChatService();
     final String currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     return Scaffold(
@@ -57,12 +56,10 @@ class AdminChatListScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. MODIFIKASI: MENAMBAHKAN BACKGROUND BANNER PADA TULISAN CHAT PELANGGAN
             Center(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                 decoration: BoxDecoration(
-                  // Menggunakan warna dasar tema dengan transparansi lembut agar terlihat modern
                   color: AppColors.primary.withValues(alpha: 0.08), 
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
@@ -71,7 +68,7 @@ class AdminChatListScreen extends StatelessWidget {
                   ),
                 ),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min, // Lebar background mengikuti panjang tulisan
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     const Icon(
                       Icons.chat_bubble,
@@ -84,7 +81,7 @@ class AdminChatListScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primary, // Menyesuaikan warna utama aplikasi
+                        color: AppColors.primary,
                         letterSpacing: 0.5,
                       ),
                     ),
@@ -92,7 +89,7 @@ class AdminChatListScreen extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 20), // Jarak antara title banner dengan garis pembatas
+            const SizedBox(height: 20),
             
             Container(
               height: 1,
@@ -100,10 +97,9 @@ class AdminChatListScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // 2. DAFTAR LIST CHAT YANG MENDUKUNG FITUR HOVER PIN DAN DELETE
             Expanded(
-              child: StreamBuilder<List<ChatRoomModel>>(
-                stream: chatService.getChatRooms(currentUid),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection('chats').snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator(color: AppColors.primary));
@@ -113,7 +109,21 @@ class AdminChatListScreen extends StatelessWidget {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   }
 
-                  final rooms = snapshot.data ?? [];
+                  final docs = snapshot.data?.docs ?? [];
+                  final rooms = docs
+                      .map((doc) => ChatRoomModel.fromFirestore(doc))
+                      .where((room) =>
+                          room.participants.contains(currentUid) &&
+                          room.isDeleted == false)
+                      .toList();
+
+                  // Sort client-side by lastTime descending
+                  rooms.sort((a, b) {
+                    if (a.lastTime == null && b.lastTime == null) return 0;
+                    if (a.lastTime == null) return 1;
+                    if (b.lastTime == null) return -1;
+                    return b.lastTime!.compareTo(a.lastTime!);
+                  });
 
                   if (rooms.isEmpty) {
                     return Center(
@@ -122,8 +132,10 @@ class AdminChatListScreen extends StatelessWidget {
                         children: [
                           Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey[300]),
                           const SizedBox(height: 16),
-                          const Text('Belum ada chat dari pelanggan.', 
-                            style: TextStyle(color: Colors.grey)),
+                          const Text(
+                            'Belum ada chat dari pelanggan.', 
+                            style: TextStyle(color: Colors.grey),
+                          ),
                         ],
                       ),
                     );
@@ -206,6 +218,45 @@ class AdminChatListScreen extends StatelessWidget {
                                 },
 
                               );
+                  return ListView.separated(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: rooms.length,
+                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final room = rooms[index];
+                      final otherUid = room.participants.firstWhere(
+                        (id) => id != currentUid, 
+                        orElse: () => room.participants.isNotEmpty ? room.participants.first : 'User',
+                      );
+                      
+                      return FutureBuilder<Map<String, String>>(
+                        future: _fetchUserInfo(otherUid),
+                        builder: (context, infoSnapshot) {
+                          final info = infoSnapshot.data;
+                          final displayName = info?['nama'] ?? room.customerName ?? 'Loading...';
+                          final photoUrl = info?['fotoUrl'] ?? '';
+
+                          return HoverableChatTile(
+                            displayName: displayName,
+                            photoUrl: photoUrl,
+                            room: room,
+                            onTap: () {
+                              context.push('/chat', extra: {
+                                'receiverId': otherUid,
+                                'receiverName': displayName,
+                              });
+                            },
+                            onDelete: () async {
+                              await FirebaseFirestore.instance
+                                  .collection('chats')
+                                  .doc(room.id)
+                                  .update({'isDeleted': true});
+                              
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text('Chat dengan $displayName telah dihapus')),
+                                );
+                              }
                             },
                           );
                         },
@@ -222,15 +273,11 @@ class AdminChatListScreen extends StatelessWidget {
   }
 }
 
-// ==========================================
-// WIDGET KUSTOM BARU: HOVERABLE CHAT TILE
-// ==========================================
 class HoverableChatTile extends StatefulWidget {
   final String displayName;
   final String photoUrl;
   final ChatRoomModel room;
   final VoidCallback onTap;
-  final VoidCallback onPin;
   final VoidCallback onDelete;
 
   const HoverableChatTile({
@@ -239,7 +286,6 @@ class HoverableChatTile extends StatefulWidget {
     required this.photoUrl,
     required this.room,
     required this.onTap,
-    required this.onPin,
     required this.onDelete,
   });
 
@@ -260,7 +306,6 @@ class _HoverableChatTileState extends State<HoverableChatTile> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: Container(
-        // Memberi latar belakang abu-abu tipis saat baris chat di-hover kursor
         color: _isHovered ? Colors.grey[50] : Colors.transparent,
         child: ListTile(
           leading: CircleAvatar(
@@ -290,45 +335,16 @@ class _HoverableChatTileState extends State<HoverableChatTile> {
               ),
             ],
           ),
-          // Mengubah sisi kanan secara dinamis (Jam -> Titik 3) saat di-hover kursor
           trailing: AnimatedSwitcher(
             duration: const Duration(milliseconds: 150),
             child: _isHovered
                 ? Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      PopupMenuButton<String>(
-                        tooltip: 'Pilihan',
-                        icon: const Icon(Icons.more_vert, color: Colors.grey),
-                        onSelected: (value) {
-                          if (value == 'pin') {
-                            widget.onPin();
-                          } else if (value == 'delete') {
-                            widget.onDelete();
-                          }
-                        },
-                        itemBuilder: (BuildContext context) => [
-                          const PopupMenuItem<String>(
-                            value: 'pin',
-                            child: Row(
-                              children: [
-                                Icon(Icons.push_pin_outlined, size: 18, color: Colors.black54),
-                                SizedBox(width: 10),
-                                Text('Sematkan chat', style: TextStyle(fontSize: 13)),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem<String>(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                                SizedBox(width: 10),
-                                Text('Hapus chat', style: TextStyle(color: Colors.red, fontSize: 13)),
-                              ],
-                            ),
-                          ),
-                        ],
+                      IconButton(
+                        tooltip: 'Hapus Chat',
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        onPressed: widget.onDelete,
                       ),
                       const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
                     ],
