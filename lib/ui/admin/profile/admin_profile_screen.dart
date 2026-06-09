@@ -19,15 +19,15 @@ class AdminProfileScreen extends StatelessWidget {
         title: const Text('Profil Admin'),
         centerTitle: true,
         titleTextStyle: const TextStyle(
-          color: Color.fromARGB(255, 15, 19, 241),
+          color: AppColors.primary,
           fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
-        backgroundColor: const Color.fromARGB(255, 3, 154, 255),
-        foregroundColor: AppColors.textDark,
+        backgroundColor: Colors.white,
+        foregroundColor: AppColors.primary,
         elevation: 0,
         actions: [
-          TextButton.icon(
+          IconButton(
             onPressed: () {
               Navigator.push(
                 context,
@@ -36,23 +36,18 @@ class AdminProfileScreen extends StatelessWidget {
                 ),
               );
             },
-            icon: const Icon(Icons.edit_outlined, size: 18),
-            label: const Text('Edit'),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.white,
-              textStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
+            icon: const Icon(Icons.edit_outlined, size: 22),
+            tooltip: 'Edit Profil',
           ),
           const SizedBox(width: 8),
-
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Top Dark Card
@@ -232,32 +227,6 @@ class AdminProfileScreen extends StatelessWidget {
                     },
                   ),
 
-                  const Divider(
-                    height: 1,
-                    indent: 56,
-                  ),
-
-                  ListTile(
-                    leading: const Icon(
-                      Icons.notifications_none_outlined,
-                      color: AppColors.textDark,
-                    ),
-                    title: const Text(
-                      'Notifikasi Aplikasi',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: const Text(
-                      'Terima update booking & stok',
-                      style: TextStyle(fontSize: 11),
-                    ),
-                    trailing: Switch(
-                      value: true,
-                      onChanged: (val) {},
-                      activeColor: Colors.green,
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -302,6 +271,8 @@ class AdminProfileScreen extends StatelessWidget {
             const SizedBox(height: 40),
           ],
         ),
+      ),
+      ),
       ),
     );
   }

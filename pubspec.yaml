@@ -63,6 +63,7 @@ dependencies:
   video_player: ^2.11.1
   youtube_player_iframe: ^6.0.2
   gal: ^2.3.2
+  firebase_storage: ^12.4.10
 
 
 
