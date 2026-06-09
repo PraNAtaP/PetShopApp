@@ -47,6 +47,7 @@ class UserModel {
   final double maxPoin;
   final String? fcmToken;
   final DateTime? createdAt;
+  final bool isBlocked;
 
   /// Creates a new [UserModel] instance.
   const UserModel({
@@ -62,6 +63,7 @@ class UserModel {
     this.maxPoin = 0.0,
     this.fcmToken,
     this.createdAt,
+    this.isBlocked = false,
   });
 
   /// Factory constructor to create a [UserModel] from a Firestore [DocumentSnapshot].
@@ -80,6 +82,7 @@ class UserModel {
       maxPoin: (data['max_poin'] ?? 0).toDouble(),
       fcmToken: data['fcm_token'] as String?,
       createdAt: (data['created_at'] as Timestamp?)?.toDate(),
+      isBlocked: data['is_blocked'] as bool? ?? false,
     );
   }
 
@@ -97,6 +100,7 @@ class UserModel {
       'max_poin': maxPoin,
       if (fcmToken != null) 'fcm_token': fcmToken,
       'created_at': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+      'is_blocked': isBlocked,
     };
   }
   
@@ -123,6 +127,7 @@ class UserModel {
     double? maxPoin,
     String? fcmToken,
     DateTime? createdAt,
+    bool? isBlocked,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -137,6 +142,7 @@ class UserModel {
       maxPoin: maxPoin ?? this.maxPoin,
       fcmToken: fcmToken ?? this.fcmToken,
       createdAt: createdAt ?? this.createdAt,
+      isBlocked: isBlocked ?? this.isBlocked,
     );
   }
 }

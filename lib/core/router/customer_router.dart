@@ -47,7 +47,7 @@ class CustomerRouter {
         if (isLoggedIn && (location == '/login' || location == '/register' || location == '/verify-email')) return '/home';
 
         // Block unauthorized access to any route that is not an auth route
-        if (!isLoggedIn && !isAuthRoute) return '/splash';
+        if (!isLoggedIn && !isAuthRoute) return '/login';
 
         // Additional: block admin users out of customer app or just ignore them.
         // Actually, if role == admin, maybe redirect to an error? Or they can't login here?
