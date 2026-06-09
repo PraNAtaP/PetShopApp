@@ -9,7 +9,7 @@ class ChatService {
 
   /// Centralized Admin Identity
   static const String adminUid = 'xs2BEOZim6VKKmhlv7PrAIuQWHz2';
-  static const String adminName = 'Admin Pranuy';
+  static const String adminName = 'Min Pet';
 
   /// Generates a standardized chat ID: customerUID_adminUID.
   String getChatId(String uid1, String uid2) {

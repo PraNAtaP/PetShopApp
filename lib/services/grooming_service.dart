@@ -3,6 +3,8 @@ import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:flutter/foundation.dart';
 import 'package:petshopapp/services/fcm_service.dart';
+import 'package:petshopapp/services/admin_log_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Service to handle all Firestore operations related to Grooming Bookings.
 class GroomingService {
@@ -70,7 +72,20 @@ class GroomingService {
 
   Future<void> updateBookingStatus(String bookingId, String status) async {
     try {
-      await _bookingsRef.doc(bookingId).update({'status': status});
+      final bookingDoc = await _bookingsRef.doc(bookingId).get();
+      final booking = bookingDoc.data();
+      await _bookingsRef.doc(bookingId).update({
+        'status': status});
+
+        if (booking != null) {
+      await AdminLogService.instance.logAction(
+        adminName: 'Min Pet',
+        actionType: 'UPDATE_GROOMING_STATUS',
+        description:
+            'Mengubah status grooming ${booking.petName} milik ${booking.customerName} menjadi $status',
+      );
+    }
+      
 
       // -- Trigger Push Notification ke Customer --
       try {

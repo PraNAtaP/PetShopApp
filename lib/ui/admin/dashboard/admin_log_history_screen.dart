@@ -14,7 +14,9 @@ class AdminLogHistoryScreen extends StatefulWidget {
 class _AdminLogHistoryScreenState extends State<AdminLogHistoryScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  String _selectedCategory = 'semua';
+  
+  // PERBAIKAN: Menggunakan teks capitalized agar sesuai dengan parameter AdminLogService
+  String _selectedCategory = 'Semua'; 
 
   @override
   void dispose() {
@@ -88,15 +90,15 @@ class _AdminLogHistoryScreenState extends State<AdminLogHistoryScreen> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildCategoryChip('Semua', 'semua'),
+                      _buildCategoryChip('Semua', 'Semua'),
                       const SizedBox(width: 8),
-                      _buildCategoryChip('Produk', 'produk'),
+                      _buildCategoryChip('Produk', 'Produk'),
                       const SizedBox(width: 8),
-                      _buildCategoryChip('Chat', 'chat'),
+                      _buildCategoryChip('Chat', 'Chat'),
                       const SizedBox(width: 8),
-                      _buildCategoryChip('Grooming', 'grooming'),
+                      _buildCategoryChip('Grooming', 'Grooming'),
                       const SizedBox(width: 8),
-                      _buildCategoryChip('Adopsi', 'adopsi'),
+                      _buildCategoryChip('Adopsi', 'Adopsi'),
                     ],
                   ),
                 ),
@@ -107,7 +109,10 @@ class _AdminLogHistoryScreenState extends State<AdminLogHistoryScreen> {
           // Logs List
           Expanded(
             child: StreamBuilder<List<AdminLogModel>>(
-              stream: AdminLogService.instance.getAdminLogsStream(),
+              // PERBAIKAN: Menggunakan method getAdminLogsByCategoryStream yang ada pada service Anda
+              stream: AdminLogService.instance.getAdminLogsByCategoryStream(
+                category: _selectedCategory,
+              ),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -123,15 +128,14 @@ class _AdminLogHistoryScreenState extends State<AdminLogHistoryScreen> {
                     ),
                   );
                 }
-                final allLogs = snapshot.data ?? [];
                 
-                // Filter locally based on search query and category
-                final filteredLogs = allLogs.where((log) {
+                final logsFromService = snapshot.data ?? [];
+                
+                // Melakukan filtering pencarian kata kunci secara lokal dari hasil stream terfilter
+                final filteredLogs = logsFromService.where((log) {
                   final matchesSearch = log.adminName.toLowerCase().contains(_searchQuery) ||
                       log.description.toLowerCase().contains(_searchQuery);
-                  final matchesCategory = _selectedCategory == 'semua' ||
-                      log.actionType.toLowerCase() == _selectedCategory;
-                  return matchesSearch && matchesCategory;
+                  return matchesSearch;
                 }).toList();
 
                 if (filteredLogs.isEmpty) {
@@ -197,27 +201,24 @@ class _AdminLogHistoryScreenState extends State<AdminLogHistoryScreen> {
   Widget _buildLogCard(AdminLogModel log) {
     IconData iconData;
     Color iconColor;
+    final actionUpper = log.actionType.toUpperCase();
 
-    switch (log.actionType.toLowerCase()) {
-      case 'produk':
-        iconData = Icons.shopping_bag_outlined;
-        iconColor = Colors.blue.shade600;
-        break;
-      case 'chat':
-        iconData = Icons.chat_bubble_outline_rounded;
-        iconColor = Colors.green.shade600;
-        break;
-      case 'grooming':
-        iconData = Icons.content_cut_rounded;
-        iconColor = Colors.purple.shade600;
-        break;
-      case 'adopsi':
-        iconData = Icons.pets_rounded;
-        iconColor = Colors.orange.shade600;
-        break;
-      default:
-        iconData = Icons.info_outline_rounded;
-        iconColor = Colors.grey.shade600;
+    // PERBAIKAN: Menggunakan logika pembacaan substring (.contains) dari database actionType
+    if (actionUpper.contains('PRODUCT') || actionUpper.contains('PRODUK')) {
+      iconData = Icons.shopping_bag_outlined;
+      iconColor = Colors.blue.shade600;
+    } else if (actionUpper.contains('CHAT') || actionUpper.contains('PESAN')) {
+      iconData = Icons.chat_bubble_outline_rounded;
+      iconColor = Colors.green.shade600;
+    } else if (actionUpper.contains('GROOMING')) {
+      iconData = Icons.content_cut_rounded;
+      iconColor = Colors.purple.shade600;
+    } else if (actionUpper.contains('ANIMAL') || actionUpper.contains('ADOPTION') || actionUpper.contains('ADOPSI')) {
+      iconData = Icons.pets_rounded;
+      iconColor = Colors.orange.shade600;
+    } else {
+      iconData = Icons.info_outline_rounded;
+      iconColor = Colors.grey.shade600;
     }
 
     final dateStr = DateFormat('dd MMM yyyy, HH:mm:ss').format(log.timestamp);

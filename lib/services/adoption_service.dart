@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/animal_model.dart';
+import '../services/admin_log_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 /// Service to handle Animal and Adoption related business logic and CRUD operations.
 class AdoptionService {
@@ -45,6 +47,12 @@ class AdoptionService {
   Future<void> addAnimal(AnimalModel animal) async {
     try {
       await _firestore.collection(_collectionPath).add(animal.toMap());
+
+      await AdminLogService.instance.logAction(
+        adminName: FirebaseAuth.instance.currentUser?.displayName ?? 'Min Pet',
+        actionType: 'ADD_ANIMAL',
+        description: 'Menambahkan hewan adopsi ${animal.name}',
+      );
     } catch (e) {
       throw Exception('Failed to add animal: $e');
     }
@@ -53,7 +61,16 @@ class AdoptionService {
   /// Updates an existing animal's data.
   Future<void> updateAnimal(String id, Map<String, dynamic> data) async {
     try {
+      final animalDoc = await _firestore.collection(_collectionPath).doc(id).get();
+      final animalName = animalDoc.data()?['name'] ?? 'Hewan';
+
       await _firestore.collection(_collectionPath).doc(id).update(data);
+
+      await AdminLogService.instance.logAction(
+        adminName: FirebaseAuth.instance.currentUser?.displayName ?? 'Min Pet',
+        actionType: 'UPDATE_ANIMAL',
+        description: 'Mengubah data hewan adopsi $animalName',
+      );
     } catch (e) {
       throw Exception('Failed to update animal: $e');
     }
@@ -62,7 +79,16 @@ class AdoptionService {
   /// Deletes an animal from the catalog.
   Future<void> deleteAnimal(String id) async {
     try {
+      final animalDoc = await _firestore.collection(_collectionPath).doc(id).get();
+      final animalName = animalDoc.data()?['name'] ?? 'Hewan';
+
       await _firestore.collection(_collectionPath).doc(id).delete();
+
+      await AdminLogService.instance.logAction(
+        adminName: FirebaseAuth.instance.currentUser?.displayName ?? 'Min Pet',
+        actionType: 'DELETE_ANIMAL',
+        description: 'Menghapus hewan adopsi $animalName',
+      );
     } catch (e) {
       throw Exception('Failed to delete animal: $e');
     }
@@ -109,34 +135,64 @@ class AdoptionService {
   /// UC-010: Admin verifies and marks adoption as complete.
   Future<void> markAsAdopted(String animalId) async {
     try {
+      final animalDoc = await _firestore.collection(_collectionPath).doc(animalId).get();
+      final animalName = animalDoc.data()?['name'] ?? 'Hewan';
+
       await _firestore.collection(_collectionPath).doc(animalId).update({
         'status': 'adopted',
       });
+
+      await AdminLogService.instance.logAction(
+        adminName: FirebaseAuth.instance.currentUser?.displayName ?? 'Min Pet',
+        actionType: 'APPROVE_ADOPTION',
+        description: 'Menyetujui adopsi hewan $animalName',
+      );
     } catch (e) {
       throw Exception('Failed to mark as adopted: $e');
     }
   }
 
-  /// UC-010: Admin cancels the adoption and resets status.
+  /// UC-010: Admin cancels the adoption and resets status to available.
   Future<void> cancelAdoption(String animalId) async {
     try {
+      final animalDoc = await _firestore.collection(_collectionPath).doc(animalId).get();
+      final animalName = animalDoc.data()?['name'] ?? 'Hewan';
+
+      // PERBAIKAN: Update status di Firestore menjadi available kembali dan hapus data booking
       await _firestore.collection(_collectionPath).doc(animalId).update({
         'status': 'available',
         'bookedBy': FieldValue.delete(),
-        'cancelReason': FieldValue.delete(),
+        'pickupDate': FieldValue.delete(),
+        'pickupTime': FieldValue.delete(),
       });
+
+      await AdminLogService.instance.logAction(
+        adminName: FirebaseAuth.instance.currentUser?.displayName ?? 'Min Pet',
+        actionType: 'CANCEL_ADOPTION',
+        description: 'Membatalkan proses adopsi hewan $animalName',
+      );
     } catch (e) {
       throw Exception('Failed to cancel adoption: $e');
     }
   }
 
-  /// Admin denies the cancellation request and resets status to booked.
+  /// Admin denies the cancellation request and resets status back to booked.
   Future<void> denyCancelAdoption(String animalId) async {
     try {
+      // PERBAIKAN: Mengambil data dokumen terlebih dahulu agar mendapatkan variabel animalName
+      final animalDoc = await _firestore.collection(_collectionPath).doc(animalId).get();
+      final animalName = animalDoc.data()?['name'] ?? 'Hewan';
+
+      // PERBAIKAN: Memastikan status tetap/kembali 'booked' jika permintaan pembatalan ditolak
       await _firestore.collection(_collectionPath).doc(animalId).update({
         'status': 'booked',
-        'cancelReason': FieldValue.delete(),
       });
+
+      await AdminLogService.instance.logAction(
+        adminName: FirebaseAuth.instance.currentUser?.displayName ?? 'Min Pet',
+        actionType: 'DENY_CANCEL_ADOPTION',
+        description: 'Menolak pembatalan adopsi hewan $animalName',
+      );
     } catch (e) {
       throw Exception('Failed to deny cancellation: $e');
     }

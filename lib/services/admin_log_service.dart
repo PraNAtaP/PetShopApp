@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/models/admin_log_model.dart';
 
+
 /// Service to handle all Firestore operations related to Admin Activity Logs.
 class AdminLogService {
   AdminLogService._privateConstructor();
@@ -65,14 +66,39 @@ class AdminLogService {
     await saveLog(log);
   }
 
-  /// Streams admin logs in real-time ordered by timestamp descending.
-  Stream<List<AdminLogModel>> getAdminLogsStream({int? limit}) {
+  /// Streams admin logs filtered by category (Semua, Produk, Chat, Grooming, Adopsi)
+  Stream<List<AdminLogModel>> getAdminLogsByCategoryStream({String category = 'Semua', int? limit}) {
     Query<AdminLogModel> query = _logsRef.orderBy('timestamp', descending: true);
+    
     if (limit != null) {
       query = query.limit(limit);
     }
+
     return query.snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => doc.data()).toList();
+      final allLogs = snapshot.docs.map((doc) => doc.data()).toList();
+      
+      if (category == 'Semua') {
+        return allLogs;
+      }
+
+      // Melakukan filtering lokal berdasarkan kecocokan actionType
+      return allLogs.where((log) {
+        final action = log.actionType.toUpperCase();
+        switch (category.toUpperCase()) {
+          case 'PRODUK':
+            return action.contains('PRODUCT') || action.contains('PRODUK');
+          case 'CHAT':
+            return action.contains('CHAT') || action.contains('PESAN');
+          case 'GROOMING':
+            // Cocok dengan 'UPDATE_GROOMING_STATUS' yang dikirim dari GroomingService
+            return action.contains('GROOMING'); 
+          case 'ADOPSI':
+            // Cocok dengan 'ADD_ANIMAL', 'UPDATE_ANIMAL', 'DELETE_ANIMAL', 'APPROVE_ADOPTION', dll.
+            return action.contains('ANIMAL') || action.contains('ADOPTION') || action.contains('ADOPSI');
+          default:
+            return true;
+        }
+      }).toList();
     });
   }
 }
