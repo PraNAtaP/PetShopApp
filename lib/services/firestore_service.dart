@@ -485,15 +485,22 @@ class FirestoreService {
   }
 
   /// Returns a real-time stream of ALL orders (for Admin).
-  Stream<List<OrderModel>> getAllOrdersStream() {
+  Stream<List<OrderModel>> getAllOrdersStream({DateTime? startDate}) {
     try {
-      return _ordersRef
-          .orderBy('created_at', descending: true)
+      var query = _ordersRef.orderBy('created_at', descending: true);
+      if (startDate != null) {
+        query = query.where('created_at', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
+      }
+      return query
           .snapshots()
           .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
     } catch (e) {
       // If index is missing, fallback to unordered
-      return _ordersRef
+      Query<OrderModel> query = _ordersRef;
+      if (startDate != null) {
+        query = query.where('created_at', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
+      }
+      return query
           .snapshots()
           .map((snapshot) {
             final list = snapshot.docs.map((doc) => doc.data()).toList();

@@ -129,8 +129,12 @@ class GroomingService {
   }
 
   /// Returns a real-time stream of all grooming bookings for the Admin Dashboard.
-  Stream<List<GroomingBookingModel>> getAdminBookingsStream() {
-    return _bookingsRef
+  Stream<List<GroomingBookingModel>> getAdminBookingsStream({DateTime? startDate}) {
+    Query<GroomingBookingModel> query = _bookingsRef;
+    if (startDate != null) {
+      query = query.where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
+    }
+    return query
         .snapshots()
         .map((snapshot) {
           final list = snapshot.docs.map((doc) => doc.data()).toList();
