@@ -139,6 +139,7 @@ class CustomerRouter {
               category: 'shop',
               usePoints: extra['usePoints'] as bool? ?? false,
               discount: (extra['discount'] as num?)?.toDouble() ?? 0,
+              order: extra['order'] as OrderModel?,
             );
           },
         ),
@@ -185,6 +186,10 @@ class CustomerRouter {
               category: 'grooming',
               usePoints: extra['usePoints'] as bool? ?? false,
               discount: (extra['discount'] as num?)?.toDouble() ?? 0,
+              bookingIds: extra['bookingIds'] as List<String>?,
+              createdAt: extra['createdAt'] as DateTime?,
+              isHomeService: extra['isHomeService'] as bool? ?? false,
+              totalHarga: (extra['totalHarga'] as num?)?.toDouble() ?? 0,
             );
           },
         ),

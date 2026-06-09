@@ -145,6 +145,19 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
 
           var bookings = snapshot.data ?? [];
 
+          // Auto-expire check
+          final now = DateTime.now();
+          for (var booking in bookings) {
+            if (booking.status == 'Unpaid') {
+              final elapsed = now.difference(booking.createdAt).inSeconds;
+              if (elapsed > 480) {
+                Future.microtask(() {
+                  GroomingService.instance.updateBookingStatus(booking.bookingId, 'Expired');
+                });
+              }
+            }
+          }
+
           if (_searchQuery.isNotEmpty) {
             bookings = bookings.where((booking) {
               return booking.customerName.toLowerCase().contains(_searchQuery);
@@ -331,9 +344,11 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
       case 'menunggu pembayaran':
       case 'pending':
       case 'menunggu':
+      case 'unpaid':
         return Colors.orange;
       case 'dibatalkan':
       case 'cancelled':
+      case 'expired':
         return Colors.red;
       default:
         return Colors.grey.shade700;

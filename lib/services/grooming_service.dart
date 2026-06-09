@@ -53,9 +53,13 @@ class GroomingService {
 
   /// Saves a new grooming booking to Firestore.
   /// Also triggers a notification record for the Admin.
-  Future<void> createBooking(GroomingBookingModel booking) async {
+  Future<String> createBooking(GroomingBookingModel booking) async {
     try {
-      await _bookingsRef.add(booking);
+      final docRef = await _bookingsRef.add(booking);
+      
+      // Update the bookingId inside the model
+      final bookingId = docRef.id;
+      await docRef.update({'bookingId': bookingId});
       
       // Trigger Notification for Admin (Mock)
       await _db.collection('notifications').add({
@@ -65,6 +69,8 @@ class GroomingService {
         'createdAt': FieldValue.serverTimestamp(),
         'read': false,
       });
+      
+      return bookingId;
     } catch (e) {
       throw Exception('Gagal membuat booking: $e');
     }

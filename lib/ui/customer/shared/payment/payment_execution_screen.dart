@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -5,19 +6,28 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
+import 'package:flutter/services.dart';
+import 'package:gal/gal.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:petshopapp/services/firestore_service.dart';
+import 'package:petshopapp/services/imgbb_service.dart';
+import 'package:petshopapp/constants/point_constants.dart';
+import 'package:petshopapp/services/grooming_service.dart';
 import 'package:petshopapp/models/order_model.dart';
 import 'package:petshopapp/providers/cart_provider.dart';
 import 'package:petshopapp/providers/grooming_provider.dart';
 import 'package:petshopapp/services/auth_service.dart';
-import 'package:petshopapp/services/firestore_service.dart';
-import 'package:petshopapp/services/imgbb_service.dart';
-import 'package:petshopapp/constants/point_constants.dart';
 
 class UniversalPaymentExecutionScreen extends StatefulWidget {
   final String paymentMethod;
   final String category;
   final bool usePoints;
   final double discount;
+  final OrderModel? order;
+  final List<String>? bookingIds;
+  final DateTime? createdAt;
+  final bool isHomeService;
+  final double totalHarga;
 
   const UniversalPaymentExecutionScreen({
     super.key,
@@ -25,6 +35,11 @@ class UniversalPaymentExecutionScreen extends StatefulWidget {
     required this.category,
     this.usePoints = false,
     this.discount = 0,
+    this.order,
+    this.bookingIds,
+    this.createdAt,
+    this.isHomeService = false,
+    this.totalHarga = 0,
   });
 
   @override
@@ -47,6 +62,10 @@ class _UniversalPaymentExecutionScreenState
     decimalDigits: 0,
   );
 
+  Timer? _timer;
+  int _remainingSeconds = 480; // 8 minutes default
+  bool _isExpired = false;
+
   @override
   void initState() {
     super.initState();
@@ -58,15 +77,79 @@ class _UniversalPaymentExecutionScreenState
       parent: _checkAnimController,
       curve: Curves.elasticOut,
     );
+    
+    _startTimer();
+  }
+
+  void _startTimer() {
+    final DateTime startTime = widget.order?.createdAt ?? widget.createdAt ?? DateTime.now();
+    final int elapsedSeconds = DateTime.now().difference(startTime).inSeconds;
+    _remainingSeconds = (480 - elapsedSeconds).clamp(0, 480);
+
+    if (_remainingSeconds <= 0) {
+      _handleExpiration();
+      return;
+    }
+
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
+      setState(() {
+        if (_remainingSeconds > 0) {
+          _remainingSeconds--;
+        } else {
+          _timer?.cancel();
+          _handleExpiration();
+        }
+      });
+    });
+  }
+
+  Future<void> _handleExpiration() async {
+    if (_isExpired || _isSuccess || _isProcessing) return;
+    setState(() {
+      _isExpired = true;
+    });
+
+    try {
+      if (widget.category == 'shop' && widget.order != null) {
+        await FirestoreService.instance.updateOrderStatus(widget.order!.orderId, 'Expired');
+      } else if (widget.category == 'grooming' && widget.bookingIds != null) {
+        for (var id in widget.bookingIds!) {
+          await GroomingService.instance.updateBookingStatus(id, 'Expired');
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to update expired status: $e');
+    }
+
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Waktu pembayaran habis. Pesanan dibatalkan.')),
+    );
+    context.goNamed('home');
+  }
+
+  String get _formattedTime {
+    final m = (_remainingSeconds ~/ 60).toString().padLeft(2, '0');
+    final s = (_remainingSeconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
     _checkAnimController.dispose();
     super.dispose();
   }
 
   double _getBaseAmount() {
+    if (widget.category == 'shop' && widget.order != null) {
+      return widget.order!.totalHarga;
+    } else if (widget.category == 'grooming' && widget.totalHarga > 0) {
+      return widget.totalHarga;
+    }
+    
+    // Fallback if providers still needed
     double base;
     if (widget.category == 'shop') {
       base = context.read<CartProvider>().totalPrice;
@@ -118,6 +201,20 @@ class _UniversalPaymentExecutionScreenState
 
     return Column(
       children: [
+        if (!_isSuccess)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            color: _remainingSeconds < 60 ? Colors.red : Colors.amber.shade700,
+            alignment: Alignment.center,
+            child: Text(
+              'Selesaikan pembayaran dalam $_formattedTime',
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
         Expanded(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
@@ -241,9 +338,51 @@ class _UniversalPaymentExecutionScreenState
             'NMID: ID1026492250984',
             style: TextStyle(color: Colors.grey, fontSize: 12),
           ),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () => _downloadQrisToGallery(),
+            icon: const Icon(Icons.download_rounded),
+            label: const Text('Simpan QRIS ke Galeri'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              side: const BorderSide(color: AppColors.primary),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Future<void> _downloadQrisToGallery() async {
+    try {
+      final byteData = await rootBundle.load('lib/assets/img/qris_placeholder.png');
+      final bytes = byteData.buffer.asUint8List();
+      
+      // Request permission via gal
+      final hasAccess = await Gal.hasAccess();
+      if (!hasAccess) {
+        await Gal.requestAccess();
+      }
+      
+      await Gal.putImageBytes(bytes);
+      
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('QRIS berhasil disimpan ke galeri')),
+      );
+    } on GalException catch (e) {
+      debugPrint(e.type.toString());
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal menyimpan QRIS: ${e.type.toString()}')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Terjadi kesalahan: $e')),
+      );
+    }
   }
 
   Widget _buildBankInfo() {
@@ -266,7 +405,7 @@ class _UniversalPaymentExecutionScreenState
         children: [
           _buildInfoRow('Bank', 'SeaBank'),
           const Divider(height: 24),
-          _buildInfoRow('No. Rekening', '901309379460'),
+          _buildInfoRow('No. Rekening', '901309379460', showCopy: true),
           const Divider(height: 24),
           _buildInfoRow('Atas Nama', 'Pranata Putrandana'),
         ],
@@ -321,41 +460,14 @@ class _UniversalPaymentExecutionScreenState
                 color: Colors.grey.shade50,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Bank',
-                          style: TextStyle(color: Colors.grey, fontSize: 12)),
-                      Text('BCA',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 12)),
-                    ],
-                  ),
-                  SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('No. Rekening',
-                          style: TextStyle(color: Colors.grey, fontSize: 12)),
-                      Text('12345678',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 12)),
-                    ],
-                  ),
-                  SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Atas Nama',
-                          style: TextStyle(color: Colors.grey, fontSize: 12)),
-                      Text('Pet Point App',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 12)),
-                    ],
-                  ),
+                  _buildInfoRow('Bank', 'Seabank'),
+                  const SizedBox(height: 4),
+                  _buildInfoRow('No. Rekening', '901309379460', showCopy: true),
+                  const SizedBox(height: 4),
+                  _buildInfoRow('Atas Nama', 'Pranata Putrandana'),
                 ],
               ),
             ),
@@ -513,12 +625,29 @@ class _UniversalPaymentExecutionScreenState
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, {bool showCopy = false}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Text(label, style: const TextStyle(color: Colors.grey)),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+        Row(
+          children: [
+            Text(value, style: const TextStyle(fontWeight: FontWeight.bold)),
+            if (showCopy) ...[
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () async {
+                  await Clipboard.setData(ClipboardData(text: value));
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('No. Rekening berhasil disalin')),
+                  );
+                },
+                child: const Icon(Icons.copy_rounded, size: 16, color: AppColors.primary),
+              ),
+            ],
+          ],
+        ),
       ],
     );
   }
@@ -635,95 +764,41 @@ class _UniversalPaymentExecutionScreenState
   }
 
   Future<void> _handleShopFinalization(String? imageUrl) async {
-    final cart = context.read<CartProvider>();
-    final auth = context.read<AuthService>();
-    final uid = auth.currentUser?.uid ?? '';
+    if (widget.order == null) throw Exception('Order data is missing');
+    
+    // Cukup update bukti dan status
+    final newStatus = widget.paymentMethod == 'COD'
+        ? 'Pending'
+        : (imageUrl != null ? 'Pending' : 'Unpaid');
 
-    double poinTerpakai = 0.0;
-    if (widget.usePoints && widget.discount > 0) {
-      poinTerpakai = (widget.discount / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem;
-      if ((auth.currentUser?.poin ?? 0) < poinTerpakai) {
-        throw Exception('Poin tidak mencukupi atau tidak valid!');
-      }
-    }
-
-    final order = OrderModel(
-      orderId: '',
-      customerId: uid,
-      items: cart.items
-          .map(
-            (c) => OrderItemModel(
-              productId: c.productId,
-              nama: c.nama,
-              jumlah: c.jumlah,
-              hargaSatuan: c.hargaSatuan,
-            ),
-          )
-          .toList(),
-      totalHarga: cart.totalPrice,
-      diskonPoin: widget.usePoints ? widget.discount : 0.0,
-      buktiBayarUrl: imageUrl,
-      statusBayar: (cart.totalPrice - (widget.usePoints ? widget.discount : 0.0)) <= 0
-          ? 'Lunas'
-          : (widget.paymentMethod == 'COD'
-              ? 'Pending'
-              : (imageUrl != null ? 'Pending' : 'Unpaid')),
-      statusPengiriman: 'Menunggu',
-      metodePengambilan: cart.isDelivery ? 'Kirim ke Alamat' : 'Ambil di Toko',
-      metodePembayaran: widget.paymentMethod,
-      alamatLengkap: cart.isDelivery ? cart.alamatLengkap : null,
-      latitude: cart.isDelivery ? cart.latitude : null,
-      longitude: cart.isDelivery ? cart.longitude : null,
+    await FirestoreService.instance.updateOrderFullStatus(
+      orderId: widget.order!.orderId,
+      statusBayar: newStatus,
     );
-
-    await FirestoreService.instance.createOrder(order);
-
-    if (poinTerpakai > 0) {
-      final error = await auth.kurangiPoin(
-        jumlahPoin: poinTerpakai,
-        keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
-      );
-      if (error != null) throw Exception(error);
+    
+    if (imageUrl != null) {
+      await FirestoreService.instance.updateOrderPaymentProof(widget.order!.orderId, imageUrl);
     }
-
-
-
-    await cart.clearCart();
-
   }
 
   Future<void> _handleGroomingFinalization(String? imageUrl) async {
-    final provider = context.read<GroomingProvider>();
-    final auth = context.read<AuthService>();
-    final user = auth.currentUser;
+    if (widget.bookingIds == null || widget.bookingIds!.isEmpty) {
+      throw Exception('Booking data is missing');
+    }
 
-    double poinTerpakai = 0.0;
-    if (widget.usePoints && widget.discount > 0) {
-      poinTerpakai = (widget.discount / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem;
-      if ((user?.poin ?? 0) < poinTerpakai) {
-        throw Exception('Poin tidak mencukupi atau tidak valid!');
+    final newStatus = widget.paymentMethod == 'COD'
+        ? 'Pending'
+        : (imageUrl != null ? 'Pending' : 'Unpaid');
+
+    for (var id in widget.bookingIds!) {
+      await GroomingService.instance.updateBookingStatus(id, newStatus);
+      if (imageUrl != null) {
+        // Asumsi grooming juga punya field buktiBayarUrl yang mau kita update
+        await FirebaseFirestore.instance.collection('grooming_bookings').doc(id).update({
+          'buktiBayarUrl': imageUrl,
+        });
       }
     }
-
-    if (user != null) {
-      await provider.confirmBooking(
-        user.uid,
-        user.nama,
-        buktiBayarUrl: imageUrl,
-        metodePembayaran: widget.paymentMethod,
-        diskonPoin: widget.usePoints ? widget.discount : 0.0,
-      );
-    }
-
-    if (poinTerpakai > 0) {
-      final error = await auth.kurangiPoin(
-        jumlahPoin: poinTerpakai,
-        keterangan: 'Penukaran poin — diskon Rp${widget.discount.toInt()}',
-      );
-      if (error != null) throw Exception(error);
-    }
-
-
   }
   
   Widget _buildSuccessView() {

@@ -7,6 +7,8 @@ import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/constants/point_constants.dart';
 import 'package:petshopapp/providers/cart_provider.dart';
 import 'package:petshopapp/providers/grooming_provider.dart';
+import 'package:petshopapp/models/order_model.dart';
+import 'package:petshopapp/services/firestore_service.dart';
 
 class UniversalPaymentMethodScreen extends StatefulWidget {
   final String category; // 'shop' or 'grooming'
@@ -25,6 +27,7 @@ class _UniversalPaymentMethodScreenState
   double _currentPoints = 0;
   double _maxPoints = 0;
   double _totalHarga = 0;
+  bool _isProcessing = false;
 
   final currencyFormatter = NumberFormat.currency(
       locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
@@ -66,18 +69,165 @@ class _UniversalPaymentMethodScreenState
       (_totalHarga - _discount).clamp(0, double.infinity);
 
   void _lanjutkanPembayaran() {
-    final routeName = widget.category == 'shop'
-        ? 'payment-execution'
-        : 'grooming-payment-execution';
-
-    context.pushNamed(
-      routeName,
-      extra: {
-        'metodePembayaran': _totalAfterDiscount == 0 ? 'POIN' : _selectedMethod,
-        'usePoints': _usePoints,
-        'discount': _discount,
-      },
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Konfirmasi'),
+        content: const Text('Apakah Anda yakin ingin membuat pesanan?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Belum'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _prosesBuatPesanan();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            child: const Text('Sudah', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
+  }
+
+  Future<void> _prosesBuatPesanan() async {
+    setState(() => _isProcessing = true);
+    try {
+      final selectedMethod = _totalAfterDiscount == 0 ? 'POIN' : _selectedMethod!;
+      final auth = context.read<AuthService>();
+      final uid = auth.currentUser?.uid ?? '';
+
+      double poinTerpakai = 0.0;
+      if (_usePoints && _discount > 0) {
+        poinTerpakai = _pointsUsedForOrder;
+        if ((auth.currentUser?.poin ?? 0) < poinTerpakai) {
+          throw Exception('Poin tidak mencukupi atau tidak valid!');
+        }
+      }
+
+      if (widget.category == 'shop') {
+        final cart = context.read<CartProvider>();
+        
+        // Buat pesanan dengan status 'Unpaid' (Belum Dibayar)
+        // Jika pembayarannya POIN penuh atau COD tanpa DP, kita bisa langsung set statusnya
+        bool isDpCoveredByPoints = _usePoints && (_maxDiscountForOrder >= (_totalHarga * 0.5));
+        bool isDpRequired = selectedMethod == 'COD' && !cart.isDelivery && !isDpCoveredByPoints;
+        
+        String initialStatus = 'Unpaid';
+        if (selectedMethod == 'POIN') {
+          initialStatus = 'Lunas';
+        } else if (selectedMethod == 'COD' && !isDpRequired) {
+          initialStatus = 'Pending';
+        }
+
+        final order = OrderModel(
+          orderId: '',
+          customerId: uid,
+          items: cart.items.map((c) => OrderItemModel(
+            productId: c.productId,
+            nama: c.nama,
+            jumlah: c.jumlah,
+            hargaSatuan: c.hargaSatuan,
+          )).toList(),
+          totalHarga: cart.totalPrice,
+          diskonPoin: _usePoints ? _discount : 0.0,
+          buktiBayarUrl: null,
+          statusBayar: initialStatus,
+          statusPengiriman: 'Menunggu',
+          metodePengambilan: cart.isDelivery ? 'Kirim ke Alamat' : 'Ambil di Toko',
+          metodePembayaran: selectedMethod,
+          alamatLengkap: cart.isDelivery ? cart.alamatLengkap : null,
+          latitude: cart.isDelivery ? cart.latitude : null,
+          longitude: cart.isDelivery ? cart.longitude : null,
+          createdAt: DateTime.now(),
+        );
+
+        // Langsung simpan ke database dan ambil orderId-nya
+        final orderId = await FirestoreService.instance.createOrder(order);
+        final createdOrder = order.copyWith(orderId: orderId);
+
+        // Potong poin dan bersihkan keranjang di sini
+        if (poinTerpakai > 0) {
+          final error = await auth.kurangiPoin(
+            jumlahPoin: poinTerpakai,
+            keterangan: 'Penukaran poin — diskon Rp${_discount.toInt()}',
+          );
+          if (error != null) throw Exception(error);
+        }
+        await cart.clearCart();
+
+        if (mounted) {
+          setState(() => _isProcessing = false);
+          // Arahkan ke layar pembayaran (countdown 8 menit)
+          context.pushNamed(
+            'payment-execution',
+            extra: {
+              'order': createdOrder,
+              'metodePembayaran': selectedMethod,
+              'usePoints': _usePoints,
+              'discount': _discount,
+            },
+          );
+        }
+      } else {
+        // Untuk Grooming
+        final provider = context.read<GroomingProvider>();
+        
+        bool isDpCoveredByPoints = _usePoints && (_maxDiscountForOrder >= (_totalHarga * 0.5));
+        bool isDpRequired = selectedMethod == 'COD' && !provider.isHomeService && !isDpCoveredByPoints;
+        
+        String initialStatus = 'Unpaid';
+        if (selectedMethod == 'POIN') {
+          initialStatus = 'Lunas & Confirmed';
+        } else if (selectedMethod == 'COD' && !isDpRequired) {
+          initialStatus = 'Pending';
+        }
+
+        // Simpan booking dengan status awal
+        final bookingIds = await provider.confirmBooking(
+          uid,
+          auth.currentUser?.nama ?? 'User',
+          buktiBayarUrl: null,
+          metodePembayaran: selectedMethod,
+          diskonPoin: _usePoints ? _discount : 0.0,
+          statusOverride: initialStatus,
+        );
+
+        if (poinTerpakai > 0) {
+          final error = await auth.kurangiPoin(
+            jumlahPoin: poinTerpakai,
+            keterangan: 'Penukaran poin — diskon Rp${_discount.toInt()}',
+          );
+          if (error != null) throw Exception(error);
+        }
+
+        if (mounted) {
+          setState(() => _isProcessing = false);
+          context.pushNamed(
+            'grooming-payment-execution',
+            extra: {
+              'bookingIds': bookingIds,
+              'metodePembayaran': selectedMethod,
+              'usePoints': _usePoints,
+              'discount': _discount,
+              'createdAt': DateTime.now(),
+              'isHomeService': provider.isHomeService,
+              'totalHarga': _totalHarga,
+            },
+          );
+          // reset provider
+          provider.reset();
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    }
   }
 
   @override

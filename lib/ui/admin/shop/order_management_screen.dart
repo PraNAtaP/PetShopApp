@@ -183,6 +183,23 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
 
           var orders = snapshot.data ?? [];
 
+          // Auto-expire check
+          final now = DateTime.now();
+          for (var order in orders) {
+            if (order.statusBayar == 'Unpaid' && order.createdAt != null) {
+              final elapsed = now.difference(order.createdAt!).inSeconds;
+              if (elapsed > 480) {
+                Future.microtask(() {
+                  _firestoreService.updateOrderFullStatus(
+                    orderId: order.orderId,
+                    statusBayar: 'Expired',
+                    statusPengiriman: 'Dibatalkan',
+                  );
+                });
+              }
+            }
+          }
+
           if (_searchQuery.isNotEmpty) {
             orders = orders.where((order) {
               final customerName = _getSyncUserName(order.customerId).toLowerCase();
