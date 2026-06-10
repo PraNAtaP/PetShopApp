@@ -26,8 +26,14 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
   final GlobalKey _teamKey = GlobalKey();
 
   void _showDemoVideo() {
+    bool wasPlaying = _isPlaying;
+    if (wasPlaying) {
+      _webAudioPlayer?.pause();
+      setState(() => _isPlaying = false);
+    }
+
     final controller = YoutubePlayerController.fromVideoId(
-      videoId: 'LMIS2PMqCL0', // Video ID asli dari iFrame Pet Point
+      videoId: 'KiB1-axuzKE', // Video ID asli dari iFrame Pet Point
       autoPlay: true,
       params: const YoutubePlayerParams(showFullscreenButton: true),
     );
@@ -77,7 +83,12 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
           ),
         );
       },
-    );
+    ).then((_) {
+      if (wasPlaying && mounted) {
+        _webAudioPlayer?.play();
+        setState(() => _isPlaying = true);
+      }
+    });
   }
 
   void _scrollToSection(GlobalKey key) {
@@ -348,7 +359,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        child: const Text('LIHAT DEMO', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+                        child: const Text('LIHAT VIDEO PROMOSIr', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
@@ -393,7 +404,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        child: const Text('LIHAT DEMO', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+                        child: const Text('LIHAT VIDEO PROMOSI', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
                       ),
                       const SizedBox(width: 16),
                       ElevatedButton(
