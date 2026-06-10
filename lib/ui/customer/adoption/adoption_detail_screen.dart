@@ -21,6 +21,10 @@ class _AdoptionDetailScreenState extends State<AdoptionDetailScreen> {
   TimeOfDay? _selectedTime;
   bool _isLoading = false;
 
+  bool _agreeToCare = false;
+  bool _agreeNoSell = false;
+  bool _agreeToCost = false;
+
   Future<void> _pickDate() async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -398,12 +402,50 @@ class _AdoptionDetailScreenState extends State<AdoptionDetailScreen> {
 
                   const SizedBox(height: 32),
 
+                  // Syarat & Ketentuan Adopsi
+                  const Text(
+                    'Syarat & Ketentuan Adopsi',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        _buildCheckboxItem(
+                          value: _agreeToCare,
+                          title: 'Saya bersedia merawat hewan ini dengan penuh kasih sayang dan komitmen jangka panjang.',
+                          onChanged: (val) => setState(() => _agreeToCare = val ?? false),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildCheckboxItem(
+                          value: _agreeNoSell,
+                          title: 'Saya setuju bahwa hewan ini tidak akan diperjualbelikan kembali.',
+                          onChanged: (val) => setState(() => _agreeNoSell = val ?? false),
+                        ),
+                        const SizedBox(height: 8),
+                        _buildCheckboxItem(
+                          value: _agreeToCost,
+                          title: 'Saya bersedia menanggung biaya pakan, kesehatan (vaksinasi), dan kebutuhannya.',
+                          onChanged: (val) => setState(() => _agreeToCost = val ?? false),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 32),
+
                   // Submit Button
                   SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: _isLoading ? null : _submitBooking,
+                      onPressed: (_isLoading || !_agreeToCare || !_agreeNoSell || !_agreeToCost) ? null : _submitBooking,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         disabledBackgroundColor: Colors.grey.shade300,
@@ -456,6 +498,38 @@ class _AdoptionDetailScreenState extends State<AdoptionDetailScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildCheckboxItem({
+    required bool value,
+    required String title,
+    required ValueChanged<bool?> onChanged,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 24,
+          height: 24,
+          child: Checkbox(
+            value: value,
+            onChanged: onChanged,
+            activeColor: AppColors.primary,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => onChanged(!value),
+            child: Text(
+              title,
+              style: TextStyle(fontSize: 13, color: Colors.grey.shade800),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
