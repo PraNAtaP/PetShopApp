@@ -155,8 +155,7 @@ class _UniversalPaymentExecutionScreenState
       base = context.read<CartProvider>().totalPrice;
     } else {
       final provider = context.read<GroomingProvider>();
-      base = (provider.selectedPrice * provider.selectedPets.length) +
-          provider.shippingFee;
+      base = provider.selectedPrice + provider.shippingFee;
     }
     return base;
   }

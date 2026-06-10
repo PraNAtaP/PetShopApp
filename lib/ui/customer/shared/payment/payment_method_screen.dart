@@ -48,8 +48,7 @@ class _UniversalPaymentMethodScreenState
       _totalHarga = context.read<CartProvider>().totalPrice;
     } else {
       final grooming = context.read<GroomingProvider>();
-      _totalHarga = (grooming.selectedPrice * grooming.selectedPets.length) +
-          grooming.shippingFee;
+      _totalHarga = grooming.selectedPrice + grooming.shippingFee;
     }
   });
 }
