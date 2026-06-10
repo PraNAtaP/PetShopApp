@@ -93,6 +93,7 @@ flutter:
   assets:
     - lib/assets/img/
     - lib/assets/music/
+    - lib/assets/video/
     - lib/assets/img/1776076564947.png
     - lib/assets/img/qris_placeholder.png
     - lib/assets/img/google_logo.png

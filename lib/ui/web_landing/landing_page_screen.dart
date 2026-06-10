@@ -676,8 +676,8 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
           Transform.scale(
             scale: isMobile ? (MediaQuery.of(context).size.width / 400).clamp(0.5, 1.0) : 1.0,
             child: Container(
-            width: 320,
-            height: 650,
+            width: 315,
+            height: 700,
             decoration: BoxDecoration(
               color: const Color(0xFF1E1E1E), // Phone Bezel Color
               borderRadius: BorderRadius.circular(40),
@@ -950,9 +950,8 @@ class _AutoPlayVideoDemoState extends State<_AutoPlayVideoDemo> {
   @override
   void initState() {
     super.initState();
-    // Video lucu anjing dan kucing sebagai placeholder demo aplikasi
-    _controller = VideoPlayerController.networkUrl(Uri.parse(
-        'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4'))
+    // Video demo aplikasi Pet Point
+    _controller = VideoPlayerController.asset('lib/assets/video/demo_app.mp4')
       ..initialize().then((_) {
         _controller.setLooping(true);
         _controller.setVolume(0); // Harus di-mute agar bisa auto-play di Web
