@@ -39,15 +39,19 @@ class ImgbbService {
   /// Uploads image bytes to ImgBB (used for Web).
   static Future<String> uploadImageBytes(Uint8List imageBytes, String filename) async {
     try {
-      // Gunakan CORS Proxy untuk mem-bypass blokir Cloudflare ImgBB pada localhost (Web)
-      final proxyUrl = 'https://corsproxy.io/?${Uri.encodeComponent('$_uploadUrl?key=$_apiKey')}';
+      final uri = Uri.parse('$_uploadUrl?key=$_apiKey');
+      final request = http.MultipartRequest('POST', uri);
       
-      final response = await http.post(
-        Uri.parse(proxyUrl),
-        body: {
-          'image': base64Encode(imageBytes),
-        },
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'image',
+          imageBytes,
+          filename: filename,
+        ),
       );
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
