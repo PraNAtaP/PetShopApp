@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/ui/shared/auth/login/login_page.dart';
+import 'package:petshopapp/ui/shared/auth/action/auth_action_screen.dart';
 import 'package:petshopapp/ui/admin/dashboard/admin_layout.dart';
 import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
 import 'package:petshopapp/ui/web_landing/landing_page_screen.dart';
@@ -20,7 +21,7 @@ class AdminRouter {
         final isLoggedIn = authService.isLoggedIn;
         final location = state.matchedLocation;
 
-        final isAuthRoute = location == '/admin' || location == '/' || location == '/splash';
+        final isAuthRoute = location == '/admin' || location == '/' || location == '/splash' || location == '/auth-action';
 
         if (!isLoggedIn && !isAuthRoute) {
           return '/';
@@ -33,7 +34,7 @@ class AdminRouter {
             return null; // Let them proceed to their admin page or stay on landing page
           } else {
              // They are logged in but not an admin.
-             if (location != '/forbidden' && location != '/') return '/forbidden';
+             if (location != '/forbidden' && location != '/' && location != '/auth-action') return '/forbidden';
              return null;
           }
         }
@@ -41,6 +42,16 @@ class AdminRouter {
         return null;
       },
       routes: [
+        GoRoute(
+          path: '/auth-action',
+          name: 'auth-action',
+          builder: (context, state) {
+            return AuthActionScreen(
+              mode: state.uri.queryParameters['mode'],
+              oobCode: state.uri.queryParameters['oobCode'],
+            );
+          },
+        ),
         GoRoute(
           path: '/',
           name: 'landing',

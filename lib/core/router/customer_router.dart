@@ -5,6 +5,7 @@ import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/ui/shared/auth/login/login_page.dart';
 import 'package:petshopapp/ui/shared/auth/register/register_page.dart';
 import 'package:petshopapp/ui/shared/auth/verify/email_verification_page.dart';
+import 'package:petshopapp/ui/shared/auth/action/auth_action_screen.dart';
 import 'package:petshopapp/ui/customer/main/base_screen.dart';
 import 'package:petshopapp/ui/customer/adoption/adoption_catalog_screen.dart';
 import 'package:petshopapp/ui/customer/adoption/adoption_history_screen.dart';
@@ -42,7 +43,7 @@ class CustomerRouter {
         final isLoggedIn = authService.isLoggedIn;
         final location = state.matchedLocation;
 
-        final isAuthRoute = location == '/login' || location == '/register' || location == '/splash' || location == '/verify-email';
+        final isAuthRoute = location == '/login' || location == '/register' || location == '/splash' || location == '/verify-email' || location == '/auth-action';
 
         if (isLoggedIn && (location == '/login' || location == '/register' || location == '/verify-email')) return '/home';
 
@@ -55,6 +56,16 @@ class CustomerRouter {
         return null;
       },
       routes: [
+        GoRoute(
+          path: '/auth-action',
+          name: 'auth-action',
+          builder: (context, state) {
+            return AuthActionScreen(
+              mode: state.uri.queryParameters['mode'],
+              oobCode: state.uri.queryParameters['oobCode'],
+            );
+          },
+        ),
         GoRoute(
           path: '/splash',
           name: 'splash',
