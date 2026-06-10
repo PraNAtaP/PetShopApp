@@ -92,61 +92,85 @@ class _LoginPageState extends State<LoginPage> {
   Future<void> _showForgotPasswordDialog() async {
     final resetEmailController = TextEditingController(text: _emailController.text);
     final formKey = GlobalKey<FormState>();
+    bool isSending = false;
 
     await showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Lupa Password?'),
-        content: Form(
-          key: formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Masukkan email Anda yang terdaftar untuk menerima link reset password.',
-                style: TextStyle(fontSize: 14),
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text('Lupa Password?'),
+            content: Form(
+              key: formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'Masukkan email Anda yang terdaftar untuk menerima link reset password.',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: resetEmailController,
+                    keyboardType: TextInputType.emailAddress,
+                    enabled: !isSending,
+                    decoration: const InputDecoration(
+                      hintText: 'Email',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) return 'Email tidak boleh kosong';
+                      if (!value.contains('@')) return 'Format email tidak valid';
+                      return null;
+                    },
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: resetEmailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  hintText: 'Email',
-                  prefixIcon: Icon(Icons.email_outlined),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) return 'Email tidak boleh kosong';
-                  if (!value.contains('@')) return 'Format email tidak valid';
-                  return null;
-                },
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSending ? null : () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: isSending
+                    ? null
+                    : () async {
+                        if (formKey.currentState!.validate()) {
+                          setStateDialog(() => isSending = true);
+                          
+                          final authService = context.read<AuthService>();
+                          final result = await authService.resetPassword(
+                            email: resetEmailController.text.trim()
+                          );
+                          
+                          if (!mounted) return;
+                          
+                          Navigator.pop(ctx);
+                          
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(result ?? 'Link reset password berhasil dikirim ke email Anda.'),
+                              backgroundColor: result == null ? Colors.green : AppColors.error,
+                            ),
+                          );
+                        }
+                      },
+                child: isSending
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2, 
+                          color: AppColors.white,
+                        ),
+                      )
+                    : const Text('Kirim Link'),
               ),
             ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              if (formKey.currentState!.validate()) {
-                Navigator.pop(ctx);
-                final authService = context.read<AuthService>();
-                final result = await authService.resetPassword(email: resetEmailController.text.trim());
-                if (!mounted) return;
-                
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(result ?? 'Link reset password berhasil dikirim ke email Anda.'),
-                    backgroundColor: result == null ? Colors.green : AppColors.error,
-                  ),
-                );
-              }
-            },
-            child: const Text('Kirim Link'),
-          ),
-        ],
+          );
+        }
       ),
     );
   }

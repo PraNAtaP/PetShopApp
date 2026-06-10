@@ -9,7 +9,9 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 class LandingPageScreen extends StatefulWidget {
-  const LandingPageScreen({super.key});
+  final String? action;
+
+  const LandingPageScreen({super.key, this.action});
 
   @override
   State<LandingPageScreen> createState() => _LandingPageScreenState();
@@ -101,6 +103,76 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
         setState(() => _isScrolled = false);
       }
     });
+
+    if (widget.action == 'emailVerified') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showEmailVerifiedDialog();
+      });
+    }
+  }
+
+  void _showEmailVerifiedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Container(
+            width: 400,
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.mark_email_read, color: Colors.green, size: 80),
+                const SizedBox(height: 24),
+                const Text(
+                  'Verifikasi Berhasil!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.textDark,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Email kamu telah berhasil diverifikasi. Akun Pet Point kamu sekarang sudah aktif sepenuhnya.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textLight,
+                    height: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      // Bersihkan URL tanpa reload halaman (opsional)
+                      GoRouter.of(context).go('/');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('OKAY', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _playBackgroundMusic() {
@@ -665,8 +737,8 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
           Transform.scale(
             scale: isMobile ? (MediaQuery.of(context).size.width / 400).clamp(0.5, 1.0) : 1.0,
             child: Container(
-            width: 320,
-            height: 650,
+            width: 315, // Rasio 9:20 (Standar Android modern)
+            height: 700,
             decoration: BoxDecoration(
               color: const Color(0xFF1E1E1E), // Phone Bezel Color
               borderRadius: BorderRadius.circular(40),
@@ -687,7 +759,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
               padding: const EdgeInsets.all(12.0), // Bezel thickness
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.black, // Dasar hitam supaya menyatu
                   borderRadius: BorderRadius.circular(28),
                 ),
                 clipBehavior: Clip.antiAlias,
@@ -696,18 +768,24 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                     // Auto-playing Video Demo
                     const _AutoPlayVideoDemo(),
                     
-                    // Top Notch (Poni Kamera)
+                    // Android Punch-hole Camera
                     Align(
                       alignment: Alignment.topCenter,
                       child: Container(
-                        width: 130,
-                        height: 26,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF1E1E1E),
-                          borderRadius: BorderRadius.only(
-                            bottomLeft: Radius.circular(16),
-                            bottomRight: Radius.circular(16),
-                          ),
+                        margin: const EdgeInsets.only(top: 10),
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: Colors.black,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.5),
+                              blurRadius: 2,
+                              spreadRadius: 1,
+                            )
+                          ],
                         ),
                       ),
                     ),
@@ -939,9 +1017,8 @@ class _AutoPlayVideoDemoState extends State<_AutoPlayVideoDemo> {
   @override
   void initState() {
     super.initState();
-    // Video lucu anjing dan kucing sebagai placeholder demo aplikasi
-    _controller = VideoPlayerController.networkUrl(Uri.parse(
-        'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4'))
+    // Video demo aplikasi Pet Point
+    _controller = VideoPlayerController.asset('lib/assets/video/demo_app.mp4')
       ..initialize().then((_) {
         _controller.setLooping(true);
         _controller.setVolume(0); // Harus di-mute agar bisa auto-play di Web

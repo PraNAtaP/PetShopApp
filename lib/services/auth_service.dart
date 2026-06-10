@@ -462,17 +462,17 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> _fetchUserProfile(String uid) async {
-    final completer = Completer<void>();
-
     _userSubscription?.cancel();
-    _userSubscription = _firestore.collection('users').doc(uid).snapshots().listen((doc) async {
+
+    try {
+      // Ambil data dari server/cache terlebih dahulu untuk menghindari state cache yang sudah usang (stale)
+      final doc = await _firestore.collection('users').doc(uid).get();
       if (doc.exists) {
         _currentUser = UserModel.fromFirestore(doc);
 
-        // Jika akun diblokir, logout otomatis dan kembalikan null
+        // Jika akun diblokir, logout otomatis
         if (_currentUser!.isBlocked) {
           await logout();
-          if (!completer.isCompleted) completer.complete();
           return;
         }
 
@@ -480,18 +480,28 @@ class AuthService extends ChangeNotifier {
           final fcmToken = await FCMService.instance.getToken();
           if (fcmToken != null && fcmToken != _currentUser!.fcmToken) {
             await _firestore.collection('users').doc(uid).update({'fcm_token': fcmToken});
-            // Akan memicu listener ini lagi, jadi aman
           }
         } catch (_) {}
+        
+        notifyListeners();
+      }
+    } catch (e) {
+      // Abaikan jika error, nanti listener yang akan handle
+    }
+
+    // Set up realtime listener
+    _userSubscription = _firestore.collection('users').doc(uid).snapshots().listen((doc) async {
+      if (doc.exists) {
+        _currentUser = UserModel.fromFirestore(doc);
+
+        if (_currentUser!.isBlocked) {
+          await logout();
+          return;
+        }
 
         notifyListeners();
-        if (!completer.isCompleted) completer.complete();
-      } else {
-        if (!completer.isCompleted) completer.complete();
       }
     });
-
-    return completer.future;
   }
 
   void _setLoading(bool value) {

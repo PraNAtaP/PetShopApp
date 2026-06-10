@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/ui/shared/auth/login/login_page.dart';
+import 'package:petshopapp/ui/shared/auth/action/auth_action_screen.dart';
 import 'package:petshopapp/ui/admin/dashboard/admin_layout.dart';
 import 'package:petshopapp/ui/shared/splash/splash_screen.dart';
 import 'package:petshopapp/ui/web_landing/landing_page_screen.dart';
@@ -20,7 +21,7 @@ class AdminRouter {
         final isLoggedIn = authService.isLoggedIn;
         final location = state.matchedLocation;
 
-        final isAuthRoute = location == '/login' || location == '/' || location == '/splash';
+        final isAuthRoute = location == '/login' || location == '/' || location == '/auth-action';
 
         if (!isLoggedIn && !isAuthRoute) {
           return '/login';
@@ -29,7 +30,7 @@ class AdminRouter {
         if (isLoggedIn) {
           final role = authService.currentUser?.role.value;
           if (role == 'admin') {
-            if (location == '/login' || location == '/splash') return '/admin/dashboard';
+            if (location == '/login') return '/admin/dashboard';
             return null; // Let them proceed to their admin page or stay on landing page
           } else {
              // They are logged in but not an admin.
@@ -44,17 +45,25 @@ class AdminRouter {
         GoRoute(
           path: '/',
           name: 'landing',
-          builder: (context, state) => const LandingPageScreen(),
+          builder: (context, state) {
+            final action = state.uri.queryParameters['action'];
+            return LandingPageScreen(action: action);
+          },
         ),
-        GoRoute(
-          path: '/splash',
-          name: 'splash',
-          builder: (context, state) => const SplashScreen(),
-        ),
+
         GoRoute(
           path: '/login',
           name: 'admin-login',
           builder: (context, state) => const LoginPage(),
+        ),
+        GoRoute(
+          path: '/auth-action',
+          name: 'auth-action',
+          builder: (context, state) {
+            final mode = state.uri.queryParameters['mode'];
+            final oobCode = state.uri.queryParameters['oobCode'];
+            return AuthActionScreen(mode: mode, oobCode: oobCode);
+          },
         ),
         GoRoute(
           path: '/admin/dashboard',
