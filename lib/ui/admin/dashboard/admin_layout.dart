@@ -13,6 +13,7 @@ import '../chat/admin_chat_list_screen.dart';
 import 'package:petshopapp/ui/admin/funfact/admin_funfact_screen.dart';
 import '../shop/order_management_screen.dart';
 import '../shop/admin_pos_screen.dart';
+import '../user/admin_user_management_screen.dart';
 import 'admin_dashboard_screen.dart';
 
 import 'package:petshopapp/services/in_app_chat_notifier.dart';
@@ -65,6 +66,7 @@ class _AdminLayoutState extends State<AdminLayout> {
       const AdminAdoptionManagementScreen(), 
       const AdminChatListScreen(),    
       AdminFunFactScreen(),     
+      const AdminUserManagementScreen(), // Added User Management
       const AdminProfileScreen(),     
     ];
 
@@ -182,6 +184,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       label: Text('FunFact'),
                     ),
                     NavigationRailDestination(
+                      icon: Icon(Icons.people_outline),
+                      selectedIcon: Icon(Icons.people),
+                      label: Text('Pelanggan'),
+                    ),
+                    NavigationRailDestination(
                       icon: Icon(Icons.person_outline),
                       selectedIcon: Icon(Icons.person),
                       label: Text('Profile'),
@@ -238,6 +245,11 @@ class _AdminLayoutState extends State<AdminLayout> {
                       icon: Icon(Icons.tips_and_updates_outlined),
                       selectedIcon: Icon(Icons.tips_and_updates),
                       label: Text('FunFact'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.people_outline),
+                      selectedIcon: Icon(Icons.people),
+                      label: Text('Pelanggan'),
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.person_outline),

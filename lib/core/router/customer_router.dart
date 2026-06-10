@@ -47,7 +47,7 @@ class CustomerRouter {
         if (isLoggedIn && (location == '/login' || location == '/register' || location == '/verify-email')) return '/home';
 
         // Block unauthorized access to any route that is not an auth route
-        if (!isLoggedIn && !isAuthRoute) return '/splash';
+        if (!isLoggedIn && !isAuthRoute) return '/login';
 
         // Additional: block admin users out of customer app or just ignore them.
         // Actually, if role == admin, maybe redirect to an error? Or they can't login here?
@@ -139,6 +139,7 @@ class CustomerRouter {
               category: 'shop',
               usePoints: extra['usePoints'] as bool? ?? false,
               discount: (extra['discount'] as num?)?.toDouble() ?? 0,
+              order: extra['order'] as OrderModel?,
             );
           },
         ),
@@ -185,6 +186,10 @@ class CustomerRouter {
               category: 'grooming',
               usePoints: extra['usePoints'] as bool? ?? false,
               discount: (extra['discount'] as num?)?.toDouble() ?? 0,
+              bookingIds: extra['bookingIds'] as List<String>?,
+              createdAt: extra['createdAt'] as DateTime?,
+              isHomeService: extra['isHomeService'] as bool? ?? false,
+              totalHarga: (extra['totalHarga'] as num?)?.toDouble() ?? 0,
             );
           },
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/models/user_model.dart';
@@ -18,6 +19,7 @@ class AuthService extends ChangeNotifier {
 
   UserModel? _currentUser;
   bool _isLoading = false;
+  StreamSubscription<DocumentSnapshot>? _userSubscription;
 
   UserModel? get currentUser => _currentUser;
   bool get isLoggedIn =>
@@ -96,6 +98,11 @@ class AuthService extends ChangeNotifier {
       }
 
       await _fetchUserProfile(credential.user!.uid);
+      if (_currentUser == null) {
+        _setLoading(false);
+        return 'Akun Anda dinonaktifkan. Hubungi Admin.';
+      }
+
       // If logged-in user is admin, log the admin login action
       if (_currentUser?.role == UserRole.admin) {
         final adminName = _currentUser?.nama ?? _auth.currentUser?.displayName ?? 'Admin';
@@ -163,6 +170,11 @@ class AuthService extends ChangeNotifier {
       }
 
       await _fetchUserProfile(uid);
+      if (_currentUser == null) {
+        _setLoading(false);
+        return 'Akun Anda dinonaktifkan. Hubungi Admin.';
+      }
+
       // If user is admin, log admin login (Google)
       if (_currentUser?.role == UserRole.admin) {
         final adminName = _currentUser?.nama ?? _auth.currentUser?.displayName ?? 'Admin';
@@ -193,7 +205,7 @@ class AuthService extends ChangeNotifier {
         if (user != null && user.emailVerified) {
           await _fetchUserProfile(user.uid);
           _setLoading(false);
-          return true;
+          return _currentUser != null; // Will be false if blocked
         }
         _setLoading(false);
         return false;
@@ -421,6 +433,9 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    _userSubscription?.cancel();
+    _userSubscription = null;
+
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
       if (await googleSignIn.isSignedIn()) {
@@ -447,22 +462,36 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> _fetchUserProfile(String uid) async {
-    final doc = await _firestore.collection('users').doc(uid).get();
-    if (doc.exists) {
-      _currentUser = UserModel.fromFirestore(doc);
-      
-      try {
-        final fcmToken = await FCMService.instance.getToken();
-        if (fcmToken != null && fcmToken != _currentUser!.fcmToken) {
-          await _firestore.collection('users').doc(uid).update({'fcm_token': fcmToken});
-          // Re-fetch to have the updated token in memory
-          final updatedDoc = await _firestore.collection('users').doc(uid).get();
-          _currentUser = UserModel.fromFirestore(updatedDoc);
-        }
-      } catch (_) {}
+    final completer = Completer<void>();
 
-      notifyListeners();
-    }
+    _userSubscription?.cancel();
+    _userSubscription = _firestore.collection('users').doc(uid).snapshots().listen((doc) async {
+      if (doc.exists) {
+        _currentUser = UserModel.fromFirestore(doc);
+
+        // Jika akun diblokir, logout otomatis dan kembalikan null
+        if (_currentUser!.isBlocked) {
+          await logout();
+          if (!completer.isCompleted) completer.complete();
+          return;
+        }
+
+        try {
+          final fcmToken = await FCMService.instance.getToken();
+          if (fcmToken != null && fcmToken != _currentUser!.fcmToken) {
+            await _firestore.collection('users').doc(uid).update({'fcm_token': fcmToken});
+            // Akan memicu listener ini lagi, jadi aman
+          }
+        } catch (_) {}
+
+        notifyListeners();
+        if (!completer.isCompleted) completer.complete();
+      } else {
+        if (!completer.isCompleted) completer.complete();
+      }
+    });
+
+    return completer.future;
   }
 
   void _setLoading(bool value) {

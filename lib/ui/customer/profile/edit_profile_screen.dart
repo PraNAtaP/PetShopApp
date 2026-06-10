@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -22,7 +22,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late TextEditingController _phoneController;
   late TextEditingController _addressController;
   String? _currentFotoUrl;
-  File? _selectedImage;
+  XFile? _selectedImage;
+  Uint8List? _selectedImageBytes;
   bool _isSaving = false;
 
   @override
@@ -49,7 +50,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final picker = ImagePicker();
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked != null) {
-      setState(() => _selectedImage = File(picked.path));
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        _selectedImage = picked;
+        _selectedImageBytes = bytes;
+      });
     }
   }
 
@@ -62,8 +67,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       String? newFotoUrl = _currentFotoUrl;
 
       // Upload new photo if selected
-      if (_selectedImage != null) {
-        newFotoUrl = await ImgbbService.uploadImage(_selectedImage!);
+      if (_selectedImageBytes != null) {
+        newFotoUrl = await ImgbbService.uploadImageBytes(_selectedImageBytes!, _selectedImage?.name ?? 'image.jpg');
       }
 
       final authService = context.read<AuthService>();
@@ -138,12 +143,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             CircleAvatar(
                               radius: 50,
                               backgroundColor: Colors.white.withValues(alpha: 0.2),
-                              backgroundImage: _selectedImage != null
-                                  ? FileImage(_selectedImage!)
+                              backgroundImage: _selectedImageBytes != null
+                                  ? MemoryImage(_selectedImageBytes!) as ImageProvider
                                   : (_currentFotoUrl != null && _currentFotoUrl!.isNotEmpty
                                       ? NetworkImage(_currentFotoUrl!) as ImageProvider
                                       : null),
-                              child: (_selectedImage == null &&
+                              child: (_selectedImageBytes == null &&
                                       (_currentFotoUrl == null || _currentFotoUrl!.isEmpty))
                                   ? const Icon(Icons.person, size: 50, color: Colors.white70)
                                   : null,

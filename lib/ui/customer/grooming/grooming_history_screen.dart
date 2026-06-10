@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/grooming_booking_model.dart';
 import 'package:petshopapp/services/auth_service.dart';
@@ -100,8 +101,32 @@ class GroomingHistoryScreen extends StatelessWidget {
     NumberFormat formatter,
     DateFormat dateFormat,
   ) {
-    final statusColor = _getStatusColor(booking.status);
-    final statusLabel = _getStatusLabel(booking.status);
+    bool isUnpaid = booking.status == 'Unpaid';
+    bool canResumePayment = false;
+    int remainingSeconds = 0;
+    
+    if (isUnpaid) {
+      final elapsed = DateTime.now().difference(booking.createdAt).inSeconds;
+      remainingSeconds = 480 - elapsed;
+      if (remainingSeconds > 0) {
+        canResumePayment = true;
+      }
+    }
+    
+    String displayStatus = booking.status;
+    if (isUnpaid && !canResumePayment) {
+      displayStatus = 'Expired';
+      
+      // Auto-expire in Firestore
+      if (booking.status != 'Expired') {
+        Future.microtask(() {
+          GroomingService.instance.updateBookingStatus(booking.bookingId, 'Expired');
+        });
+      }
+    }
+
+    final statusColor = _getStatusColor(displayStatus);
+    final statusLabel = _getStatusLabel(displayStatus);
 
     return GestureDetector(
       onTap: () {
@@ -233,6 +258,40 @@ class GroomingHistoryScreen extends StatelessWidget {
                 ],
               ),
             ),
+            // Resume Payment Button if applicable
+            if (canResumePayment)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(18)),
+                ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    context.pushNamed(
+                      'grooming-payment-execution',
+                      extra: {
+                        'bookingIds': [booking.bookingId],
+                        'metodePembayaran': booking.metodePembayaran,
+                        'usePoints': booking.diskonPoin > 0,
+                        'discount': booking.diskonPoin,
+                        'createdAt': booking.createdAt,
+                        'isHomeService': booking.isHomeService,
+                        'totalHarga': booking.totalPrice,
+                      },
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text('Selesaikan Pembayaran', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
           ],
         ),
       ),
@@ -262,9 +321,11 @@ class GroomingHistoryScreen extends StatelessWidget {
         return AppColors.background;
       case 'Pending':
       case 'Menunggu Konfirmasi':
+      case 'Unpaid':
         return AppColors.accent;
       case 'Cancelled':
       case 'Dibatalkan':
+      case 'Expired':
         return AppColors.error;
       default:
         return AppColors.textLight;
@@ -281,6 +342,10 @@ class GroomingHistoryScreen extends StatelessWidget {
         return 'Selesai';
       case 'Cancelled':
         return 'Dibatalkan';
+      case 'Expired':
+        return 'Expired';
+      case 'Unpaid':
+        return 'Unpaid';
       default:
         return status;
     }

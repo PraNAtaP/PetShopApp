@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/order_model.dart';
@@ -103,11 +104,43 @@ class OrderHistoryScreen extends StatelessWidget {
     OrderModel order,
     NumberFormat formatter,
   ) {
-    final statusColor = _getStatusColor(order.statusBayar);
-    final statusIcon = _getStatusIcon(order.statusBayar);
     final dateStr = order.createdAt != null
         ? DateFormat('dd MMM yyyy, HH:mm', 'id_ID').format(order.createdAt!)
         : '-';
+
+    bool isUnpaid = order.statusBayar == 'Unpaid';
+    bool canResumePayment = false;
+    int remainingSeconds = 0;
+    
+    if (isUnpaid && order.createdAt != null) {
+      final elapsed = DateTime.now().difference(order.createdAt!).inSeconds;
+      remainingSeconds = 480 - elapsed;
+      if (remainingSeconds > 0) {
+        canResumePayment = true;
+      }
+    }
+    
+    // UI Override for Expired Status (locally displayed as expired if time ran out but Firestore not yet updated)
+    String displayStatusBayar = order.statusBayar;
+    String displayStatusKirim = order.statusPengiriman;
+    if (isUnpaid && !canResumePayment) {
+      displayStatusBayar = 'Expired';
+      displayStatusKirim = 'Dibatalkan';
+      
+      // Auto-expire in Firestore
+      if (order.statusBayar != 'Expired') {
+        Future.microtask(() {
+          FirestoreService.instance.updateOrderFullStatus(
+            orderId: order.orderId,
+            statusBayar: 'Expired',
+            statusPengiriman: 'Dibatalkan',
+          );
+        });
+      }
+    }
+    
+    final statusColor = _getStatusColor(displayStatusBayar);
+    final statusIcon = _getStatusIcon(displayStatusBayar);
 
     return GestureDetector(
       onTap: () {
@@ -179,7 +212,7 @@ class OrderHistoryScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          order.statusBayar,
+                          displayStatusBayar,
                           style: TextStyle(
                             color: statusColor,
                             fontWeight: FontWeight.bold,
@@ -195,11 +228,11 @@ class OrderHistoryScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
-                          order.statusPengiriman,
-                          style: const TextStyle(
-                            color: Colors.blue,
+                          displayStatusKirim,
+                          style: TextStyle(
+                            color: displayStatusKirim == 'Dibatalkan' ? Colors.red : Colors.blue,
                             fontWeight: FontWeight.bold,
-                            fontSize: 10,
+                            fontSize: 11,
                           ),
                         ),
                       ),
@@ -296,6 +329,39 @@ class OrderHistoryScreen extends StatelessWidget {
                 ],
               ),
             ),
+            
+            // Resume Payment Button if applicable
+            if (canResumePayment)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(18)),
+                ),
+                child: ElevatedButton(
+                  onPressed: () {
+                    context.pushNamed(
+                      'payment-execution',
+                      extra: {
+                        'order': order,
+                        'metodePembayaran': order.metodePembayaran,
+                        'usePoints': order.diskonPoin > 0,
+                        'discount': order.diskonPoin,
+                      },
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: const Text('Selesaikan Pembayaran', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+
           ],
         ),
       ),
@@ -312,6 +378,8 @@ class OrderHistoryScreen extends StatelessWidget {
         return AppColors.accent;
       case 'Rejected':
         return AppColors.error;
+      case 'Expired':
+        return Colors.red;
       default:
         return AppColors.textLight;
     }
@@ -326,6 +394,7 @@ class OrderHistoryScreen extends StatelessWidget {
       case 'Pending':
         return Icons.hourglass_top_rounded;
       case 'Rejected':
+      case 'Expired':
         return Icons.cancel_outlined;
       default:
         return Icons.info_outline;

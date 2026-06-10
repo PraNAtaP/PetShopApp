@@ -53,9 +53,13 @@ class GroomingService {
 
   /// Saves a new grooming booking to Firestore.
   /// Also triggers a notification record for the Admin.
-  Future<void> createBooking(GroomingBookingModel booking) async {
+  Future<String> createBooking(GroomingBookingModel booking) async {
     try {
-      await _bookingsRef.add(booking);
+      final docRef = await _bookingsRef.add(booking);
+      
+      // Update the bookingId inside the model
+      final bookingId = docRef.id;
+      await docRef.update({'bookingId': bookingId});
       
       // Trigger Notification for Admin (Mock)
       await _db.collection('notifications').add({
@@ -65,6 +69,8 @@ class GroomingService {
         'createdAt': FieldValue.serverTimestamp(),
         'read': false,
       });
+      
+      return bookingId;
     } catch (e) {
       throw Exception('Gagal membuat booking: $e');
     }
@@ -123,8 +129,12 @@ class GroomingService {
   }
 
   /// Returns a real-time stream of all grooming bookings for the Admin Dashboard.
-  Stream<List<GroomingBookingModel>> getAdminBookingsStream() {
-    return _bookingsRef
+  Stream<List<GroomingBookingModel>> getAdminBookingsStream({DateTime? startDate}) {
+    Query<GroomingBookingModel> query = _bookingsRef;
+    if (startDate != null) {
+      query = query.where('createdAt', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate));
+    }
+    return query
         .snapshots()
         .map((snapshot) {
           final list = snapshot.docs.map((doc) => doc.data()).toList();

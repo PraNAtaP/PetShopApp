@@ -25,13 +25,34 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
   final currencyFormat = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
   String _searchQuery = '';
   String _selectedLocation = 'Semua';
-  DateTimeRange? _selectedDateRange;
+  String _activeFilter = 'Hari Ini';
+  int _currentPage = 0;
+  final int _itemsPerPage = 10;
   late Stream<List<GroomingBookingModel>> _bookingsStream;
+
+  DateTime? _getStartDate(String filter) {
+    final now = DateTime.now();
+    switch (filter) {
+      case 'Hari Ini':
+        return DateTime(now.year, now.month, now.day);
+      case 'Minggu Ini':
+        return DateTime(now.year, now.month, now.day).subtract(Duration(days: now.weekday - 1));
+      case 'Bulan Ini':
+        return DateTime(now.year, now.month, 1);
+      case 'Semua Waktu':
+      default:
+        return null;
+    }
+  }
+
+  void _loadStream() {
+    _bookingsStream = GroomingService.instance.getAdminBookingsStream(startDate: _getStartDate(_activeFilter));
+  }
 
   @override
   void initState() {
     super.initState();
-    _bookingsStream = GroomingService.instance.getAdminBookingsStream();
+    _loadStream();
   }
 
   @override
@@ -46,6 +67,40 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
       ),
       body: Column(
         children: [
+          // Quick Date Filters
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Row(
+              children: ['Hari Ini', 'Minggu Ini', 'Bulan Ini', 'Semua Waktu'].map((filter) {
+                final isSelected = _activeFilter == filter;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: ChoiceChip(
+                    label: Text(filter, style: const TextStyle(fontSize: 12)),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      if (selected && _activeFilter != filter) {
+                        setState(() {
+                          _activeFilter = filter;
+                          _currentPage = 0;
+                          _loadStream();
+                        });
+                      }
+                    },
+                    showCheckmark: false,
+                    selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                    backgroundColor: Colors.grey.shade100,
+                    side: BorderSide(color: isSelected ? AppColors.primary : Colors.transparent),
+                    labelStyle: TextStyle(
+                      color: isSelected ? AppColors.primary : Colors.black87,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -62,6 +117,7 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                     onChanged: (val) {
                       setState(() {
                         _searchQuery = val.toLowerCase();
+                        _currentPage = 0;
                       });
                     },
                   ),
@@ -83,47 +139,13 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
                           return DropdownMenuItem(value: type, child: Text(type, style: const TextStyle(fontSize: 13), overflow: TextOverflow.ellipsis));
                         }).toList(),
                         onChanged: (val) {
-                          if (val != null) setState(() => _selectedLocation = val);
+                          if (val != null) {
+                            setState(() {
+                              _selectedLocation = val;
+                              _currentPage = 0;
+                            });
+                          }
                         },
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  flex: 1,
-                  child: InkWell(
-                    onTap: () async {
-                      final picked = await _showDateRangePopup(context, _selectedDateRange);
-                      if (picked != null) {
-                        setState(() => _selectedDateRange = picked);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.grey.shade400),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.calendar_month, size: 18, color: Colors.grey),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              _selectedDateRange == null 
-                                  ? 'Filter Tanggal' 
-                                  : '${DateFormat('dd/MM/yy').format(_selectedDateRange!.start)} - ${DateFormat('dd/MM/yy').format(_selectedDateRange!.end)}',
-                              style: const TextStyle(fontSize: 12),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          if (_selectedDateRange != null)
-                            GestureDetector(
-                              onTap: () => setState(() => _selectedDateRange = null),
-                              child: const Icon(Icons.close, size: 16),
-                            )
-                        ],
                       ),
                     ),
                   ),
@@ -145,6 +167,19 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
 
           var bookings = snapshot.data ?? [];
 
+          // Auto-expire check
+          final now = DateTime.now();
+          for (var booking in bookings) {
+            if (booking.status == 'Unpaid') {
+              final elapsed = now.difference(booking.createdAt).inSeconds;
+              if (elapsed > 480) {
+                Future.microtask(() {
+                  GroomingService.instance.updateBookingStatus(booking.bookingId, 'Expired');
+                });
+              }
+            }
+          }
+
           if (_searchQuery.isNotEmpty) {
             bookings = bookings.where((booking) {
               return booking.customerName.toLowerCase().contains(_searchQuery);
@@ -156,15 +191,6 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
               if (_selectedLocation == 'Home Service') return booking.isHomeService;
               if (_selectedLocation == 'Di Toko') return !booking.isHomeService;
               return true;
-            }).toList();
-          }
-
-          if (_selectedDateRange != null) {
-            bookings = bookings.where((booking) {
-              final bookingDate = DateTime(booking.bookingDate.year, booking.bookingDate.month, booking.bookingDate.day);
-              final start = DateTime(_selectedDateRange!.start.year, _selectedDateRange!.start.month, _selectedDateRange!.start.day);
-              final end = DateTime(_selectedDateRange!.end.year, _selectedDateRange!.end.month, _selectedDateRange!.end.day);
-              return bookingDate.isAtSameMomentAs(start) || bookingDate.isAtSameMomentAs(end) || (bookingDate.isAfter(start) && bookingDate.isBefore(end));
             }).toList();
           }
 
@@ -181,32 +207,83 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
             );
           }
 
-          return SingleChildScrollView(
-            scrollDirection: Axis.vertical,
-            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey.shade200),
-                  borderRadius: BorderRadius.circular(12),
+          // Pagination Logic
+          final int totalItems = bookings.length;
+          final int totalPages = (totalItems / _itemsPerPage).ceil();
+          
+          if (_currentPage >= totalPages && totalPages > 0) {
+            _currentPage = totalPages - 1;
+          }
+          
+          final int startIndex = _currentPage * _itemsPerPage;
+          final int endIndex = (startIndex + _itemsPerPage > totalItems) ? totalItems : startIndex + _itemsPerPage;
+          final paginatedBookings = bookings.sublist(startIndex, endIndex);
+
+          return Expanded(
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.vertical,
+                    padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade200),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: DataTable(
+                          headingRowColor: WidgetStateProperty.all(AppColors.primary.withValues(alpha: 0.05)),
+                          columnSpacing: 24,
+                          columns: const [
+                            DataColumn(label: Text('ID Booking', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Tanggal Masuk', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Pelanggan', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Jadwal Layanan', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Total Pembayaran', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Lokasi Layanan', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Status Grooming', style: TextStyle(fontWeight: FontWeight.bold))),
+                            DataColumn(label: Text('Aksi', style: TextStyle(fontWeight: FontWeight.bold))),
+                          ],
+                          rows: paginatedBookings.map((booking) => _buildBookingRow(booking)).toList(),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-                child: DataTable(
-                  headingRowColor: WidgetStateProperty.all(AppColors.primary.withValues(alpha: 0.05)),
-                  columnSpacing: 24,
-                  columns: const [
-                    DataColumn(label: Text('ID Booking', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Tanggal Masuk', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Pelanggan', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Jadwal Layanan', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Total Pembayaran', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Lokasi Layanan', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Status Grooming', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Aksi', style: TextStyle(fontWeight: FontWeight.bold))),
-                  ],
-                  rows: bookings.map((booking) => _buildBookingRow(booking)).toList(),
-                ),
-              ),
+                // Pagination Controls
+                if (totalPages > 1)
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      border: Border(top: BorderSide(color: Colors.grey.shade200)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Menampilkan ${startIndex + 1}-${endIndex} dari $totalItems', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        Row(
+                          children: [
+                            TextButton.icon(
+                              onPressed: _currentPage > 0 ? () => setState(() => _currentPage--) : null,
+                              icon: const Icon(Icons.chevron_left, size: 16),
+                              label: const Text('Prev'),
+                            ),
+                            const SizedBox(width: 8),
+                            Text('Halaman ${_currentPage + 1} / $totalPages', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                            const SizedBox(width: 8),
+                            TextButton(
+                              onPressed: _currentPage < totalPages - 1 ? () => setState(() => _currentPage++) : null,
+                              child: const Row(children: [Text('Next'), Icon(Icons.chevron_right, size: 16)]),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           );
         },
@@ -331,9 +408,11 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
       case 'menunggu pembayaran':
       case 'pending':
       case 'menunggu':
+      case 'unpaid':
         return Colors.orange;
       case 'dibatalkan':
       case 'cancelled':
+      case 'expired':
         return Colors.red;
       default:
         return Colors.grey.shade700;
