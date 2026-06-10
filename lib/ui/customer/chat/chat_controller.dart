@@ -87,7 +87,7 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  /// Sends a text message (Murni mengirim pesan customer tanpa ada balasan otomatis).
+  /// Sends a text message and triggers smart auto-reply if customer.
   void sendMessage(String text) async {
     if (text.trim().isEmpty || _chatId == null || _currentUid == null || _receiverId == null) return;
 
@@ -100,6 +100,32 @@ class ChatController extends ChangeNotifier {
       receiverName: _receiverName,
       customerName: _currentUserName,
     );
+
+    // Auto-reply pintar jika pengirim adalah customer (bukan admin)
+    if (_currentUserRole != 'admin') {
+      final textLower = text.toLowerCase();
+      String reply = 'Terima kasih atas pesannya kak! Admin Pet Point akan segera membalas pesan kakak ya. Mohon ditunggu sebentar. 🙏';
+      
+      if (textLower == 'p' || textLower == 'ping' || textLower.contains('halo') || textLower.contains('permisi')) {
+        reply = 'Halo kak! Selamat datang di Pet Point. Ada yang bisa kami bantu seputar anabul kakak? 🐾';
+      } else if (textLower.contains('grooming') || textLower.contains('mandi') || textLower.contains('salon')) {
+        reply = 'Untuk layanan Grooming, kakak bisa langsung booking jadwal lewat menu "Grooming" di aplikasi lho kak! Praktis nggak perlu antre. 🛁✨';
+      } else if (textLower.contains('adopsi')) {
+        reply = 'Wah, kakak tertarik adopsi? Kakak bisa langsung cek daftar anabul lucu yang lagi cari majikan baru di menu "Adopsi". Semua gratis kak! 🐶😺';
+      } else if (textLower.contains('harga') || textLower.contains('makanan') || textLower.contains('stok')) {
+        reply = 'Untuk cek ketersediaan stok makanan, vitamin, dan harga, kakak bisa langsung meluncur ke menu "Shop" ya kak! 🛒';
+      }
+
+      // Jeda 1.5 detik biar kerasa natural
+      Future.delayed(const Duration(milliseconds: 1500), () async {
+        await _chatService.sendMessage(
+          chatId: _chatId!,
+          senderId: _receiverId!, // Seolah-olah admin yang kirim
+          receiverId: _currentUid!,
+          text: reply,
+        );
+      });
+    }
   }
 
   /// Picks and sends an image.
