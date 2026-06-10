@@ -155,9 +155,7 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
                         ? DateFormat('HH:mm').format(timestamp.toDate())
                         : '';
                     final String content = data['text'] ?? data['message'] ?? '';
-
                     final String messageId = docs[index].id;
-                    final String content = data['text'] ?? data['message'] ?? '';
                     final bool msgIsPinned = data['isPinned'] as bool? ?? false;
                     final bool msgIsDeleted = data['isDeleted'] as bool? ?? false;
 
@@ -176,40 +174,6 @@ class _AdminChatScreenState extends State<AdminChatScreen> {
                                 topRight: const Radius.circular(12),
                                 bottomLeft: isMe ? const Radius.circular(12) : const Radius.circular(0),
                                 bottomRight: isMe ? const Radius.circular(0) : const Radius.circular(12),
-
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4),
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        decoration: BoxDecoration(
-                          color: isMe ? AppColors.primary : Colors.white,
-                          borderRadius: BorderRadius.only(
-                            topLeft: const Radius.circular(12),
-                            topRight: const Radius.circular(12),
-                            bottomLeft: isMe ? const Radius.circular(12) : const Radius.circular(0),
-                            bottomRight: isMe ? const Radius.circular(0) : const Radius.circular(12),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.03),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.6,
-                        ),
-                        child: Column(
-                          crossAxisAlignment:
-                              isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              content,
-                              style: TextStyle(
-                                color: isMe ? Colors.white : Colors.black87,
-                                fontSize: 14,
-
                               ),
                               boxShadow: [
                                 BoxShadow(
