@@ -20,16 +20,16 @@ class AdminRouter {
         final isLoggedIn = authService.isLoggedIn;
         final location = state.matchedLocation;
 
-        final isAuthRoute = location == '/login' || location == '/' || location == '/splash';
+        final isAuthRoute = location == '/admin' || location == '/' || location == '/splash';
 
         if (!isLoggedIn && !isAuthRoute) {
-          return '/login';
+          return '/';
         }
 
         if (isLoggedIn) {
           final role = authService.currentUser?.role.value;
           if (role == 'admin') {
-            if (location == '/login' || location == '/splash') return '/admin/dashboard';
+            if (location == '/admin' || location == '/splash') return '/admin/dashboard';
             return null; // Let them proceed to their admin page or stay on landing page
           } else {
              // They are logged in but not an admin.
@@ -52,7 +52,7 @@ class AdminRouter {
           builder: (context, state) => const SplashScreen(),
         ),
         GoRoute(
-          path: '/login',
+          path: '/admin',
           name: 'admin-login',
           builder: (context, state) => const LoginPage(),
         ),

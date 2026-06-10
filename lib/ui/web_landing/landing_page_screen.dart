@@ -251,7 +251,16 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
 
           // Action Button
           ElevatedButton(
-            onPressed: () => context.push('/login'),
+            onPressed: () async {
+              final Uri emailLaunchUri = Uri(
+                scheme: 'mailto',
+                path: 'pranatapu08@gmail.com',
+                query: 'subject=Pertanyaan Seputar Pet Point',
+              );
+              if (!await launchUrl(emailLaunchUri)) {
+                debugPrint('Could not launch $emailLaunchUri');
+              }
+            },
             style: ElevatedButton.styleFrom(
               minimumSize: isMobile ? const Size(100, 40) : const Size(120, 50),
               backgroundColor: const Color(0xFF4FC3F7), 
@@ -263,7 +272,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
               elevation: 0,
             ),
             child: Text(
-              'MASUK ADMIN',
+              'CONTACT US',
               style: TextStyle(fontWeight: FontWeight.w900, fontSize: isMobile ? 11 : 13, letterSpacing: 1),
             ),
           )
