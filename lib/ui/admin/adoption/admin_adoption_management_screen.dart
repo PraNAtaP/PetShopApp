@@ -165,6 +165,8 @@ class _AdminAdoptionManagementScreenState extends State<AdminAdoptionManagementS
               child: CachedNetworkImage(
                 imageUrl: animal.imageUrl,
                 width: 80,
+                memCacheWidth: 200,
+                maxWidthDiskCache: 400,
                 height: 80,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(

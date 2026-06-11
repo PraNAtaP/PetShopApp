@@ -138,6 +138,8 @@ class _AdoptionCatalogScreenState extends State<AdoptionCatalogScreen> {
               child: CachedNetworkImage(
                 imageUrl: animal.imageUrl,
                 fit: BoxFit.cover,
+                memCacheWidth: 400,
+                maxWidthDiskCache: 800,
                 placeholder: (context, url) => Container(
                   color: Colors.grey.shade200,
                   child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),

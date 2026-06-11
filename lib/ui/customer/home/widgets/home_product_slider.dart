@@ -74,6 +74,8 @@ class HomeProductSlider extends StatelessWidget {
                                     ? CachedNetworkImage(
                                         imageUrl: product.fotoUrl,
                                         width: double.infinity,
+                                        memCacheWidth: 300,
+                                        maxWidthDiskCache: 600,
                                         height: double.infinity,
                                         fit: BoxFit.cover,
                                         placeholder: (context, url) => Container(color: Colors.grey.shade100, child: const Center(child: CircularProgressIndicator())),

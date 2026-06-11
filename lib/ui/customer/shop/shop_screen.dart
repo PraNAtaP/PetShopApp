@@ -288,6 +288,8 @@ class _ShopScreenState extends State<ShopScreen> {
                             imageUrl: product.fotoUrl,
                             width: double.infinity,
                             fit: BoxFit.cover,
+                            memCacheWidth: 400,
+                            maxWidthDiskCache: 800,
                             placeholder: (context, url) => Container(color: Colors.grey.shade100, child: const Center(child: CircularProgressIndicator())),
                             errorWidget: (context, url, error) => Container(color: Colors.grey.shade200, child: const Icon(Icons.broken_image)),
                           )
@@ -468,7 +470,7 @@ class CartBottomSheet extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                   image: item.fotoUrl.isNotEmpty
                                       ? DecorationImage(
-                                          image: CachedNetworkImageProvider(item.fotoUrl),
+                                          image: CachedNetworkImageProvider(item.fotoUrl, maxWidth: 400),
                                           fit: BoxFit.cover,
                                         )
                                       : null,

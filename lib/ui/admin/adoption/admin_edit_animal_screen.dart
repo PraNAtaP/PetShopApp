@@ -194,6 +194,8 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
                                     child: CachedNetworkImage(
                                       imageUrl: widget.animal.imageUrl,
                                       fit: BoxFit.cover,
+                                      memCacheWidth: 400,
+                                      maxWidthDiskCache: 800,
                                       placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
                                       errorWidget: (context, url, error) => Column(
                                         mainAxisAlignment: MainAxisAlignment.center,
