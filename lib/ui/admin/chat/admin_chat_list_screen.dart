@@ -8,9 +8,14 @@ import 'package:petshopapp/models/chat_room_model.dart';
 import 'package:petshopapp/services/chat_service.dart';
 import 'package:petshopapp/services/admin_chat_service.dart';
 
-class AdminChatListScreen extends StatelessWidget {
+class AdminChatListScreen extends StatefulWidget {
   const AdminChatListScreen({super.key});
 
+  @override
+  State<AdminChatListScreen> createState() => _AdminChatListScreenState();
+}
+
+class _AdminChatListScreenState extends State<AdminChatListScreen> {
   Future<Map<String, String>> _fetchUserInfo(String uid) async {
     try {
       final doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
@@ -175,52 +180,72 @@ class AdminChatListScreen extends StatelessWidget {
                               final info = infoSnapshot.data;
                               final displayName = info?['nama'] ?? room.customerName ?? 'Loading...';
                               final photoUrl = info?['fotoUrl'] ?? '';
-                              final isPinned = pinnedMap[room.id]?['isPinned'] as bool? ?? false;
+                                final isPinned = pinnedMap[room.id]?['isPinned'] as bool? ?? false;
 
-                              return HoverableChatTile(
-                                displayName: displayName,
-                                photoUrl: photoUrl,
-                                room: room,
-                                onTap: () {
-                                  context.push('/chat', extra: {
-                                    'receiverId': otherUid,
-                                    'receiverName': displayName,
-                                  });
-                                },
-                                onPin: () async {
-                                  // Pin chat via AdminChatService (soft, with admin log)
-                                  final adminId = FirebaseAuth.instance.currentUser?.uid ?? ChatService.adminUid;
-                                  final adminName = FirebaseAuth.instance.currentUser?.displayName ?? ChatService.adminName;
-                                  try {
-                                    await AdminChatService.instance.pinChat(roomId: room.id, adminId: adminId, adminName: adminName);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Chat dengan $displayName telah disematkan')),
-                                    );
-                                  } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Gagal sematkan chat: $e')),
-                                    );
-                                  }
-                                },
-                                onDelete: () async {
-                                  final adminId = FirebaseAuth.instance.currentUser?.uid ?? ChatService.adminUid;
-                                  final adminName = FirebaseAuth.instance.currentUser?.displayName ?? ChatService.adminName;
-                                  try {
-                                    await AdminChatService.instance.deleteChat(roomId: room.id, adminId: adminId, adminName: adminName);
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Chat dengan $displayName telah dihapus')),
-                                    );
-                                  } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text('Gagal menghapus chat: $e')),
-                                    );
-                                  }
-                                },
+                                return HoverableChatTile(
+                                  displayName: displayName,
+                                  photoUrl: photoUrl,
+                                  room: room,
+                                  isPinned: isPinned,
+                                  onTap: () {
+                                    context.push('/chat', extra: {
+                                      'receiverId': otherUid,
+                                      'receiverName': displayName,
+                                    });
+                                  },
+                                  onPin: () async {
+                                    final adminId = FirebaseAuth.instance.currentUser?.uid ?? ChatService.adminUid;
+                                    final adminName = FirebaseAuth.instance.currentUser?.displayName ?? ChatService.adminName;
+                                    try {
+                                      if (isPinned) {
+                                        await AdminChatService.instance.unpinChat(roomId: room.id, adminId: adminId, adminName: adminName);
+                                        if (mounted) {
+                                          setState(() {}); // Trigger refresh
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('Sematan dilepas untuk chat $displayName')),
+                                          );
+                                        }
+                                      } else {
+                                        await AdminChatService.instance.pinChat(roomId: room.id, adminId: adminId, adminName: adminName);
+                                        if (mounted) {
+                                          setState(() {}); // Trigger refresh
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            SnackBar(content: Text('Chat dengan $displayName telah disematkan')),
+                                          );
+                                        }
+                                      }
+                                    } catch (e) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Gagal mengubah sematan chat: $e')),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  onDelete: () async {
+                                    final adminId = FirebaseAuth.instance.currentUser?.uid ?? ChatService.adminUid;
+                                    final adminName = FirebaseAuth.instance.currentUser?.displayName ?? ChatService.adminName;
+                                    try {
+                                      await AdminChatService.instance.deleteChat(roomId: room.id, adminId: adminId, adminName: adminName);
+                                      if (mounted) {
+                                        setState(() {}); // Trigger refresh
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Chat dengan $displayName telah dihapus')),
+                                        );
+                                      }
+                                    } catch (e) {
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Gagal menghapus chat: $e')),
+                                        );
+                                      }
+                                    }
+                                  },
 
-                              );
-                            },
-                          );
-                        },
+                                );
+                              },
+                            );
+                          },
                       );
                     },
                   );
@@ -238,6 +263,7 @@ class HoverableChatTile extends StatefulWidget {
   final String displayName;
   final String photoUrl;
   final ChatRoomModel room;
+  final bool isPinned;
   final VoidCallback onTap;
   final VoidCallback onDelete;
   final VoidCallback? onPin;
@@ -247,6 +273,7 @@ class HoverableChatTile extends StatefulWidget {
     required this.displayName,
     required this.photoUrl,
     required this.room,
+    this.isPinned = false,
     required this.onTap,
     required this.onDelete,
     this.onPin,
@@ -269,7 +296,7 @@ class _HoverableChatTileState extends State<HoverableChatTile> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: Container(
-        color: _isHovered ? Colors.grey[50] : Colors.transparent,
+        color: _isHovered ? Colors.grey[50] : (widget.isPinned ? Colors.blue.shade50.withValues(alpha: 0.3) : Colors.transparent),
         child: ListTile(
           leading: CircleAvatar(
             backgroundColor: AppColors.primary.withValues(alpha: 0.1),
@@ -306,8 +333,8 @@ class _HoverableChatTileState extends State<HoverableChatTile> {
                     children: [
                       if (widget.onPin != null)
                         IconButton(
-                          tooltip: 'Sematkan Chat',
-                          icon: const Icon(Icons.push_pin_outlined, color: Colors.blue),
+                          tooltip: widget.isPinned ? 'Lepaskan Sematan' : 'Sematkan Chat',
+                          icon: Icon(widget.isPinned ? Icons.push_pin : Icons.push_pin_outlined, color: widget.isPinned ? Colors.orange : Colors.blue),
                           onPressed: widget.onPin,
                         ),
                       IconButton(
@@ -321,13 +348,23 @@ class _HoverableChatTileState extends State<HoverableChatTile> {
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisSize: MainAxisSize.min,
                     key: const ValueKey('time_state'),
                     children: [
-                      if (timeString.isNotEmpty)
-                        Text(
-                          timeString,
-                          style: const TextStyle(fontSize: 11, color: Colors.grey),
-                        ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (widget.isPinned)
+                            const Icon(Icons.push_pin, size: 14, color: Colors.orange),
+                          if (widget.isPinned && timeString.isNotEmpty)
+                            const SizedBox(width: 4),
+                          if (timeString.isNotEmpty)
+                            Text(
+                              timeString,
+                              style: const TextStyle(fontSize: 11, color: Colors.grey),
+                            ),
+                        ],
+                      ),
                       const Icon(Icons.chevron_right, size: 16, color: Colors.grey),
                     ],
                   ),
