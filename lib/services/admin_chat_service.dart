@@ -30,7 +30,7 @@ class AdminChatService {
       description: 'Pinned chat: $roomId by $adminName',
       adminId: adminId,
       targetId: roomId,
-      targetType: 'chat_room',
+      targetType: 'chats',
     ));
 
     await batch.commit();
@@ -57,7 +57,7 @@ class AdminChatService {
       description: 'Unpinned chat: $roomId by $adminName',
       adminId: adminId,
       targetId: roomId,
-      targetType: 'chat_room',
+      targetType: 'chats',
     ));
 
     await batch.commit();
@@ -69,7 +69,7 @@ class AdminChatService {
     required String adminName,
   }) async {
     final batch = _firestore.batch();
-    final roomRef = _firestore.collection('chat_rooms').doc(roomId);
+    final roomRef = _firestore.collection('chats').doc(roomId);
     final logRef = AdminLogService.instance.getNewLogRef();
 
     batch.set(roomRef, {
@@ -84,7 +84,7 @@ class AdminChatService {
       description: 'Deleted chat (soft): $roomId by $adminName',
       adminId: adminId,
       targetId: roomId,
-      targetType: 'chat_room',
+      targetType: 'chats',
     ));
 
     await batch.commit();
@@ -97,7 +97,7 @@ class AdminChatService {
     required String adminName,
   }) async {
     final batch = _firestore.batch();
-    final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc(messageId);
+    final msgRef = _firestore.collection('chats').doc(roomId).collection('messages').doc(messageId);
     final logRef = AdminLogService.instance.getNewLogRef();
 
     batch.set(msgRef, {
@@ -112,7 +112,7 @@ class AdminChatService {
       description: 'Pinned message $messageId in chat $roomId by $adminName',
       adminId: adminId,
       targetId: messageId,
-      targetType: 'chat_message',
+      targetType: 'chats',
     ));
 
     await batch.commit();
@@ -125,7 +125,7 @@ class AdminChatService {
     required String adminName,
   }) async {
     final batch = _firestore.batch();
-    final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc(messageId);
+    final msgRef = _firestore.collection('chats').doc(roomId).collection('messages').doc(messageId);
     final logRef = AdminLogService.instance.getNewLogRef();
 
     batch.set(msgRef, {
@@ -140,7 +140,7 @@ class AdminChatService {
       description: 'Unpinned message $messageId in chat $roomId by $adminName',
       adminId: adminId,
       targetId: messageId,
-      targetType: 'chat_message',
+      targetType: 'chats',
     ));
 
     await batch.commit();
@@ -153,7 +153,7 @@ class AdminChatService {
     required String adminName,
   }) async {
     final batch = _firestore.batch();
-    final msgRef = _firestore.collection('chat_rooms').doc(roomId).collection('messages').doc(messageId);
+    final msgRef = _firestore.collection('chats').doc(roomId).collection('messages').doc(messageId);
     final logRef = AdminLogService.instance.getNewLogRef();
 
     batch.set(msgRef, {
@@ -168,7 +168,7 @@ class AdminChatService {
       description: 'Deleted message $messageId in chat $roomId by $adminName',
       adminId: adminId,
       targetId: messageId,
-      targetType: 'chat_message',
+      targetType: 'chats',
     ));
 
     await batch.commit();

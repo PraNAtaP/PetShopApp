@@ -95,6 +95,7 @@ class AdminLogService {
           case 'ADOPSI':
             // Cocok dengan 'ADD_ANIMAL', 'UPDATE_ANIMAL', 'DELETE_ANIMAL', 'APPROVE_ADOPTION', dll.
             return action.contains('ANIMAL') || action.contains('ADOPTION') || action.contains('ADOPSI');
+            
           default:
             return true;
         }
