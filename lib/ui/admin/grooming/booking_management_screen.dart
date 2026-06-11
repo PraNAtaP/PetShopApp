@@ -976,11 +976,11 @@ class _BookingManagementScreenState extends State<BookingManagementScreen> {
     );
   }
   Future<void> _handlePointLogic(GroomingBookingModel booking, String newStatus) async {
-    if (booking.status == newStatus) return;
+    if (booking.status.toLowerCase() == newStatus.toLowerCase()) return;
 
     final auth = context.read<AuthService>();
-    final isNowCompleted = (newStatus == 'Completed');
-    final isNowCanceled = (newStatus == 'Dibatalkan');
+    final isNowCompleted = (newStatus.toLowerCase() == 'completed' || newStatus.toLowerCase() == 'selesai');
+    final isNowCanceled = (newStatus.toLowerCase() == 'dibatalkan' || newStatus.toLowerCase() == 'cancelled');
 
     if (isNowCanceled && booking.diskonPoin > 0) {
       final double poinTerpakai = (booking.diskonPoin / PointConstants.diskonPerRedeem) * PointConstants.poinPerRedeem;
