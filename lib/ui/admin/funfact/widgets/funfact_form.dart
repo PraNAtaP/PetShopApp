@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:petshopapp/models/funfact_banner_model.dart';
-import 'package:petshopapp/services/imgbb_service.dart';
+import 'package:petshopapp/services/cloudinary_service.dart';
 
 class FunFactForm extends StatefulWidget {
   final Function(FunFactBannerModel) onSubmit;
@@ -160,7 +160,7 @@ class _FunFactFormState extends State<FunFactForm> {
                 setState(() => _isLoading = true);
 
                 try {
-                  final imageUrl = await ImgbbService.uploadImageBytes(_imageBytes!, _imageName ?? 'funfact.jpg');
+                  final imageUrl = await CloudinaryService.uploadImageBytes(_imageBytes!, _imageName ?? 'funfact.jpg');
                   
                   widget.onSubmit(
                     FunFactBannerModel(

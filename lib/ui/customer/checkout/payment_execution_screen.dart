@@ -9,7 +9,7 @@ import 'package:petshopapp/models/order_model.dart';
 import 'package:petshopapp/providers/cart_provider.dart';
 import 'package:petshopapp/services/auth_service.dart';
 import 'package:petshopapp/services/firestore_service.dart';
-import 'package:petshopapp/services/imgbb_service.dart';
+import 'package:petshopapp/services/cloudinary_service.dart';
 
 /// Handles the final payment step based on the selected method.
 /// For QRIS: Shows a static QR code and simulates verification.
@@ -499,9 +499,9 @@ class _PaymentExecutionScreenState extends State<PaymentExecutionScreen>
     setState(() => _isProcessing = true);
 
     try {
-      // Upload to ImgBB
+      // Upload to Cloudinary
       final bytes = await _selectedImage!.readAsBytes();
-      final imageUrl = await ImgbbService.uploadImageBytes(bytes, _selectedImage!.name);
+      final imageUrl = await CloudinaryService.uploadImageBytes(bytes, _selectedImage!.name);
 
       // Create order with Pending status
       await _createOrder('Pending', buktiBayarUrl: imageUrl);

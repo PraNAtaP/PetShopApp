@@ -6,7 +6,7 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/animal_model.dart';
 import 'package:petshopapp/services/adoption_service.dart';
-import 'package:petshopapp/services/imgbb_service.dart';
+import 'package:petshopapp/services/cloudinary_service.dart';
 
 class AdminAddAnimalScreen extends StatefulWidget {
   const AdminAddAnimalScreen({super.key});
@@ -73,8 +73,8 @@ class _AdminAddAnimalScreenState extends State<AdminAddAnimalScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // 1. Upload image to ImgBB using byte stream (works perfectly on web and mobile)
-      final imageUrl = await ImgbbService.uploadImageBytes(
+      // 1. Upload image to Cloudinary using byte stream (works perfectly on web and mobile)
+      final imageUrl = await CloudinaryService.uploadImageBytes(
         _croppedImageBytes!,
         _imageFile!.name,
       );

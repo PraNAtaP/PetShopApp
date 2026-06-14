@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/services/auth_service.dart';
-import 'package:petshopapp/services/imgbb_service.dart';
+import 'package:petshopapp/services/cloudinary_service.dart';
 
 /// Edit Profile screen that loads current user data from AuthService
 /// and saves changes back to Firestore.
@@ -68,7 +68,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       // Upload new photo if selected
       if (_selectedImageBytes != null) {
-        newFotoUrl = await ImgbbService.uploadImageBytes(_selectedImageBytes!, _selectedImage?.name ?? 'image.jpg');
+        newFotoUrl = await CloudinaryService.uploadImageBytes(_selectedImageBytes!, _selectedImage?.name ?? 'image.jpg');
       }
 
       final authService = context.read<AuthService>();

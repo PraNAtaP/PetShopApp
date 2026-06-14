@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:petshopapp/models/funfact_banner_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
-import 'package:petshopapp/services/imgbb_service.dart';
+import 'package:petshopapp/services/cloudinary_service.dart';
 
 class EditFunFactDialog extends StatefulWidget {
   final FunFactBannerModel funFact;
@@ -76,7 +76,7 @@ class _EditFunFactDialogState extends State<EditFunFactDialog> {
     try {
       String imageUrl = _existingImageUrl ?? '';
       if (_imageBytes != null) {
-        imageUrl = await ImgbbService.uploadImageBytes(_imageBytes!, _imageName ?? 'funfact.jpg');
+        imageUrl = await CloudinaryService.uploadImageBytes(_imageBytes!, _imageName ?? 'funfact.jpg');
       }
 
       final updatedFunFact = FunFactBannerModel(

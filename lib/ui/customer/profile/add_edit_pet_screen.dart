@@ -6,7 +6,7 @@ import 'package:petshopapp/services/firestore_service.dart';
 import 'package:petshopapp/models/user_pet_model.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:petshopapp/services/imgbb_service.dart';
+import 'package:petshopapp/services/cloudinary_service.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AddEditPetScreen extends StatefulWidget {
@@ -308,8 +308,8 @@ class _AddEditPetScreenState extends State<AddEditPetScreen> {
 
         // Upload baru jika ada file gambar yang dipilih
         if (_imageFile != null) {
-          debugPrint('SavePet: Uploading image to ImgBB...');
-          finalImageUrl = await ImgbbService.uploadImage(_imageFile!);
+          debugPrint('SavePet: Uploading image to Cloudinary...');
+          finalImageUrl = await CloudinaryService.uploadImage(_imageFile!);
           debugPrint('SavePet: Image upload success: $finalImageUrl');
         }
 

@@ -7,7 +7,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/animal_model.dart';
 import 'package:petshopapp/services/adoption_service.dart';
-import 'package:petshopapp/services/imgbb_service.dart';
+import 'package:petshopapp/services/cloudinary_service.dart';
 
 class AdminEditAnimalScreen extends StatefulWidget {
   final AnimalModel animal;
@@ -87,7 +87,7 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
 
       // 1. Upload new image if selected (using byte stream, robust on all platforms)
       if (_croppedImageBytes != null && _imageFile != null) {
-        imageUrl = await ImgbbService.uploadImageBytes(
+        imageUrl = await CloudinaryService.uploadImageBytes(
           _croppedImageBytes!,
           _imageFile!.name,
         );

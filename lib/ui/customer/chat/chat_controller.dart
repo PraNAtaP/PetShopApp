@@ -7,7 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:petshopapp/models/chat_message_model.dart';
 import 'package:petshopapp/services/chat_service.dart';
-import 'package:petshopapp/services/imgbb_service.dart';
+import 'package:petshopapp/services/cloudinary_service.dart';
 
 /// Controller that bridges the Chat UI with [ChatService].
 class ChatController extends ChangeNotifier {
@@ -146,9 +146,9 @@ class ChatController extends ChangeNotifier {
       String imageUrl;
       if (kIsWeb) {
         final bytes = await pickedFile.readAsBytes();
-        imageUrl = await ImgbbService.uploadImageBytes(bytes, pickedFile.name);
+        imageUrl = await CloudinaryService.uploadImageBytes(bytes, pickedFile.name);
       } else {
-        imageUrl = await ImgbbService.uploadImage(File(pickedFile.path));
+        imageUrl = await CloudinaryService.uploadImage(File(pickedFile.path));
       }
 
       await _chatService.sendMessage(

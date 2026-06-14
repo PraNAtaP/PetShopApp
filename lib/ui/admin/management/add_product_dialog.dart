@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
-import 'package:petshopapp/services/imgbb_service.dart';
+import 'package:petshopapp/services/cloudinary_service.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 
 class AddProductDialog extends StatefulWidget {
@@ -84,7 +84,7 @@ class _AddProductDialogState extends State<AddProductDialog> {
     try {
       String fotoUrl = _existingImageUrl ?? '';
       if (_imageBytes != null) {
-        fotoUrl = await ImgbbService.uploadImageBytes(_imageBytes!, _imageName ?? 'product.jpg');
+        fotoUrl = await CloudinaryService.uploadImageBytes(_imageBytes!, _imageName ?? 'product.jpg');
       }
 
       final product = ProductModel(

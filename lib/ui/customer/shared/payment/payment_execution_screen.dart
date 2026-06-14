@@ -10,7 +10,7 @@ import 'package:flutter/services.dart';
 import 'package:gal/gal.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:petshopapp/services/firestore_service.dart';
-import 'package:petshopapp/services/imgbb_service.dart';
+import 'package:petshopapp/services/cloudinary_service.dart';
 import 'package:petshopapp/constants/point_constants.dart';
 import 'package:petshopapp/services/grooming_service.dart';
 import 'package:petshopapp/models/order_model.dart';
@@ -734,7 +734,7 @@ class _UniversalPaymentExecutionScreenState
       String? imageUrl;
       if (_selectedImage != null) {
         final bytes = await _selectedImage!.readAsBytes();
-        imageUrl = await ImgbbService.uploadImageBytes(
+        imageUrl = await CloudinaryService.uploadImageBytes(
           bytes,
           _selectedImage!.name,
         );

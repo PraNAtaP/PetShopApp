@@ -31,7 +31,8 @@ class MapPickerScreen extends StatelessWidget {
           // Check if address name contains "malang"
           bool hasMalangText = addressName.contains('malang');
 
-          // Check other address components in the map
+
+          // Check other address components in the map
           final addressMap = pickedData.address;
           for (var val in addressMap.values) {
             if (val != null && val.toString().toLowerCase().contains('malang')) {
