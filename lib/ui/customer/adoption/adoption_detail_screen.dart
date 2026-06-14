@@ -227,8 +227,6 @@ class _AdoptionDetailScreenState extends State<AdoptionDetailScreen> {
               background: CachedNetworkImage(
                 imageUrl: animal.imageUrl,
                 fit: BoxFit.cover,
-                memCacheWidth: 800,
-                maxWidthDiskCache: 1200,
                 placeholder: (context, url) => Container(
                   color: Colors.grey.shade200,
                   child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),

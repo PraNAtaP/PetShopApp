@@ -289,8 +289,6 @@ class _AdminAdoptionOrdersViewState extends State<AdminAdoptionOrdersView> {
                                       child: CachedNetworkImage(
                                         imageUrl: animal.imageUrl,
                                         width: 48,
-                                        memCacheWidth: 200,
-                                        maxWidthDiskCache: 400,
                                         height: 48,
                                         fit: BoxFit.cover,
                                         placeholder: (context, url) => Container(

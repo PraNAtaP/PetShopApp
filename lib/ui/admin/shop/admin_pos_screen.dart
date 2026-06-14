@@ -956,8 +956,6 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
                                 ? CachedNetworkImage(
                                     imageUrl: product.fotoUrl,
                                     fit: BoxFit.cover,
-                                    memCacheWidth: 400,
-                                    maxWidthDiskCache: 800,
                                     placeholder: (context, url) => Container(color: Colors.grey.shade100, child: const Center(child: CircularProgressIndicator())),
                                     errorWidget: (context, url, error) => Container(color: Colors.grey.shade200, child: const Icon(Icons.image, color: Colors.grey)),
                                   )

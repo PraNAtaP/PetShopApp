@@ -621,8 +621,6 @@ class _OrderManagementScreenState extends State<OrderManagementScreen> {
                         child: CachedNetworkImage(
                           imageUrl: order.buktiBayarUrl!,
                           width: double.infinity,
-                          memCacheWidth: 400,
-                          maxWidthDiskCache: 800,
                           fit: BoxFit.cover,
                           placeholder: (context, url) => Container(
                             height: 200,

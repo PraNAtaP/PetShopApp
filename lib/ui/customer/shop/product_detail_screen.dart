@@ -78,8 +78,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ? CachedNetworkImage(
                             imageUrl: widget.product.fotoUrl,
                             fit: BoxFit.cover,
-                            memCacheWidth: 800,
-                            maxWidthDiskCache: 1200,
                             placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
                             errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 80, color: Colors.grey),
                           )

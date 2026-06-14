@@ -163,8 +163,6 @@ class _ManagementScreenState extends State<ManagementScreen> {
                                 ? CachedNetworkImage(
                                     imageUrl: product.fotoUrl,
                                     width: 50,
-                                    memCacheWidth: 200,
-                                    maxWidthDiskCache: 400,
                                     height: 50,
                                     fit: BoxFit.cover,
                                     placeholder: (context, url) => Container(width: 50, height: 50, color: Colors.grey[200], child: const Center(child: CircularProgressIndicator())),

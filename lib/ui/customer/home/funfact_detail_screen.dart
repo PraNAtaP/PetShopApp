@@ -40,8 +40,6 @@ class FunFactDetailScreen extends StatelessWidget {
               CachedNetworkImage(
                 imageUrl: funFact.imageUrl,
                 width: double.infinity,
-                memCacheWidth: 800,
-                maxWidthDiskCache: 1200,
                 height: 250,
                 fit: BoxFit.cover,
                 placeholder: (context, url) => Container(

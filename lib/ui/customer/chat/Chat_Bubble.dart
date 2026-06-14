@@ -62,8 +62,6 @@ class ChatBubble extends StatelessWidget {
                         child: CachedNetworkImage(
                           imageUrl: message.imageUrl!,
                           width: 200,
-                          memCacheWidth: 400,
-                          maxWidthDiskCache: 800,
                           fit: BoxFit.cover,
                           placeholder: (context, url) => Container(
                             width: 200,
