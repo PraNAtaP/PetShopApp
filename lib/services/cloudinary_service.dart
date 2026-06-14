@@ -5,12 +5,13 @@ import 'package:crypto/crypto.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Service for handling image uploads to Cloudinary securely using Signed Uploads.
 class CloudinaryService {
-  static const String cloudName = 'dftfpu7tp';
-  static const String apiKey = '214629568521827';
-  static const String apiSecret = 'VPWlrJAjxxCoPlsKr6Vlb86zITU';
+  static String get cloudName => dotenv.env['CLOUDINARY_CLOUD_NAME'] ?? '';
+  static String get apiKey => dotenv.env['CLOUDINARY_API_KEY'] ?? '';
+  static String get apiSecret => dotenv.env['CLOUDINARY_API_SECRET'] ?? '';
   
   static const String _uploadUrl = 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
 

@@ -65,6 +65,7 @@ dependencies:
   gal: ^2.3.2
   firebase_storage: ^12.4.10
   crypto: ^3.0.7
+  flutter_dotenv: ^6.0.1
 
 
 
@@ -92,6 +93,7 @@ flutter:
   uses-material-design: true
 
   assets:
+    - .env
     - lib/assets/img/
     - lib/assets/music/
     - lib/assets/video/
