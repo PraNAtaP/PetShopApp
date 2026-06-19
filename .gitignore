@@ -50,4 +50,4 @@ app.*.map.json
 /lib/firebase_options.dart
 SKILL.md
 # Secrets
-.env
+app.env

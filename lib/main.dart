@@ -35,7 +35,7 @@ void main() async {
   HttpOverrides.global = MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('id_ID', null);
-  await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: "app.env");
 
   
   try {
