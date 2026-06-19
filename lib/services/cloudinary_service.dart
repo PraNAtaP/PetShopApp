@@ -13,7 +13,7 @@ class CloudinaryService {
   static String get apiKey => dotenv.env['CLOUDINARY_API_KEY'] ?? '';
   static String get apiSecret => dotenv.env['CLOUDINARY_API_SECRET'] ?? '';
   
-  static const String _uploadUrl = 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
+  static String get _uploadUrl => 'https://api.cloudinary.com/v1_1/$cloudName/image/upload';
 
   /// Generates the SHA-1 signature required by Cloudinary for secure uploads.
   static String _generateSignature(Map<String, String> params) {
