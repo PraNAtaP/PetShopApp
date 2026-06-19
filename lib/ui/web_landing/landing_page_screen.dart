@@ -635,8 +635,9 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
     if (isGlass) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(24),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        // Removed BackdropFilter to fix extreme lag on mobile CanvasKit
+        child: Container(
+          color: Colors.white.withValues(alpha: 0.05),
           child: cardContent,
         ),
       );
@@ -692,10 +693,10 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
               borderRadius: BorderRadius.circular(40),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.3),
-                  blurRadius: 40,
-                  spreadRadius: 10,
-                  offset: const Offset(0, 20),
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 15,
+                  spreadRadius: 2,
+                  offset: const Offset(0, 10),
                 ),
               ],
               border: Border.all(
