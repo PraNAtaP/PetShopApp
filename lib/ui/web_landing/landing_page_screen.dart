@@ -307,7 +307,9 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
       // Background image of a pet in a landscape
       decoration: BoxDecoration(
         image: DecorationImage(
-          image: const NetworkImage('https://images.unsplash.com/photo-1450778869180-41d0601e046e?q=80&w=2560&auto=format&fit=crop'),
+          image: NetworkImage(isMobile 
+            ? 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?q=80&w=800&auto=format&fit=crop'
+            : 'https://images.unsplash.com/photo-1450778869180-41d0601e046e?q=80&w=2560&auto=format&fit=crop'),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
             Colors.black.withValues(alpha: 0.35),
@@ -978,6 +980,16 @@ class _AutoPlayVideoDemoState extends State<_AutoPlayVideoDemo> {
 
   @override
   Widget build(BuildContext context) {
+    bool isMobile = MediaQuery.of(context).size.width < 800;
+    
+    // On mobile, PlatformView (Video) inside ScrollView causes massive jank on CanvasKit.
+    // We fall back to a static image mockup.
+    if (isMobile) {
+      return SizedBox.expand(
+        child: Image.asset('lib/assets/img/app_mockup.png', fit: BoxFit.cover),
+      );
+    }
+
     return _controller.value.isInitialized
         ? SizedBox.expand(
             child: FittedBox(
