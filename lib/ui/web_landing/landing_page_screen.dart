@@ -455,7 +455,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
           // 3D Curved Cards Mockup
           IgnorePointer(
             child: Transform.scale(
-              scale: isMobile ? MediaQuery.of(context).size.width / 800 : 1.0,
+              scale: isMobile ? (MediaQuery.of(context).size.width / 500).clamp(0.5, 1.2) : 1.0,
               child: SizedBox(
                 width: 800, // Fixed logical width for the 3D stack
                 height: 350,
