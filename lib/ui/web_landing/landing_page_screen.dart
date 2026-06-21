@@ -313,7 +313,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
             Colors.black.withValues(alpha: 0.35),
-            BlendMode.darken,
+            BlendMode.srcOver, // srcOver is much faster than darken on CanvasKit
           ),
         ),
         gradient: const LinearGradient(
@@ -463,7 +463,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                   alignment: Alignment.center,
                   children: [
                     // Far Left Card
-                  Transform.translate(
+                  if (!isMobile) Transform.translate(
                     offset: const Offset(-306, -13),
                     child: Transform(
                       transform: Matrix4.identity()
@@ -486,7 +486,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                     ),
                   ),
                   // Mid Left Card
-                  Transform.translate(
+                  if (!isMobile) Transform.translate(
                     offset: const Offset(-171, 0),
                     child: Transform(
                       transform: Matrix4.identity()
@@ -511,7 +511,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                     ),
                   ),
                   // Far Right Card
-                  Transform.translate(
+                  if (!isMobile) Transform.translate(
                     offset: const Offset(306, -13),
                     child: Transform(
                       transform: Matrix4.identity()
@@ -534,7 +534,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                     ),
                   ),
                   // Mid Right Card
-                  Transform.translate(
+                  if (!isMobile) Transform.translate(
                     offset: const Offset(171, 0),
                     child: Transform(
                       transform: Matrix4.identity()
@@ -616,7 +616,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
         image: bgImageUrl != null ? DecorationImage(
           image: NetworkImage(bgImageUrl),
           fit: BoxFit.cover,
-          colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.5), BlendMode.darken),
+          colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.5), BlendMode.srcOver),
         ) : null,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
@@ -980,16 +980,6 @@ class _AutoPlayVideoDemoState extends State<_AutoPlayVideoDemo> {
 
   @override
   Widget build(BuildContext context) {
-    bool isMobile = MediaQuery.of(context).size.width < 800;
-    
-    // On mobile, PlatformView (Video) inside ScrollView causes massive jank on CanvasKit.
-    // We fall back to a static image mockup.
-    if (isMobile) {
-      return SizedBox.expand(
-        child: Image.asset('lib/assets/img/app_mockup.png', fit: BoxFit.cover),
-      );
-    }
-
     return _controller.value.isInitialized
         ? SizedBox.expand(
             child: FittedBox(
