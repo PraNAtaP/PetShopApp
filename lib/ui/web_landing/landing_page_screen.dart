@@ -370,7 +370,7 @@ class _LandingPageScreenState extends State<LandingPageScreen> {
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        child: const Text('LIHAT VIDEO PROMOSIr', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+                        child: const Text('LIHAT VIDEO PROMOSI', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
