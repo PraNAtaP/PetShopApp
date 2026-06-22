@@ -11,7 +11,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:petshopapp/services/pdf_invoice_service.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:universal_html/html.dart' as html;
 import 'package:petshopapp/models/grooming_package_model.dart';
 
@@ -953,11 +953,14 @@ class _AdminPosScreenState extends State<AdminPosScreen> {
                           child: ClipRRect(
                             borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                             child: product.fotoUrl.isNotEmpty
-                                ? CachedNetworkImage(
-                                    imageUrl: product.fotoUrl,
+                                ? Image.network(
+                                    product.fotoUrl,
                                     fit: BoxFit.cover,
-                                    placeholder: (context, url) => Container(color: Colors.grey.shade100, child: const Center(child: CircularProgressIndicator())),
-                                    errorWidget: (context, url, error) => Container(color: Colors.grey.shade200, child: const Icon(Icons.image, color: Colors.grey)),
+                                    loadingBuilder: (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(color: Colors.grey.shade100, child: const Center(child: CircularProgressIndicator()));
+                                    },
+                                    errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey.shade200, child: const Icon(Icons.image, color: Colors.grey)),
                                   )
                                 : Container(color: Colors.grey.shade200, child: const Icon(Icons.image, color: Colors.grey)),
                           ),

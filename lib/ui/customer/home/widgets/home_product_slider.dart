@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 
 class HomeProductSlider extends StatelessWidget {
   const HomeProductSlider({super.key});

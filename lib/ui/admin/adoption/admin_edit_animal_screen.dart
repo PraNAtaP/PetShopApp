@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:crop_your_image/crop_your_image.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/animal_model.dart';
 import 'package:petshopapp/services/adoption_service.dart';
@@ -193,11 +193,14 @@ class _AdminEditAnimalScreenState extends State<AdminEditAnimalScreen> {
                                     )
                                   : ClipRRect(
                                       borderRadius: BorderRadius.circular(16),
-                                      child: CachedNetworkImage(
-                                        imageUrl: widget.animal.imageUrl,
+                                      child: Image.network(
+                                        widget.animal.imageUrl,
                                         fit: BoxFit.cover,
-                                        placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                                        errorWidget: (context, url, error) => Column(
+                                        loadingBuilder: (context, child, loadingProgress) {
+                                          if (loadingProgress == null) return child;
+                                          return const Center(child: CircularProgressIndicator());
+                                        },
+                                        errorBuilder: (context, error, stackTrace) => Column(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
                                             Icon(Icons.add_a_photo, size: 48, color: Colors.grey.shade400),

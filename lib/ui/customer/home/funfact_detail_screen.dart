@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:petshopapp/models/funfact_banner_model.dart';
 import 'package:go_router/go_router.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 
 class FunFactDetailScreen extends StatelessWidget {
   final FunFactBannerModel funFact;

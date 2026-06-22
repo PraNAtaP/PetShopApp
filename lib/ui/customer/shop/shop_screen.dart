@@ -6,7 +6,7 @@ import 'package:petshopapp/core/theme/app_colors.dart';
 import 'package:petshopapp/models/product_model.dart';
 import 'package:petshopapp/services/firestore_service.dart';
 import 'package:petshopapp/providers/cart_provider.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+
 
 class ShopScreen extends StatefulWidget {
   const ShopScreen({super.key});
