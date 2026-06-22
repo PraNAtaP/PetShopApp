@@ -284,12 +284,15 @@ class _ShopScreenState extends State<ShopScreen> {
                   child: Hero(
                     tag: 'product_${product.productId}',
                     child: product.fotoUrl.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: product.fotoUrl,
+                        ? Image.network(
+                            product.fotoUrl,
                             width: double.infinity,
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(color: Colors.grey.shade100, child: const Center(child: CircularProgressIndicator())),
-                            errorWidget: (context, url, error) => Container(color: Colors.grey.shade200, child: const Icon(Icons.broken_image)),
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(color: Colors.grey.shade100, child: const Center(child: CircularProgressIndicator()));
+                            },
+                            errorBuilder: (context, error, stackTrace) => Container(color: Colors.grey.shade200, child: const Icon(Icons.broken_image)),
                           )
                         : Container(
                             color: Colors.grey.shade100,
@@ -468,7 +471,7 @@ class CartBottomSheet extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(12),
                                   image: item.fotoUrl.isNotEmpty
                                       ? DecorationImage(
-                                          image: CachedNetworkImageProvider(item.fotoUrl, maxWidth: 400),
+                                          image: NetworkImage(item.fotoUrl),
                                           fit: BoxFit.cover,
                                         )
                                       : null,

@@ -75,11 +75,14 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     width: double.infinity,
                     color: Colors.grey.shade100,
                     child: widget.product.fotoUrl.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: widget.product.fotoUrl,
+                        ? Image.network(
+                            widget.product.fotoUrl,
                             fit: BoxFit.cover,
-                            placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
-                            errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 80, color: Colors.grey),
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return const Center(child: CircularProgressIndicator());
+                            },
+                            errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image, size: 80, color: Colors.grey),
                           )
                         : const Icon(Icons.pets, size: 80, color: AppColors.primary),
                   ),
