@@ -37,18 +37,21 @@ class FunFactDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (funFact.imageUrl.isNotEmpty)
-              CachedNetworkImage(
-                imageUrl: funFact.imageUrl,
+              Image.network(
+                funFact.imageUrl,
                 width: double.infinity,
                 height: 250,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  height: 250,
-                  width: double.infinity,
-                  color: Colors.grey[200],
-                  child: const Center(child: CircularProgressIndicator()),
-                ),
-                errorWidget: (context, url, error) {
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return Container(
+                    height: 250,
+                    width: double.infinity,
+                    color: Colors.grey[200],
+                    child: const Center(child: CircularProgressIndicator()),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
                   return Container(
                     height: 250,
                     width: double.infinity,
